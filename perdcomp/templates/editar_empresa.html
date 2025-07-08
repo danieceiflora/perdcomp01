@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Cadastro de Empresa</h1>
+  <form class="form-control" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    
+    <!-- Render the current logo -->
+    {% if empresa.logo %}
+      <div>
+        <label>Logo:</label>
+        <img src="{{ empresa.logo.url }}" alt="Logo da Empresa" style="max-width: 200px;">
+      </div>
+    {% endif %}
+    
+    {{ form.as_p }}
+    
+    <input type="submit" value="Salvar" class="btn btn-primary">
+    
+  </form>
+{% endblock %}

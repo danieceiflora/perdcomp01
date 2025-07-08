@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Parceiros</h1>
+<table class="table table-striped table-bordered align-middle">
+  <thead class="table-light">
+    <tr>
+      <th>ID</th>
+      <th>Empresa</th>
+      <th>CNPJ</th>
+      <th>Razão Social</th>
+      <th>Nome Fantasia</th>
+      <th>Data Início</th>
+      <th>Ações</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for parceiro in parceiros %}
+    <tr>
+      <td>{{ parceiro.id }}</td>
+      <td>{{ parceiro.empresa }}</td>
+      <td>{{ parceiro.cnpj }}</td>
+      <td>{{ parceiro.razao_social }}</td>
+      <td>{{ parceiro.nome_fantasia }}</td>
+      <td>{{ parceiro.data_inicio_parceria|date:'d/m/Y' }}</td>
+      <td>
+        <a href="#" class="btn btn-sm btn-info">Detalhes</a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="7" class="text-center">Nenhum parceiro cadastrado.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
