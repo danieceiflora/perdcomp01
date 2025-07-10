@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Empresa{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Editar Empresa</h2>
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <!-- Empresa Data -->
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Dados da Empresa</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="id_cnpj" class="form-label">CNPJ</label>
+                        {{ form.cnpj }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="id_razao_social" class="form-label">Razão Social</label>
+                        {{ form.razao_social }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="id_nome_fantasia" class="form-label">Nome Fantasia</label>
+                        {{ form.nome_fantasia }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="id_codigo_origem" class="form-label">Código de Origem</label>
+                        {{ form.codigo_origem }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="id_logomarca" class="form-label">Logomarca</label>
+                        {% if form.instance.logomarca %}
+                            <div class="mb-2">
+                                <img src="{{ form.instance.logomarca.url }}" alt="Logomarca atual" style="max-width: 150px; max-height: 150px;">
+                                <p class="text-muted">Logomarca atual</p>
+                            </div>
+                        {% endif %}
+                        {{ form.logomarca }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contacts Section -->
+        <div class="card mb-4">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Contatos</h5>
+                <button type="button" class="btn btn-sm btn-primary" id="addContactBtn">
+                    <i class="bi bi-plus-circle"></i> Adicionar Contato
+                </button>
+            </div>
+            <div class="card-body" id="contactsContainer">
+                <!-- Existing contacts will be loaded here -->
+                {% for contato in contatos %}
+                <div class="contact-item border-bottom pb-3 mb-3">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Tipo de Contato</label>
+                            <select name="tipo_contato_{{ forloop.counter }}" class="form-select">
+                                {% for value, text in tipo_contato_options %}
+                                    <option value="{{ value }}" {% if value == contato.tipo_contato %}selected{% endif %}>{{ text }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Telefone</label>
+                            <input type="text" name="telefone_{{ forloop.counter }}" value="{{ contato.telefone }}" class="form-control">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email_{{ forloop.counter }}" value="{{ contato.email }}" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Site</label>
+                            <input type="url" name="site_{{ forloop.counter }}" value="{{ contato.site }}" class="form-control">
+                        </div>
+                    </div>
+                    <input type="hidden" name="contato_id_{{ forloop.counter }}" value="{{ contato.id }}">
+                    <button type="button" class="btn btn-sm btn-danger remove-contact">
+                        <i class="bi bi-trash"></i> Remover
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <input type="hidden" name="contact_count" id="contactCount" value="{{ contatos|length }}">
+        
+        <div class="d-flex justify-content-between">
+            <a href="{% url 'empresas:lista_empresas' %}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add new contact button
+        document.getElementById('addContactBtn').addEventListener('click', function() {
+            const contactsContainer = document.getElementById('contactsContainer');
+            const contactCount = document.getElementById('contactCount');
+            const newIndex = parseInt(contactCount.value) + 1;
+            
+            // Create new contact form
+            const newContactHTML = `
+                <div class="contact-item border-bottom pb-3 mb-3">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Tipo de Contato</label>
+                            <select name="tipo_contato_${newIndex}" class="form-select">
+                                {% for value, text in tipo_contato_options %}
+                                    <option value="{{ value }}">{{ text }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Telefone</label>
+                            <input type="text" name="telefone_${newIndex}" class="form-control">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email_${newIndex}" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Site</label>
+                            <input type="url" name="site_${newIndex}" class="form-control">
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-danger remove-contact">
+                        <i class="bi bi-trash"></i> Remover
+                    </button>
+                </div>
+            `;
+            
+            // Add to DOM
+            contactsContainer.insertAdjacentHTML('beforeend', newContactHTML);
+            contactCount.value = newIndex;
+            
+            // Add event listener to the new remove button
+            setupRemoveButtons();
+        });
+        
+        // Setup remove contact buttons
+        function setupRemoveButtons() {
+            document.querySelectorAll('.remove-contact').forEach(button => {
+                button.addEventListener('click', function() {
+                    this.closest('.contact-item').remove();
+                    updateContactCount();
+                });
+            });
+        }
+        
+        // Update contact count
+        function updateContactCount() {
+            const count = document.querySelectorAll('.contact-item').length;
+            document.getElementById('contactCount').value = count;
+        }
+        
+        // Initialize remove buttons
+        setupRemoveButtons();
+    });
+</script>
+{% endblock %}

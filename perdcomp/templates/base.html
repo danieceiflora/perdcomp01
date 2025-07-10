@@ -38,22 +38,24 @@
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                   <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  <i class="bi bi-building me-1">  </i> Empresas
-                
-          </a>
-          <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="{% url 'cadastro_empresa' %}"><i class="bi bi-plus me-1"></i>Cadastrar</a></li>
-            <li><a class="dropdown-item" href="{% url 'empresas' %}"><i class="bi bi-list me-1"></i>Listar Empresas</a></li>
-            <li><hr class="dropdown-divider"></li>
+                  <i class="bi bi-building me-1">  </i>Empresas</a>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="{% url 'empresas:cadastro_empresa' %}"><i class="bi bi-plus me-1"></i>Cadastrar</a></li>
+                <li><a class="dropdown-item" href="{% url 'empresas:lista_empresas' %}"><i class="bi bi-list me-1"></i>Listar Empresas</a></li>
+                <li><a class="dropdown-item" href="{% url 'tipo_relacionamento' %}"><i class="bi bi-pencil me-1"></i>Tipo de parceria</a></li>
+                <li><hr class="dropdown-divider"></li>
+              </ul></li>
 
-          </ul>
-        </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#"><i class="bi bi-people me-1"></i>Parceiros</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#cliente"><i class="bi bi-person me-1"></i>Clientes</a>
-                    </li>
+              <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                  <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <i class="bi bi-people me-1">  </i>Clientes - Parceiros</a>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="{% url 'cadastrar_cliente_parceiro' %}"><i class="bi bi-person-plus me-1"></i>Cadastrar Cliente</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{% url 'lista_clientes_parceiros' %}"><i class="bi bi-list me-1"></i>Listar Clientes</a></li>
+              </ul></li>
                     <li class="nav-item">
                         <a class="nav-link" href="#teses"><i class="bi bi-journal-text me-1"></i>Teses de Crédito</a>
                     </li>

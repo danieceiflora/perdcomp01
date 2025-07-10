@@ -10,5 +10,5 @@ urlpatterns = [
     path('', home_view),
     path('empresas/', include('empresas.urls')),
     path('contatos/', include('contatos.urls')),
-    
+    path('clientes-parceiros/', include('clientes_parceiros.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,18 +1,13 @@
 from django.db import models
 from empresas.models import Empresa
 
-class TipoContato(models.Model):
+class Contatos(models.Model):
   tipo_contato_options = (
     ('Comercial', 'Comercial'),
     ('Celular', 'Celular'),
     ('Pessoal', 'Pessoal')
   )
-
-  tipo_contato = models.CharField(choices=tipo_contato_options, max_length=50, default='Comercial')
-  descricao = models.CharField(max_length=100)
-
-class Contatos(models.Model):
-  tipo_contato = models.ForeignKey(TipoContato, on_delete=models.CASCADE)
+  tipo_contato = models.CharField(max_length=20, choices=tipo_contato_options, default='Comercial')
   empresa_base = models.ForeignKey(Empresa, on_delete=models.CASCADE, related_name='empresa_base_contato')
   empresa_vinculada = models.ForeignKey(Empresa, on_delete=models.CASCADE, related_name='empresa_vinculada_contato')
   telefone = models.CharField(max_length=20)

@@ -1,3 +1,10 @@
 from django.shortcuts import render
+from django.views.generic import CreateView
+from .models import Contatos
 
-# Create your views here.
+class NewContatoView(CreateView):
+    model = Contatos
+    fields = '__all__'
+    
+    
+

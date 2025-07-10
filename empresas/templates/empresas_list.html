@@ -3,7 +3,7 @@
 {% block content %}
   <h1 class="text-center my-4">Lista de Empresas</h1>
   <div class="mb-3 text-center">
-    <a href="{% url 'cadastro_empresa' %}" class="btn btn-primary">Cadastrar Nova Empresa</a>
+    <a href="{% url 'empresas:cadastro_empresa' %}" class="btn btn-primary">Cadastrar Nova Empresa</a>
   </div>
   <table class="table table-striped">
     <thead>
@@ -29,7 +29,7 @@
           <td>{{ empresa.cnpj }}</td>
           <td>{{ empresa.razao_social }}</td>
           <td>
-            <a href="{% url 'editar_empresa' empresa.id %}" class="btn btn-secondary btn-sm">Editar</a>
+            <a href="{% url 'empresas:editar_empresa' empresa.id %}" class="btn btn-secondary btn-sm">Editar</a>
             <form action="#" method="post" style="display:inline;">
               {% csrf_token %}
               <button type="submit" class="btn btn-danger btn-sm">Excluir</button>

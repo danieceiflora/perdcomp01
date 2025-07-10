@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1 class="text-center my-4">Cadastrar Cliente ou Parceiro</h1>
+  <form class="form-control p-4" method="post">
+    {% csrf_token %}
+    
+    {{ form.as_p }}
+    
+    <div class="text-center mt-4">
+      <input type="submit" value="Salvar" class="btn btn-primary">
+    </div>
+  </form>
+{% endblock %}
