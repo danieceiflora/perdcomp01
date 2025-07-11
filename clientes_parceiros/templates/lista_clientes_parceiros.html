@@ -13,6 +13,9 @@
         <th>Empresa Vinculada</th>
         <th>Nome Referência</th>
         <th>Cargo Referência</th>
+        <th>Data Início Parceria</th>
+        <th>Status</th>
+        <th>Ações</th>
       </tr>
     </thead>
     <tbody>
@@ -23,6 +26,20 @@
           <td>{{ cliente_parceiro.id_company_vinculada }}</td>
           <td>{{ cliente_parceiro.nome_referencia }}</td>
           <td>{{ cliente_parceiro.cargo_referencia }}</td>
+          <td>{{ cliente_parceiro.data_inicio_parceria }}</td>
+          <td>
+            {% if cliente_parceiro.ativo %}
+              <span class="badge bg-success">Ativo</span>
+            {% else %}
+              <span class="badge bg-danger">Inativo</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="btn-group" role="group">
+              <a href="{% url 'editar_cliente_parceiro' cliente_parceiro.id %}" class="btn btn-sm btn-warning">Editar</a>
+              <a href="{% url 'excluir_cliente_parceiro' cliente_parceiro.id %}" class="btn btn-sm btn-danger">Excluir</a>
+            </div>
+          </td>
         </tr>
       {% endfor %}
     </tbody>

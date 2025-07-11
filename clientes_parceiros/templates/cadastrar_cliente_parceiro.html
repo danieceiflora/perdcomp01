@@ -1,14 +1,206 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <h1 class="text-center my-4">Cadastrar Cliente ou Parceiro</h1>
-  <form class="form-control p-4" method="post">
+<h1 class="text-center my-4">Cadastrar Cliente ou Parceiro</h1>
+
+<div class="container">
+  <form class="form-control p-4" method="post" enctype="multipart/form-data">
     {% csrf_token %}
+
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        <h3>Empresa Base</h3>
+      </div>
+      <div class="card-body">
+        <div class="row mb-3">
+          <div class="col-12">
+            <label for="id_empresa_base" class="form-label">{{ form.empresa_base.label }}</label>
+            {{ form.empresa_base }}
+            <div class="form-text text-muted">Selecione a empresa base já cadastrada no sistema</div>
+          </div>
+        </div>
+      </div>
+    </div>
     
-    {{ form.as_p }}
-    
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        <h3>Nova Empresa Vinculada</h3>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="id_cnpj" class="form-label">{{ form.cnpj.label }}</label>
+            {{ form.cnpj }}
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="id_razao_social" class="form-label">{{ form.razao_social.label }}</label>
+            {{ form.razao_social }}
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="id_nome_fantasia" class="form-label">{{ form.nome_fantasia.label }}</label>
+            {{ form.nome_fantasia }}
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="id_codigo_origem" class="form-label">{{ form.codigo_origem.label }}</label>
+            {{ form.codigo_origem }}
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-12 mb-3">
+            <label for="id_logomarca" class="form-label">{{ form.logomarca.label }}</label>
+            {{ form.logomarca }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        <h3>Dados do Relacionamento</h3>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="id_id_tipo_relacionamento" class="form-label">{{ form.id_tipo_relacionamento.label }}</label>
+            {{ form.id_tipo_relacionamento }}
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="id_nome_referencia" class="form-label">{{ form.nome_referencia.label }}</label>
+            {{ form.nome_referencia }}
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="id_cargo_referencia" class="form-label">{{ form.cargo_referencia.label }}</label>
+            {{ form.cargo_referencia }}
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="id_data_inicio_parceria" class="form-label">{{ form.data_inicio_parceria.label }}</label>
+            {{ form.data_inicio_parceria }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        <h3>Contatos</h3>
+      </div>
+      <div class="card-body" id="contatos-section">
+        <div id="contatos-container">
+          <!-- Os contatos serão adicionados dinamicamente aqui -->
+        </div>
+        <input type="hidden" id="contact_count" name="contact_count" value="0">
+        <div class="text-center mt-3">
+          <button type="button" id="add-contact-btn" class="btn btn-info">Adicionar Contato</button>
+        </div>
+      </div>
+    </div>
+
     <div class="text-center mt-4">
-      <input type="submit" value="Salvar" class="btn btn-primary">
+      <input type="submit" value="Salvar" class="btn btn-success">
+      <a href="{% url 'lista_clientes_parceiros' %}" class="btn btn-secondary">Cancelar</a>
     </div>
   </form>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    let contactCount = 0;
+    const contatosContainer = document.getElementById('contatos-container');
+    const addContactBtn = document.getElementById('add-contact-btn');
+    const contactCountInput = document.getElementById('contact_count');
+    const form = document.querySelector('form');
+
+    // Adicionar um contato automaticamente quando a página carregar
+    addContact();
+    
+    // Add contact function
+    addContactBtn.addEventListener('click', addContact);
+    
+    // Validar o formulário antes de enviar
+    form.addEventListener('submit', function(event) {
+      // Verificar se existe pelo menos um contato com dados preenchidos
+      let contatoValido = false;
+      for (let i = 1; i <= contactCount; i++) {
+        const telefoneEl = document.getElementById(`telefone_${i}`);
+        const emailEl = document.getElementById(`email_${i}`);
+        const siteEl = document.getElementById(`site_${i}`);
+        
+        if (telefoneEl && telefoneEl.value || 
+            emailEl && emailEl.value || 
+            siteEl && siteEl.value) {
+          contatoValido = true;
+          break;
+        }
+      }
+      
+      if (!contatoValido) {
+        event.preventDefault();
+        alert("É obrigatório preencher pelo menos um contato com telefone, email ou site.");
+      }
+    });
+
+    function addContact() {
+      contactCount++;
+      contactCountInput.value = contactCount;
+
+      const contactDiv = document.createElement('div');
+      contactDiv.className = 'card mb-3 contact-item';
+      contactDiv.id = `contact-${contactCount}`;
+
+      contactDiv.innerHTML = `
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+          <h5>Contato #${contactCount}</h5>
+          <button type="button" class="btn btn-sm btn-danger remove-contact" data-id="${contactCount}">Remover</button>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="tipo_contato_${contactCount}" class="form-label">Tipo de Contato</label>
+              <select name="tipo_contato_${contactCount}" id="tipo_contato_${contactCount}" class="form-control" required>
+                {% for value, text in tipos_contato_options %}
+                  <option value="{{ value }}">{{ text }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="telefone_${contactCount}" class="form-label">Telefone</label>
+              <input type="text" name="telefone_${contactCount}" id="telefone_${contactCount}" class="form-control">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="email_${contactCount}" class="form-label">Email</label>
+              <input type="email" name="email_${contactCount}" id="email_${contactCount}" class="form-control">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="site_${contactCount}" class="form-label">Site</label>
+              <input type="text" name="site_${contactCount}" id="site_${contactCount}" class="form-control">
+            </div>
+          </div>
+        </div>
+      `;
+
+      contatosContainer.appendChild(contactDiv);
+
+      // Add event listener to remove button
+      const removeBtn = contactDiv.querySelector('.remove-contact');
+      removeBtn.addEventListener('click', function() {
+        // Verificar se há mais de um contato antes de remover
+        const contatosItems = document.querySelectorAll('.contact-item');
+        if (contatosItems.length <= 1) {
+          alert('É obrigatório ter pelo menos um contato.');
+          return;
+        }
+        
+        const contactId = this.getAttribute('data-id');
+        const contactToRemove = document.getElementById(`contact-${contactId}`);
+        contactToRemove.remove();
+      });
+    }
+  });
+</script>
 {% endblock %}

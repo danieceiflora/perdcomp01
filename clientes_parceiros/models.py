@@ -25,8 +25,9 @@ class ClientesParceiros(models.Model):
     )
     nome_referencia = models.CharField(max_length=200)
     cargo_referencia = models.CharField(max_length=100, blank=True, null=True)
+    # Alterando de DateTimeField para DateField
+    data_inicio_parceria = models.DateField(blank=True, null=True)
+    ativo = models.BooleanField(default=True)
 
     def __str__(self):
         return f"{self.nome_referencia} ({self.id_company_base} -> {self.id_company_vinculada})"
-
-

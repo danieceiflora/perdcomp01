@@ -121,3 +121,12 @@ class EmpresaUpdateView(UpdateView):
         
         messages.success(self.request, 'Empresa atualizada com sucesso!')
         return super().form_valid(form)
+
+class EmpresaDeleteView(DeleteView):
+    model = Empresa
+    template_name = 'excluir_empresa.html'
+    success_url = reverse_lazy('empresas:lista_empresas')
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, 'Empresa excluída com sucesso!')
+        return super().delete(request, *args, **kwargs)

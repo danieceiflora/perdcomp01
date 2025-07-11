@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="text-center my-4">Editar Cliente/Parceiro</h1>
+
+<div class="container">
+  <form class="form-control p-4" method="post">
+    {% csrf_token %}
+
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        <h3>Informações da Empresa Base</h3>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">CNPJ</label>
+            <input type="text" class="form-control" value="{{ empresa_base.cnpj }}" readonly>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Razão Social</label>
+            <input type="text" class="form-control" value="{{ empresa_base.razao_social }}" readonly>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-12 mb-3">
+            <label class="form-label">Nome Fantasia</label>
+            <input type="text" class="form-control" value="{{ empresa_base.nome_fantasia }}" readonly>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        <h3>Informações da Empresa Vinculada</h3>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">CNPJ</label>
+            <input type="text" class="form-control" value="{{ empresa_vinculada.cnpj }}" readonly>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Razão Social</label>
+            <input type="text" class="form-control" value="{{ empresa_vinculada.razao_social }}" readonly>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-12 mb-3">
+            <label class="form-label">Nome Fantasia</label>
+            <input type="text" class="form-control" value="{{ empresa_vinculada.nome_fantasia }}" readonly>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        <h3>Dados do Relacionamento</h3>
+      </div>
+      <div class="card-body">
+        {{ form.as_p }}
+      </div>
+    </div>
+
+    {% if contatos %}
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        <h3>Contatos</h3>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th>Tipo</th>
+                <th>Telefone</th>
+                <th>Email</th>
+                <th>Site</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for contato in contatos %}
+                <tr>
+                  <td>{{ contato.tipo_contato }}</td>
+                  <td>{{ contato.telefone }}</td>
+                  <td>{{ contato.email }}</td>
+                  <td>{{ contato.site }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="text-center mt-4">
+      <button type="submit" class="btn btn-success">Salvar Alterações</button>
+      <a href="{% url 'lista_clientes_parceiros' %}" class="btn btn-secondary">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
