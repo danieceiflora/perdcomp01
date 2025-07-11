@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if object %}Editar Correção{% else %}Nova Correção{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        {% if object %}
+                            <i class="fas fa-edit"></i> Editar Correção
+                        {% else %}
+                            <i class="fas fa-plus"></i> Nova Correção
+                        {% endif %}
+                    </h3>
+                </div>
+                <form method="post" class="card-body">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ form.cod_origem.label_tag }}
+                                {{ form.cod_origem }}
+                                {% if form.cod_origem.errors %}
+                                    <div class="text-danger">
+                                        {{ form.cod_origem.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ form.descricao.label_tag }}
+                                {{ form.descricao }}
+                                {% if form.descricao.errors %}
+                                    <div class="text-danger">
+                                        {{ form.descricao.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="form-group">
+                                {{ form.fonte_correcao.label_tag }}
+                                {{ form.fonte_correcao }}
+                                {% if form.fonte_correcao.errors %}
+                                    <div class="text-danger">
+                                        {{ form.fonte_correcao.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> Salvar
+                        </button>
+                        <a href="{% url 'correcao:list' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
