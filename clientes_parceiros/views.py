@@ -29,13 +29,13 @@ class TipoRelacionamentoUpdateView(UpdateView):
 class TipoRelacionamentoDeleteView(DeleteView):
     model = TipoRelacionamento
     template_name = 'excluir_tipo_relacionamento.html'
-    success_url = '/clientes-parceiros/tipo-relacionamento/'
+    success_url = reverse_lazy('lista_tipos_relacionamento')
 
 class NewClienteParceiroView(CreateView):
     model = ClientesParceiros
     template_name = 'cadastrar_cliente_parceiro.html'
     form_class = ClientesParceirosForm
-    success_url = '/listar/'
+    success_url = reverse_lazy('lista_clientes_parceiros')
 
     def form_valid(self, form):
         form.save()
