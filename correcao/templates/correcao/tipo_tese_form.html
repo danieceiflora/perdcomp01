@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if object %}Editar Tipo de Tese{% else %}Novo Tipo de Tese{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        {% if object %}
+                            <i class="bi bi-pencil"></i> Editar Tipo de Tese
+                        {% else %}
+                            <i class="bi bi-plus"></i> Novo Tipo de Tese
+                        {% endif %}
+                    </h3>
+                </div>
+                <form method="post" class="card-body">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="form-group mb-3">
+                                {{ form.descricao.label_tag }}
+                                {{ form.descricao }}
+                                {% if form.descricao.errors %}
+                                    <div class="text-danger">
+                                        {{ form.descricao.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-lg"></i> Salvar
+                        </button>
+                        <a href="{% url 'correcao:tipo_tese_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Voltar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

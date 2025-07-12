@@ -1,5 +1,5 @@
 from django import forms
-from .models import Correcao
+from .models import Correcao, tipoTese, TeseCredito
 
 class CorrecaoForm(forms.ModelForm):
     class Meta:
@@ -23,4 +23,59 @@ class CorrecaoForm(forms.ModelForm):
             'cod_origem': 'Código de Origem',
             'descricao': 'Descrição',
             'fonte_correcao': 'Fonte da Correção',
+        }
+
+class tipoTeseForm(forms.ModelForm):
+    class Meta:
+        model = tipoTese
+        fields = ['descricao']
+        widgets = {
+            'descricao': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Descrição do tipo de tese'
+            }),
+        }
+        labels = {
+            'descricao': 'Descrição',
+        }
+
+class TeseCreditoForm(forms.ModelForm):
+    class Meta:
+        model = TeseCredito
+        fields = ['id_correcao', 'id_tipo_tese', 'cod_origem', 'descricao', 'jurisprudencia', 'corrige', 'correcao']
+        widgets = {
+            'id_correcao': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            'id_tipo_tese': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            'cod_origem': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Código de origem'
+            }),
+            'descricao': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Descrição'
+            }),
+            'jurisprudencia': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Jurisprudência'
+            }),
+            'corrige': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+            }),
+            'correcao': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Valor da correção'
+            }),
+        }
+        labels = {
+            'id_correcao': 'Correção',
+            'id_tipo_tese': 'Tipo de Tese',
+            'cod_origem': 'Código de Origem',
+            'descricao': 'Descrição',
+            'jurisprudencia': 'Jurisprudência',
+            'corrige': 'Aplicar Correção',
+            'correcao': 'Valor da Correção',
         }

@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Lista de Teses de Crédito{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title">Lista de Teses de Crédito</h3>
+                    <a href="{% url 'correcao:tese_credito_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus"></i> Nova Tese de Crédito
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if teses_credito %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Correção</th>
+                                        <th>Tipo de Tese</th>
+                                        <th>Código Origem</th>
+                                        <th>Descrição</th>
+                                        <th>Aplica Correção</th>
+                                        <th>Valor Correção</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for tese in teses_credito %}
+                                    <tr>
+                                        <td>{{ tese.id }}</td>
+                                        <td>{{ tese.id_correcao }}</td>
+                                        <td>{{ tese.id_tipo_tese }}</td>
+                                        <td>{{ tese.cod_origem }}</td>
+                                        <td>{{ tese.descricao }}</td>
+                                        <td>
+                                            {% if tese.corrige %}
+                                                <span class="badge bg-success">Sim</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Não</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ tese.correcao|default_if_none:"--" }}</td>
+                                        <td>
+                                            <a href="{% url 'correcao:tese_credito_update' tese.pk %}" class="btn btn-sm btn-warning">
+                                                <i class="bi bi-pencil"></i> Editar
+                                            </a>
+                                            <a href="{% url 'correcao:tese_credito_delete' tese.pk %}" class="btn btn-sm btn-danger">
+                                                <i class="bi bi-trash"></i> Excluir
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        {% if is_paginated %}
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                                    </li>
+                                {% endif %}
+                                
+                                <li class="page-item active">
+                                    <span class="page-link">
+                                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                    </span>
+                                </li>
+                                
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Próximo</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> Nenhuma tese de crédito cadastrada.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
