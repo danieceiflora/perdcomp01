@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'empresas',
     'contatos',
     'correcao',
+    'adesao',
 ]
 
 MIDDLEWARE = [
