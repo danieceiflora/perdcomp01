@@ -74,8 +74,13 @@
                             <li><a class="dropdown-item" href="{% url 'correcao:create' %}"><i class="bi bi-plus me-1"></i>Nova Correção</a></li>
                         </ul>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#adesoes"><i class="bi bi-file-earmark-plus me-1"></i>Adesões</a>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                          <i class="bi bi-file-earmark-plus me-1"></i>Adesões</a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'adesao:list' %}"><i class="bi bi-list me-1"></i>Listar Adesões</a></li>
+                            <li><a class="dropdown-item" href="{% url 'adesao:create' %}"><i class="bi bi-plus me-1"></i>Nova Adesão</a></li>
+                        </ul>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#lancamentos"><i class="bi bi-cash-stack me-1"></i>Lançamentos</a>

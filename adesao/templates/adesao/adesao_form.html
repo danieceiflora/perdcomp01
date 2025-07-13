@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if object %}Editar Adesão{% else %}Nova Adesão{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        {% if object %}
+                            <i class="bi bi-pencil"></i> Editar Adesão
+                        {% else %}
+                            <i class="bi bi-plus"></i> Nova Adesão
+                        {% endif %}
+                    </h3>
+                </div>
+                <form method="post" class="card-body">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.cliente.id_for_label }}" class="form-label">{{ form.cliente.label }}:</label>
+                                {{ form.cliente }}
+                                {% if form.cliente.errors %}
+                                    <div class="text-danger">
+                                        {{ form.cliente.errors }}
+                                    </div>
+                                {% endif %}
+                                <small class="form-text text-muted">Selecione o cliente para esta adesão</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.tese_credito_id.id_for_label }}" class="form-label">{{ form.tese_credito_id.label }}:</label>
+                                {{ form.tese_credito_id }}
+                                {% if form.tese_credito_id.errors %}
+                                    <div class="text-danger">
+                                        {{ form.tese_credito_id.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.perdcomp.id_for_label }}" class="form-label">{{ form.perdcomp.label }}:</label>
+                                {{ form.perdcomp }}
+                                {% if form.perdcomp.errors %}
+                                    <div class="text-danger">
+                                        {{ form.perdcomp.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.data_inicio.id_for_label }}" class="form-label">{{ form.data_inicio.label }}:</label>
+                                {{ form.data_inicio }}
+                                {% if form.data_inicio.errors %}
+                                    <div class="text-danger">
+                                        {{ form.data_inicio.errors }}
+                                    </div>
+                                {% endif %}
+                                <small class="form-text text-muted">{{ form.data_inicio.help_text }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.saldo.id_for_label }}" class="form-label">{{ form.saldo.label }}:</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    {{ form.saldo }}
+                                </div>
+                                {% if form.saldo.errors %}
+                                    <div class="text-danger">
+                                        {{ form.saldo.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.free_rate.id_for_label }}" class="form-label">{{ form.free_rate.label }}:</label>
+                                <div class="input-group">
+                                    {{ form.free_rate }}
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                {% if form.free_rate.errors %}
+                                    <div class="text-danger">
+                                        {{ form.free_rate.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="form-check">
+                                {{ form.ativo }}
+                                <label for="{{ form.ativo.id_for_label }}" class="form-check-label">{{ form.ativo.label }}</label>
+                                {% if form.ativo.errors %}
+                                    <div class="text-danger">
+                                        {{ form.ativo.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-lg"></i> Salvar
+                        </button>
+                        <a href="{% url 'adesao:list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Voltar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Adicionar classes de validação ao formulário quando for submetido
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function() {
+            form.classList.add('was-validated');
+        });
+    });
+</script>
+{% endblock %}
