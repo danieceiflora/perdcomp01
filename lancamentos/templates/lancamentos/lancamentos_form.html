@@ -1,0 +1,288 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if object %}Editar Lançamento{% else %}Novo Lançamento{% endif %}
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    .anexo-form {
+        background-color: #f8f9fa;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        border: 1px solid #dee2e6;
+    }
+    .delete-form {
+        background-color: #fff3f3;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        {% if object %}
+                            <i class="bi bi-pencil"></i> Editar Lançamento
+                        {% else %}
+                            <i class="bi bi-plus"></i> Novo Lançamento
+                        {% endif %}
+                    </h3>
+                </div>
+                <form method="post" enctype="multipart/form-data" class="card-body">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="{{ form.id_adesao.id_for_label }}" class="form-label">{{ form.id_adesao.label }}:</label>
+                                {{ form.id_adesao }}
+                                {% if form.id_adesao.errors %}
+                                    <div class="text-danger">
+                                        {{ form.id_adesao.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label for="{{ form.data_lancamento.id_for_label }}" class="form-label">{{ form.data_lancamento.label }}:</label>
+                                {{ form.data_lancamento }}
+                                {% if form.data_lancamento.errors %}
+                                    <div class="text-danger">
+                                        {{ form.data_lancamento.errors }}
+                                    </div>
+                                {% endif %}
+                                <small class="form-text text-muted">{{ form.data_lancamento.help_text }}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="{{ form.tipo.id_for_label }}" class="form-label">{{ form.tipo.label }}:</label>
+                                {{ form.tipo }}
+                                {% if form.tipo.errors %}
+                                    <div class="text-danger">
+                                        {{ form.tipo.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="form-group mb-3">
+                                        <label for="{{ form.valor.id_for_label }}" class="form-label">{{ form.valor.label }}:</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">R$</span>
+                                            {{ form.valor }}
+                                        </div>
+                                        {% if form.valor.errors %}
+                                            <div class="text-danger">
+                                                {{ form.valor.errors }}
+                                            </div>
+                                        {% endif %}
+                                        <small class="form-text text-muted">{{ form.valor.help_text }}</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group mb-3">
+                                        <label for="{{ form.sinal.id_for_label }}" class="form-label">{{ form.sinal.label }}:</label>
+                                        {{ form.sinal }}
+                                        {% if form.sinal.errors %}
+                                            <div class="text-danger">
+                                                {{ form.sinal.errors }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group mb-4">
+                        <label for="{{ form.observacao.id_for_label }}" class="form-label">{{ form.observacao.label }}:</label>
+                        {{ form.observacao }}
+                        {% if form.observacao.errors %}
+                            <div class="text-danger">
+                                {{ form.observacao.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group mb-4">
+                        <label for="{{ form.status.id_for_label }}" class="form-label">{{ form.status.label }}:</label>
+                        {{ form.status }}
+                        {% if form.status.errors %}
+                            <div class="text-danger">
+                                {{ form.status.errors }}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            <strong>Atenção:</strong> Após mudar para "Confirmado", o lançamento não poderá mais ser editado ou excluído.
+                        </small>
+                    </div>
+                    
+                    <h4 class="border-bottom pb-2 mb-3">Anexos</h4>
+                    
+                    {{ anexos_formset.management_form }}
+                    
+                    <div id="anexos-container">
+                        {% for anexo_form in anexos_formset.forms %}
+                            <div class="anexo-form {% if anexo_form.instance.pk and anexo_form.DELETE.value %}delete-form{% endif %}">
+                                <div class="row">
+                                    {% if anexo_form.instance.pk %}
+                                    <div class="col-12 mb-2">
+                                        <strong>Anexo atual:</strong> 
+                                        {% if anexo_form.instance.arquivo %}
+                                            <a href="{{ anexo_form.instance.arquivo.url }}" target="_blank">{{ anexo_form.instance.nome_anexo }}</a>
+                                        {% else %}
+                                            {{ anexo_form.instance.nome_anexo }}
+                                        {% endif %}
+                                        
+                                        <!-- Campo de exclusão -->
+                                        <div class="form-check form-switch float-end">
+                                            {{ anexo_form.DELETE }}
+                                            <label class="form-check-label text-danger" for="{{ anexo_form.DELETE.id_for_label }}">
+                                                Excluir este anexo
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                
+                                    <!-- Campos ocultos -->
+                                    {% for hidden in anexo_form.hidden_fields %}
+                                        {{ hidden }}
+                                    {% endfor %}
+                                
+                                    <div class="col-md-4">
+                                        <div class="form-group mb-3">
+                                            <label for="{{ anexo_form.arquivo.id_for_label }}" class="form-label">Arquivo:</label>
+                                            {{ anexo_form.arquivo }}
+                                            {% if anexo_form.arquivo.errors %}
+                                                <div class="text-danger">
+                                                    {{ anexo_form.arquivo.errors }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group mb-3">
+                                            <label for="{{ anexo_form.nome_anexo.id_for_label }}" class="form-label">Nome:</label>
+                                            {{ anexo_form.nome_anexo }}
+                                            {% if anexo_form.nome_anexo.errors %}
+                                                <div class="text-danger">
+                                                    {{ anexo_form.nome_anexo.errors }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group mb-3">
+                                            <label for="{{ anexo_form.descricao.id_for_label }}" class="form-label">Descrição:</label>
+                                            {{ anexo_form.descricao }}
+                                            {% if anexo_form.descricao.errors %}
+                                                <div class="text-danger">
+                                                    {{ anexo_form.descricao.errors }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <button type="button" id="add-anexo" class="btn btn-outline-primary mb-4">
+                        <i class="bi bi-plus-circle"></i> Adicionar Anexo
+                    </button>
+                    
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-lg"></i> Salvar
+                        </button>
+                        <a href="{% url 'lancamentos:list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Garantir que o campo de data esteja preenchido corretamente
+        const dataField = document.querySelector('input[name="data_lancamento"]');
+        if (dataField && !dataField.value) {
+            // Se estamos editando e por algum motivo o campo está vazio, preenchemos com a data atual
+            const today = new Date().toISOString().split('T')[0];
+            dataField.value = today;
+        }
+        
+        // Função para gerenciar o formset de anexos
+        const anexosContainer = document.getElementById('anexos-container');
+        const addAnexoBtn = document.getElementById('add-anexo');
+        
+        // Pegando o prefixo do formset
+        const prefix = '{{ anexos_formset.prefix }}';
+        
+        // Atualizando os campos quando um novo anexo é adicionado
+        const updateElementIndex = function(el, prefix, ndx) {
+            const id_regex = new RegExp('(' + prefix + '-\\d+)');
+            const replacement = prefix + '-' + ndx;
+            
+            if (el.id) el.id = el.id.replace(id_regex, replacement);
+            if (el.name) el.name = el.name.replace(id_regex, replacement);
+            
+            // Atualizando os atributos for de todas as labels dentro deste elemento
+            el.querySelectorAll('label').forEach((label) => {
+                if (label.getAttribute('for')) {
+                    label.setAttribute('for', 
+                        label.getAttribute('for').replace(id_regex, replacement)
+                    );
+                }
+            });
+        };
+        
+        // Função para adicionar um novo anexo
+        addAnexoBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Pegando o número total de forms
+            let totalForms = document.getElementById('id_' + prefix + '-TOTAL_FORMS');
+            let currentFormCount = parseInt(totalForms.value);
+            
+            // Pegando o primeiro form como template
+            const formTemplate = anexosContainer.querySelector('.anexo-form');
+            const newForm = formTemplate.cloneNode(true);
+            
+            // Resetando todos os valores dos inputs
+            newForm.querySelectorAll('input, select, textarea').forEach((input) => {
+                if (input.getAttribute('type') !== 'hidden') {
+                    input.value = '';
+                }
+                // Limpando quaisquer mensagens de erro
+                const errorDiv = input.nextElementSibling;
+                if (errorDiv && errorDiv.classList.contains('text-danger')) {
+                    errorDiv.innerHTML = '';
+                }
+            });
+            
+            // Atualizando os índices
+            updateElementIndex(newForm, prefix, currentFormCount);
+            
+            // Atualizando o valor total de forms
+            totalForms.value = currentFormCount + 1;
+            
+            // Adicionando o novo form ao container
+            anexosContainer.appendChild(newForm);
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalhes do Lançamento{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-3">
+        <div class="col">
+            <h1 class="h3">Detalhes do Lançamento</h1>
+        </div>
+        <div class="col text-end">
+            <a href="{% url 'lancamentos:list' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+            
+            {% if object.status == 'PENDENTE' %}
+                <a href="{% url 'lancamentos:update' object.id %}" class="btn btn-warning">
+                    <i class="bi bi-pencil"></i> Editar
+                </a>
+                <a href="{% url 'lancamentos:delete' object.id %}" class="btn btn-danger">
+                    <i class="bi bi-trash"></i> Excluir
+                </a>
+                <a href="{% url 'lancamentos:confirmar' object.id %}" class="btn btn-success">
+                    <i class="bi bi-check-circle"></i> Confirmar Lançamento
+                </a>
+            {% elif object.status == 'CONFIRMADO' %}
+                <a href="{% url 'lancamentos:editar_anexos' object.id %}" class="btn btn-warning">
+                    <i class="bi bi-paperclip"></i> Editar Anexos
+                </a>
+                <a href="{% url 'lancamentos:estornar' object.id %}" class="btn btn-danger">
+                    <i class="bi bi-arrow-counterclockwise"></i> Estornar
+                </a>
+            {% elif object.status == 'ESTORNADO' %}
+                <a href="{% url 'lancamentos:editar_anexos' object.id %}" class="btn btn-warning">
+                    <i class="bi bi-paperclip"></i> Editar Anexos
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Informações do Lançamento</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong>ID:</strong> {{ object.id }}</p>
+                            <p><strong>Data:</strong> {{ object.data_lancamento|date:"d/m/Y" }}</p>
+                            <p><strong>Adesão:</strong> {{ object.id_adesao }}</p>
+                            <p><strong>Status:</strong> 
+                                {% if object.status == 'PENDENTE' %}
+                                    <span class="badge bg-warning">Pendente</span>
+                                {% elif object.status == 'CONFIRMADO' %}
+                                    <span class="badge bg-success">Confirmado</span>
+                                {% elif object.status == 'ESTORNADO' %}
+                                    <span class="badge bg-danger">Estornado</span>
+                                {% endif %}
+                            </p>
+                            <p><strong>Tipo:</strong> 
+                                {% if object.sinal == '-' %}
+                                    <span class="badge bg-danger">Débito</span>
+                                {% else %}
+                                    <span class="badge bg-success">Crédito</span>
+                                {% endif %}
+                                {% if object.tipo %}
+                                    <span class="badge bg-info">{{ object.tipo }}</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Valor:</strong> R$ {{ object.valor|floatformat:2 }}</p>
+                            <p><strong>Data de Registro:</strong> {{ object.data_criacao|date:"d/m/Y H:i" }}</p>
+                            <p><strong>Observação:</strong> {{ object.observacao|default:"Não informada" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">Anexos</h5>
+                </div>
+                <div class="card-body">
+                    {% if object.anexos.all %}
+                        <ul class="list-group">
+                            {% for anexo in object.anexos.all %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>
+                                        <i class="bi bi-file-earmark"></i>
+                                        <a href="{{ anexo.arquivo.url }}" target="_blank">
+                                            {{ anexo.nome_anexo }}
+                                        </a>
+                                    </span>
+                                    <span class="badge bg-secondary">{{ anexo.arquivo.size|filesizeformat }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="alert alert-light">Nenhum anexo disponível.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

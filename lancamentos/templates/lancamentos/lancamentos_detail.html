@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Detalhes do Lançamento{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title">Detalhes do Lançamento</h3>
+                    <div>
+                        <a href="{% url 'lancamentos:list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Voltar
+                        </a>
+                        
+                        {% if lancamento.status == 'PENDENTE' %}
+                            <a href="{% url 'lancamentos:update' lancamento.pk %}" class="btn btn-warning">
+                                <i class="bi bi-pencil"></i> Editar
+                            </a>
+                            <a href="{% url 'lancamentos:delete' lancamento.pk %}" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Excluir
+                            </a>
+                            <a href="{% url 'lancamentos:confirmar' lancamento.pk %}" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i> Confirmar
+                            </a>
+                        {% elif lancamento.status == 'CONFIRMADO' %}
+                            <a href="{% url 'lancamentos:editar_anexos' lancamento.pk %}" class="btn btn-warning">
+                                <i class="bi bi-paperclip"></i> Editar Anexos
+                            </a>
+                            <a href="{% url 'lancamentos:estornar' lancamento.pk %}" class="btn btn-danger">
+                                <i class="bi bi-arrow-counterclockwise"></i> Estornar
+                            </a>
+                        {% elif lancamento.status == 'ESTORNADO' %}
+                            <a href="{% url 'lancamentos:editar_anexos' lancamento.pk %}" class="btn btn-warning">
+                                <i class="bi bi-paperclip"></i> Editar Anexos
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="border-bottom pb-2">Informações do Lançamento</h5>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th style="width: 30%">Adesão (PERDCOMP):</th>
+                                    <td>{{ lancamento.id_adesao.perdcomp }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Data do Lançamento:</th>
+                                    <td>{{ lancamento.data_lancamento|date:"d/m/Y" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Valor:</th>
+                                    <td class="text-{{ lancamento.sinal|yesno:"success,danger" }}">
+                                        <strong>{{ lancamento.sinal }} R$ {{ lancamento.valor|floatformat:2 }}</strong>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Tipo:</th>
+                                    <td>{{ lancamento.tipo|default:"Não especificado" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Status:</th>
+                                    <td>
+                                        {% if lancamento.status == 'PENDENTE' %}
+                                            <span class="badge bg-warning">Pendente</span>
+                                        {% elif lancamento.status == 'CONFIRMADO' %}
+                                            <span class="badge bg-success">Confirmado</span>
+                                            {% if lancamento.data_confirmacao %}
+                                                <small class="text-muted d-block">
+                                                    Confirmado em: {{ lancamento.data_confirmacao|date:"d/m/Y H:i" }}
+                                                </small>
+                                            {% endif %}
+                                        {% elif lancamento.status == 'ESTORNADO' %}
+                                            <span class="badge bg-danger">Estornado</span>
+                                            {% if lancamento.lancamento_original %}
+                                                <small class="text-muted d-block">
+                                                    Estorno do lançamento: #{{ lancamento.lancamento_original.id }}
+                                                </small>
+                                            {% endif %}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Data de Criação:</th>
+                                    <td>{{ lancamento.data_criacao|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Observação:</th>
+                                    <td>{{ lancamento.observacao|linebreaks|default:"Nenhuma observação" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h5 class="border-bottom pb-2">Anexos</h5>
+                            {% if anexos %}
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Nome</th>
+                                                <th>Descrição</th>
+                                                <th>Data Upload</th>
+                                                <th>Arquivo</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for anexo in anexos %}
+                                            <tr>
+                                                <td>{{ anexo.nome_anexo }}</td>
+                                                <td>{{ anexo.descricao }}</td>
+                                                <td>{{ anexo.data_upload|date:"d/m/Y H:i" }}</td>
+                                                <td>
+                                                    <a href="{{ anexo.arquivo.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                        <i class="bi bi-file-earmark"></i> Baixar
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-light">
+                                    <i class="bi bi-info-circle"></i> Nenhum anexo para este lançamento.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
