@@ -5,7 +5,7 @@ from clientes_parceiros.models import ClientesParceiros, TipoRelacionamento
 class AdesaoForm(forms.ModelForm):
     class Meta:
         model = Adesao
-        fields = ['cliente', 'tese_credito_id', 'data_inicio', 'perdcomp', 'saldo', 'free_rate', 'ativo']
+        fields = ['cliente', 'tese_credito_id', 'data_inicio', 'perdcomp', 'saldo', 'free_rate', 'ativo', 'saldo_atual']
         widgets = {
             'cliente': forms.Select(attrs={
                 'class': 'form-select',
@@ -34,10 +34,24 @@ class AdesaoForm(forms.ModelForm):
             'ativo': forms.CheckboxInput(attrs={
                 'class': 'form-check-input',
             }),
+            'saldo_atual': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Saldo Atual',
+                'step': '0.01'
+            }),
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        
+        # Se for um novo objeto, inicializa o saldo_atual com o valor do saldo
+        if not self.instance.pk:
+            self.fields['saldo_atual'].initial = self.initial.get('saldo', 0)
+            
+        # Se estiver editando, torna o saldo_atual somente leitura
+        else:
+            self.fields['saldo_atual'].widget.attrs['readonly'] = True
+            self.fields['saldo_atual'].help_text = 'Este campo é atualizado automaticamente pelos lançamentos'
         
         # Filtra apenas clientes_parceiros com tipo_relacionamento=1 (Cliente) e ativos
         try:

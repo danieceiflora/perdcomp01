@@ -14,5 +14,9 @@ class Contatos(models.Model):
   email = models.EmailField(max_length=100)
   site = models.CharField(max_length=100)
 
+  class Meta:
+    verbose_name = 'Contato'
+    verbose_name_plural = 'Contatos'
+
   def __str__(self):
     return f"{self.tipo_contato} - {self.empresa_base} - {self.empresa_vinculada} - {self.telefone}"

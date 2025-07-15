@@ -49,6 +49,20 @@
                                     <td>{{ lancamento.id_adesao.perdcomp }}</td>
                                 </tr>
                                 <tr>
+                                    <th>Saldo Atual da Adesão:</th>
+                                    <td class="fw-bold">R$ {{ lancamento.id_adesao.saldo_atual|floatformat:2 }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Saldo Restante:</th>
+                                    <td class="fw-bold {% if lancamento.saldo_restante > 0 %}text-success{% elif lancamento.saldo_restante < 0 %}text-danger{% endif %}">
+                                        {% if lancamento.saldo_restante != None %}
+                                            R$ {{ lancamento.saldo_restante|floatformat:2 }}
+                                        {% else %}
+                                            <span class="text-muted">Não disponível para lançamentos pendentes</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
                                     <th>Data do Lançamento:</th>
                                     <td>{{ lancamento.data_lancamento|date:"d/m/Y" }}</td>
                                 </tr>

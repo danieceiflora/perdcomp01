@@ -37,6 +37,17 @@ class Adesao(models.Model):
         default=True,
         verbose_name='Ativo'
     )
+    saldo_atual = models.FloatField(
+        verbose_name='Saldo Atual',
+        help_text='Saldo atual da adesão, atualizado automaticamente pelos lançamentos'
+    )
+    
+    def save(self, *args, **kwargs):
+        """Sobrescreve o método save para garantir que o saldo_atual seja inicializado corretamente"""
+        # Se é um novo objeto (não tem ID) e o saldo_atual não foi definido
+        if not self.pk and not self.saldo_atual:
+            self.saldo_atual = self.saldo
+        super().save(*args, **kwargs)
     
     @property
     def empresa_cliente(self):

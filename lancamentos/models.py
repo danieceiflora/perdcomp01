@@ -82,6 +82,13 @@ class Lancamentos(models.Model):
         blank=True,
         verbose_name='Data de Confirmação'
     )
+    
+    saldo_restante = models.FloatField(
+        verbose_name='Saldo Restante',
+        help_text='Saldo da adesão após este lançamento',
+        null=True,
+        blank=True
+    )
 
     def __str__(self):
         return f"{self.id_adesao.perdcomp} - {self.sinal}{self.valor} - {self.data_lancamento}"
@@ -112,6 +119,32 @@ class Lancamentos(models.Model):
         
     def get_absolute_url(self):
         return reverse('lancamentos:detail', kwargs={'pk': self.pk})
+    
+    def atualizar_saldo_adesao(self):
+        """
+        Atualiza o saldo atual da adesão com base no valor e sinal deste lançamento.
+        Também registra o saldo restante no próprio lançamento para referência histórica.
+        Esta função deve ser chamada dentro de um bloco de transação para garantir a atomicidade.
+        """
+        adesao = self.id_adesao
+        
+        # Apenas lançamentos confirmados afetam o saldo
+        if self.status == 'CONFIRMADO':
+            valor_numerico = self.valor
+            
+            # Se for débito (sinal -), subtrai do saldo atual
+            if self.sinal == '-':
+                adesao.saldo_atual -= valor_numerico
+            # Se for crédito (sinal +), adiciona ao saldo atual
+            else:
+                adesao.saldo_atual += valor_numerico
+            
+            # Registra o saldo restante no lançamento (registro histórico)
+            self.saldo_restante = adesao.saldo_atual
+            self.save(update_fields=['saldo_restante'])
+                
+            # Salva a adesão com o novo saldo
+            adesao.save(update_fields=['saldo_atual'])
 
 class Anexos(models.Model):
     id_lancamento = models.ForeignKey(

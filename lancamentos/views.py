@@ -16,12 +16,40 @@ class LancamentosListView(ListView):
     paginate_by = 10
     
     def get_queryset(self):
-        return super().get_queryset().select_related('id_adesao').order_by('-data_lancamento')
+        """
+        Retorna os lançamentos ordenados por data, com as adesões relacionadas carregadas
+        para evitar consultas N+1 e otimizar a exibição do saldo atual.
+        
+        Permite filtrar por PERDCOMP se o parâmetro 'perdcomp' estiver na query string.
+        """
+        queryset = super().get_queryset().select_related('id_adesao').order_by('-data_lancamento')
+        
+        # Filtro por PERDCOMP
+        perdcomp = self.request.GET.get('perdcomp')
+        if perdcomp:
+            queryset = queryset.filter(id_adesao__perdcomp__icontains=perdcomp)
+            
+        return queryset
+        
+    def get_context_data(self, **kwargs):
+        """
+        Adiciona parâmetros de filtro ao contexto para persistir a pesquisa na paginação.
+        """
+        context = super().get_context_data(**kwargs)
+        context['current_filters'] = self.request.GET.dict()
+        return context
 
 class LancamentoDetailView(DetailView):
     model = Lancamentos
     template_name = 'lancamentos/lancamentos_detail.html'
     context_object_name = 'lancamento'
+    
+    def get_queryset(self):
+        """
+        Carrega a adesão relacionada para evitar consultas N+1 e 
+        otimizar a exibição do saldo atual.
+        """
+        return super().get_queryset().select_related('id_adesao')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -55,6 +83,10 @@ class LancamentoCreateView(CreateView):
                 self.object.data_confirmacao = timezone.now()
             
             self.object.save()
+            
+            # Atualiza o saldo da adesão se o lançamento foi confirmado
+            if self.object.status == 'CONFIRMADO':
+                self.object.atualizar_saldo_adesao()
             
             # Salva os anexos se forem válidos
             if anexos_formset.is_valid():
@@ -113,8 +145,24 @@ class LancamentoUpdateView(UpdateView):
             # Se o status mudou para CONFIRMADO, registra a data de confirmação
             if old_status != 'CONFIRMADO' and new_status == 'CONFIRMADO':
                 self.object.data_confirmacao = timezone.now()
-            
+                
             self.object.save()
+            
+            # Atualiza o saldo da adesão se o status foi alterado para ou de CONFIRMADO
+            if (old_status != 'CONFIRMADO' and new_status == 'CONFIRMADO') or \
+               (old_status == 'CONFIRMADO' and new_status != 'CONFIRMADO'):
+                # Se o lançamento agora está confirmado, atualizamos o saldo
+                if new_status == 'CONFIRMADO':
+                    self.object.atualizar_saldo_adesao()
+                # Se estava confirmado e agora não está, revertemos o efeito no saldo
+                else:
+                    # Invertemos o sinal para reverter o efeito anterior
+                    original_sinal = self.object.sinal
+                    self.object.sinal = '+' if original_sinal == '-' else '-'
+                    self.object.atualizar_saldo_adesao()
+                    # Restauramos o sinal original
+                    self.object.sinal = original_sinal
+                    self.object.save(update_fields=['sinal'])
             
             if anexos_formset.is_valid():
                 anexos_formset.instance = self.object
@@ -154,7 +202,11 @@ class LancamentoDeleteView(DeleteView):
 def confirmar_lancamento(request, pk):
     """Confirma um lançamento, tornando-o não mais editável.
     Essa view ainda é mantida para compatibilidade com os links de confirmação
-    existentes e para permitir confirmar rapidamente sem editar o lançamento."""
+    existentes e para permitir confirmar rapidamente sem editar o lançamento.
+    
+    Ao confirmar o lançamento, o saldo atual da adesão é atualizado de acordo
+    com o valor e sinal do lançamento.
+    """
     lancamento = get_object_or_404(Lancamentos, pk=pk)
     
     if lancamento.status != 'PENDENTE':
@@ -165,6 +217,10 @@ def confirmar_lancamento(request, pk):
         lancamento.status = 'CONFIRMADO'
         lancamento.data_confirmacao = timezone.now()
         lancamento.save()
+        
+        # Atualiza o saldo da adesão
+        lancamento.atualizar_saldo_adesao()
+        
         messages.success(request, "Lançamento confirmado com sucesso!")
     
     return redirect('lancamentos:detail', pk=pk)
@@ -231,6 +287,15 @@ def estornar_lancamento(request, pk):
     with transaction.atomic():
         # Marca o lançamento original como estornado
         lancamento.status = 'ESTORNADO'
+        
+        # Revertemos o efeito do lançamento original no saldo
+        # Invertemos o sinal para reverter o efeito anterior
+        original_sinal = lancamento.sinal
+        lancamento.sinal = '+' if original_sinal == '-' else '-'
+        lancamento.atualizar_saldo_adesao()
+        # Restauramos o sinal original
+        lancamento.sinal = original_sinal
+        
         lancamento.save()
         
         # Cria o lançamento de estorno com sinal contrário
@@ -246,6 +311,9 @@ def estornar_lancamento(request, pk):
             lancamento_original=lancamento
         )
         estorno.save()
+        
+        # Atualizamos o saldo com o lançamento de estorno
+        estorno.atualizar_saldo_adesao()
         
         messages.success(request, "Lançamento estornado com sucesso!")
     
