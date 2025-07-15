@@ -2,6 +2,7 @@ from django.contrib import admin
 from empresas.models import Empresa
 from contatos.models import Contatos
 from django.utils.safestring import mark_safe
+from django.utils.html import format_html
 
 class ContatosInline(admin.TabularInline):
     model = Contatos
@@ -48,7 +49,7 @@ class EmpresaAdmin(admin.ModelAdmin):
     
     def display_logomarca(self, obj):
         if obj.logomarca:
-            return mark_safe(f'<img src="{obj.logomarca.url}" width="150" />')
+            return format_html('<img src="{}" width="150" />', obj.logomarca.url)
         return "Sem logomarca"
     display_logomarca.short_description = 'Visualização da Logomarca'
     

@@ -1,9 +1,64 @@
 from django.contrib import admin
-from .models import Correcao
+from .models import Correcao, tipoTese, TeseCredito
 
 @admin.register(Correcao)
 class CorrecaoAdmin(admin.ModelAdmin):
-    list_display = ('cod_origem', 'descricao', 'fonte_correcao')
+    list_display = ('cod_origem', 'descricao', 'fonte_correcao', 'teses_count')
     list_filter = ('cod_origem',)
     search_fields = ('cod_origem', 'descricao', 'fonte_correcao')
     ordering = ('descricao',)
+    
+    def teses_count(self, obj):
+        return obj.tesecredito_set.count()
+    teses_count.short_description = 'Teses'
+
+@admin.register(tipoTese)
+class TipoTeseAdmin(admin.ModelAdmin):
+    list_display = ('id', 'descricao', 'teses_count')
+    search_fields = ('descricao',)
+    
+    def teses_count(self, obj):
+        return obj.tesecredito_set.count()
+    teses_count.short_description = 'Teses'
+
+class TeseInline(admin.TabularInline):
+    model = TeseCredito
+    extra = 0
+    fields = ('cod_origem', 'descricao', 'corrige', 'correcao')
+    show_change_link = True
+
+@admin.register(TeseCredito)
+class TeseCreditoAdmin(admin.ModelAdmin):
+    list_display = ('cod_origem', 'descricao', 'tipo_tese', 'correcao_display', 'corrige_display', 'adesoes_count')
+    list_filter = ('id_tipo_tese', 'corrige', 'id_correcao')
+    search_fields = ('cod_origem', 'descricao', 'jurisprudencia')
+    fieldsets = (
+        ('Identificação', {
+            'fields': ('cod_origem', 'descricao', 'id_tipo_tese')
+        }),
+        ('Correção', {
+            'fields': ('id_correcao', 'corrige', 'correcao')
+        }),
+        ('Detalhes', {
+            'fields': ('jurisprudencia',)
+        }),
+    )
+    
+    def tipo_tese(self, obj):
+        return obj.id_tipo_tese.descricao
+    tipo_tese.short_description = 'Tipo de Tese'
+    
+    def correcao_display(self, obj):
+        return obj.id_correcao.descricao
+    correcao_display.short_description = 'Correção'
+    
+    def corrige_display(self, obj):
+        return 'Sim' if obj.corrige else 'Não'
+    corrige_display.short_description = 'Aplica Correção'
+    
+    def adesoes_count(self, obj):
+        return obj.adesoes.count()
+    adesoes_count.short_description = 'Adesões'
+
+# Atualizar as classes Admin para incluir inlines
+CorrecaoAdmin.inlines = [TeseInline]
