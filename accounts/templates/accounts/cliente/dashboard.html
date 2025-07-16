@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard Cliente - PERDCOMP{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-header {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        padding: 2rem 0;
+    }
+    .stat-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    /* Customizações específicas para o header do cliente */
+    .dashboard-header .empresa-logo,
+    .dashboard-header .logo-placeholder {
+        border-color: rgba(255,255,255,0.3) !important;
+        background: rgba(255,255,255,0.95) !important;
+    }
+    
+    /* Estilo para o botão de Minha Conta com logomarca */
+    .btn-light.dropdown-toggle {
+        padding: 0.4rem 0.75rem;
+        display: inline-flex !important;
+        align-items: center;
+        border-radius: 30px;
+        border: 1px solid rgba(0,0,0,0.1);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        transition: all 0.2s ease-in-out;
+    }
+    
+    .btn-light.dropdown-toggle:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .btn-light .logo-container {
+        margin-right: 8px;
+    }
+    
+    /* Estilo para o ícone do dropdown */
+    .dropdown-toggle-icon {
+        position: relative;
+        width: 12px;
+        height: 12px;
+    }
+    
+    .dropdown-toggle-icon:after {
+        content: '';
+        display: inline-block;
+        width: 0;
+        height: 0;
+        margin-left: 0.255em;
+        vertical-align: 0.255em;
+        border-top: 0.3em solid;
+        border-right: 0.3em solid transparent;
+        border-bottom: 0;
+        border-left: 0.3em solid transparent;
+    }
+    
+    /* Responsividade para o botão Minha Conta */
+    @media (max-width: 576px) {
+        .btn-light.dropdown-toggle span:not(.dropdown-toggle-icon) {
+            display: none; /* Oculta o texto em dispositivos pequenos */
+        }
+        
+        .btn-light.dropdown-toggle .logo-container {
+            margin-right: 0; /* Remove margem quando texto está oculto */
+        }
+        
+        .account-dropdown-wrapper {
+            justify-content: flex-end !important;
+        }
+        
+        .account-dropdown-wrapper .dropdown {
+            margin-left: auto !important;
+        }
+    }
+    
+    /* Classe para garantir alinhamento à direita */
+    .account-dropdown-wrapper {
+        display: flex;
+        justify-content: flex-end;
+    }
+    
+    /* Responsividade para mobile */
+    @media (max-width: 768px) {
+        .dashboard-header {
+            padding: 1.5rem 0;
+        }
+        .dashboard-header h1 {
+            font-size: 1.25rem !important;
+        }
+        .dashboard-header p {
+            font-size: 0.9rem;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .dashboard-header h1 {
+            font-size: 1.1rem !important;
+        }
+        .stat-card i {
+            font-size: 2rem !important;
+        }
+        .stat-card h3 {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h1 class="h3 mb-1">Bem-vindo, {{ user.get_full_name|default:user.username }}!</h1>
+                        <p class="mb-0 opacity-75">{{ empresa.nome_fantasia|default:empresa.razao_social }} - {{ tipo_acesso }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 account-dropdown-wrapper">
+                <div class="dropdown">
+                    <button class="btn btn-light dropdown-toggle d-flex align-items-center account-button" type="button" data-bs-toggle="dropdown">
+                        <div class="logo-container me-2">
+                            {% if empresa.logomarca %}
+                                <img src="{{ empresa.logomarca.url }}" alt="{{ empresa.razao_social }}" class="empresa-logo-small">
+                            {% else %}
+                                <div class="logo-placeholder-small">
+                                    <i class="bi bi-building text-success" style="font-size: 0.6rem;"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <span>Minha Conta</span>
+                        <span class="dropdown-toggle-icon ms-1"></span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">
+                            <i class="bi bi-person me-2"></i>Meu Perfil
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item logout-link" href="{% url 'accounts:logout' %}">
+                            <i class="bi bi-box-arrow-right me-2"></i>Sair
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mt-4">
+    <!-- Cards de Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card stat-card text-center p-4">
+                <div class="card-body">
+                    <i class="bi bi-clipboard-data text-primary" style="font-size: 2.5rem;"></i>
+                    <h3 class="mt-3 mb-1">{{ empresas_acessiveis|length }}</h3>
+                    <p class="text-muted mb-0">Empresa{{ empresas_acessiveis|length|pluralize }} Acessível{{ empresas_acessiveis|length|pluralize:",eis" }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card stat-card text-center p-4">
+                <div class="card-body">
+                    <i class="bi bi-graph-up text-success" style="font-size: 2.5rem;"></i>
+                    <h3 class="mt-3 mb-1">R$ 0,00</h3>
+                    <p class="text-muted mb-0">Saldo Total</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card stat-card text-center p-4">
+                <div class="card-body">
+                    <i class="bi bi-clock-history text-warning" style="font-size: 2.5rem;"></i>
+                    <h3 class="mt-3 mb-1">0</h3>
+                    <p class="text-muted mb-0">Lançamentos Pendentes</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informações da Empresa -->
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-building me-2"></i>Informações da Empresa
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Razão Social:</strong><br>{{ empresa.razao_social }}</p>
+                            <p><strong>Nome Fantasia:</strong><br>{{ empresa.nome_fantasia|default:"--" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>CNPJ:</strong><br>{{ empresa.cnpj }}</p>
+                            <p><strong>Código de Origem:</strong><br>{{ empresa.codigo_origem|default:"--" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-check me-2"></i>Ações Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="#" class="btn btn-outline-primary">
+                            <i class="bi bi-eye me-2"></i>Ver Adesões
+                        </a>
+                        <a href="#" class="btn btn-outline-success">
+                            <i class="bi bi-cash-stack me-2"></i>Ver Lançamentos
+                        </a>
+                        <a href="#" class="btn btn-outline-info">
+                            <i class="bi bi-file-earmark-text me-2"></i>Relatórios
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informações do Perfil -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-badge me-2"></i>Perfil de Acesso
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <p><strong>Usuário:</strong><br>{{ user.username }}</p>
+                        </div>
+                        <div class="col-md-3">
+                            <p><strong>Nome:</strong><br>{{ user.get_full_name|default:"--" }}</p>
+                        </div>
+                        <div class="col-md-3">
+                            <p><strong>Email:</strong><br>{{ user.email|default:"--" }}</p>
+                        </div>
+                        <div class="col-md-3">
+                            <p><strong>Tipo de Acesso:</strong><br>
+                                <span class="badge bg-success">{{ tipo_acesso }}</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script src="{% static 'js/dashboard-account.js' %}"></script>
+{% endblock %}

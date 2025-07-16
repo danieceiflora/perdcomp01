@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-from .models import Lancamentos
+from .models import Lancamentos, Anexos
 
 class LancamentoInline(admin.TabularInline):
     model = Lancamentos
@@ -17,6 +17,14 @@ class LancamentoInline(admin.TabularInline):
     
     def has_add_permission(self, request, obj=None):
         return False
+
+class AnexosInline(admin.TabularInline):
+    model = Anexos
+    extra = 1
+    fields = ('nome_anexo', 'descricao', 'arquivo', 'data_upload')
+    readonly_fields = ('data_upload',)
+    verbose_name = "Anexo"
+    verbose_name_plural = "Anexos"
 
 @admin.register(Lancamentos)
 class LancamentosAdmin(admin.ModelAdmin):
@@ -40,7 +48,7 @@ class LancamentosAdmin(admin.ModelAdmin):
         }),
     )
     
-    inlines = [LancamentoInline]
+    inlines = [AnexosInline, LancamentoInline]
     
     def adesao_perdcomp(self, obj):
         return obj.id_adesao.perdcomp
@@ -87,12 +95,10 @@ class LancamentosAdmin(admin.ModelAdmin):
     saldo_restante_display.short_description = 'Saldo Restante'
     
     def tem_anexos(self, obj):
-        # Assumindo que existe um relacionamento de anexos
-        # Se não existir, você pode remover este método ou adaptar conforme necessário
-        has_anexos = hasattr(obj, 'anexos') and obj.anexos.exists()
-        return format_html('<span style="color:{}">{}</span>', 
-                          'green' if has_anexos else 'gray',
-                          'Sim' if has_anexos else '-')
+        count = obj.anexos.count()
+        if count > 0:
+            return format_html('<span style="color:green; font-weight:bold">{} anexo(s)</span>', count)
+        return format_html('<span style="color:gray">-</span>')
     tem_anexos.short_description = 'Anexos'
     
     def lancamento_original_link(self, obj):
@@ -102,3 +108,46 @@ class LancamentosAdmin(admin.ModelAdmin):
                               url, obj.lancamento_original.id)
         return "-"
     lancamento_original_link.short_description = 'Lançamento Original'
+
+@admin.register(Anexos)
+class AnexosAdmin(admin.ModelAdmin):
+    list_display = ('nome_anexo', 'lancamento_info', 'descricao', 'arquivo_link', 'data_upload')
+    list_filter = ('data_upload', 'id_lancamento__status')
+    search_fields = ('nome_anexo', 'descricao', 'id_lancamento__id_adesao__perdcomp')
+    date_hierarchy = 'data_upload'
+    readonly_fields = ('data_upload', 'arquivo_preview')
+    
+    fieldsets = (
+        ('Informações do Anexo', {
+            'fields': ('id_lancamento', 'nome_anexo', 'descricao')
+        }),
+        ('Arquivo', {
+            'fields': ('arquivo', 'arquivo_preview', 'data_upload')
+        }),
+    )
+    
+    def lancamento_info(self, obj):
+        return f"#{obj.id_lancamento.id} - {obj.id_lancamento.id_adesao.perdcomp}"
+    lancamento_info.short_description = 'Lançamento'
+    
+    def arquivo_link(self, obj):
+        if obj.arquivo:
+            return format_html('<a href="{}" target="_blank">Baixar</a>', obj.arquivo.url)
+        return '-'
+    arquivo_link.short_description = 'Download'
+    
+    def arquivo_preview(self, obj):
+        if obj.arquivo:
+            file_name = obj.arquivo.name.split('/')[-1]
+            return format_html(
+                '<div style="border: 1px solid #ddd; padding: 10px; border-radius: 4px;">'
+                '<strong>Arquivo:</strong> {}<br>'
+                '<strong>Tamanho:</strong> {:.2f} KB<br>'
+                '<a href="{}" target="_blank" style="color: #007cba;">Visualizar arquivo</a>'
+                '</div>',
+                file_name,
+                obj.arquivo.size / 1024 if obj.arquivo.size else 0,
+                obj.arquivo.url
+            )
+        return "Nenhum arquivo anexado"
+    arquivo_preview.short_description = 'Visualização do Arquivo'

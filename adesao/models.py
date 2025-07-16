@@ -61,3 +61,7 @@ class Adesao(models.Model):
             return f"{self.perdcomp} - {nome_empresa}"
         return f"{self.perdcomp} - N/A"
     
+    class Meta:
+        verbose_name = 'Adesão'
+        verbose_name_plural = 'Adesões'
+    

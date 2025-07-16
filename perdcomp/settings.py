@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'accounts',
     'clientes_parceiros',
     'empresas',
     'contatos',
@@ -108,6 +109,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'perdcomp/static'),
+]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Arquivos de mídia(uploads)
 
@@ -127,9 +132,11 @@ JAZZMIN_SETTINGS = {
     "icons":
         {
             "clientes_parceiros.ClientesParceiros": "fas fa-users",
+            "clientes_parceiros.TipoRelacionamento": "fa-solid fa-tag",
             "empresas.Empresa": "fas fa-building",
             "contatos.Contatos": "fas fa-address-book",
             "correcao.TeseCredito": "fas fa-balance-scale",
+            "correcao.TipoTese": "fa-solid fa-tag",
             "adesao.Adesao": "fas fa-handshake",
             "lancamentos.Lancamentos": "fas fa-file-invoice-dollar",
             "correcao.Correcao": "fas fa-tools",

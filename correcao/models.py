@@ -13,7 +13,7 @@ class Correcao(models.Model):
         verbose_name_plural = 'Correções'
 
 class tipoTese(models.Model):
-    descricao = models.CharField(max_length=50)
+    descricao = models.CharField(max_length=50, verbose_name='Categoria')
     def __str__(self):
         return self.descricao
     

@@ -2,16 +2,21 @@ from django.db import models
 from empresas.models import Empresa
 
 class TipoRelacionamento(models.Model):
-    tipo_relacionamento = models.CharField(max_length=50, unique=True)
+    tipo_relacionamento = models.CharField(max_length=50, unique=True, verbose_name="Vínculo")
 
     def __str__(self):
         return self.tipo_relacionamento
+    
+    class Meta:
+        verbose_name = 'Vínculo'
+        verbose_name_plural = 'Vínculos'
 
 class ClientesParceiros(models.Model):
     id_tipo_relacionamento = models.ForeignKey(
         TipoRelacionamento, 
         on_delete=models.CASCADE, 
-        related_name='clientes_parceiros'
+        related_name='clientes_parceiros',
+        verbose_name="Vínculo"
     )
     id_company_base = models.ForeignKey(
         Empresa, 
@@ -30,4 +35,4 @@ class ClientesParceiros(models.Model):
     ativo = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"{self.nome_referencia} ({self.id_company_base} -> {self.id_company_vinculada})"
+        return f"{self.id_company_vinculada.razao_social} - {self.id_tipo_relacionamento.tipo_relacionamento}"
