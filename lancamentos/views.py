@@ -6,12 +6,12 @@ from django.db import transaction
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from accounts.decorators import cliente_can_view_lancamento
+from accounts.decorators import cliente_can_view_lancamento, admin_required
 from .models import Lancamentos, Anexos
 from .forms import LancamentosForm, AnexosFormSet
-from .permissions import LancamentoClientePermissionMixin
+from .permissions import LancamentoPermissionMixin, LancamentoClienteViewOnlyMixin, AdminRequiredMixin
 
-class LancamentosListView(LancamentoClientePermissionMixin, ListView):
+class LancamentosListView(LancamentoClienteViewOnlyMixin, ListView):
     model = Lancamentos
     template_name = 'lancamentos/lancamentos_list.html'
     context_object_name = 'lancamentos'
@@ -41,7 +41,7 @@ class LancamentosListView(LancamentoClientePermissionMixin, ListView):
         context['current_filters'] = self.request.GET.dict()
         return context
 
-class LancamentoDetailView(LancamentoClientePermissionMixin, DetailView):
+class LancamentoDetailView(LancamentoClienteViewOnlyMixin, DetailView):
     model = Lancamentos
     template_name = 'lancamentos/lancamentos_detail.html'
     context_object_name = 'lancamento'
@@ -58,7 +58,7 @@ class LancamentoDetailView(LancamentoClientePermissionMixin, DetailView):
         context['anexos'] = self.object.anexos.all()
         return context
 
-class LancamentoCreateView(LoginRequiredMixin, CreateView):
+class LancamentoCreateView(AdminRequiredMixin, CreateView):
     model = Lancamentos
     form_class = LancamentosForm
     template_name = 'lancamentos/lancamentos_form.html'
@@ -108,7 +108,7 @@ class LancamentoCreateView(LoginRequiredMixin, CreateView):
         messages.error(self.request, 'Erro ao cadastrar lançamento. Verifique os campos.')
         return super().form_invalid(form)
 
-class LancamentoUpdateView(LoginRequiredMixin, UpdateView):
+class LancamentoUpdateView(AdminRequiredMixin, UpdateView):
     model = Lancamentos
     form_class = LancamentosForm
     template_name = 'lancamentos/lancamentos_form.html'
@@ -182,7 +182,7 @@ class LancamentoUpdateView(LoginRequiredMixin, UpdateView):
         messages.error(self.request, 'Erro ao atualizar lançamento. Verifique os campos.')
         return super().form_invalid(form)
 
-class LancamentoDeleteView(LoginRequiredMixin, DeleteView):
+class LancamentoDeleteView(AdminRequiredMixin, DeleteView):
     model = Lancamentos
     template_name = 'lancamentos/lancamentos_confirm_delete.html'
     success_url = reverse_lazy('lancamentos:list')
@@ -201,7 +201,7 @@ class LancamentoDeleteView(LoginRequiredMixin, DeleteView):
         return super().delete(request, *args, **kwargs)
 
 @login_required
-@cliente_can_view_lancamento
+@admin_required
 def confirmar_lancamento(request, pk):
     """Confirma um lançamento, tornando-o não mais editável.
     Essa view ainda é mantida para compatibilidade com os links de confirmação
@@ -228,7 +228,7 @@ def confirmar_lancamento(request, pk):
     
     return redirect('lancamentos:detail', pk=pk)
 
-class AnexosUpdateView(LoginRequiredMixin, UpdateView):
+class AnexosUpdateView(AdminRequiredMixin, UpdateView):
     """View para editar apenas os anexos de um lançamento.
     
     Permite a edição de anexos mesmo para lançamentos que já foram confirmados
@@ -274,7 +274,7 @@ class AnexosUpdateView(LoginRequiredMixin, UpdateView):
             )
 
 @login_required
-@cliente_can_view_lancamento
+@admin_required
 def estornar_lancamento(request, pk):
     """Cria um estorno para um lançamento."""
     lancamento = get_object_or_404(Lancamentos, pk=pk)

@@ -28,7 +28,7 @@ class ClienteLoginView(LoginView):
         return super().form_valid(form)
     
     def form_invalid(self, form):
-        messages.error(self.request, 'Usuário ou senha inválidos. Por favor, tente novamente.')
+        messages.error(self.request, 'Usuário ou senha inválidos.')
         return super().form_invalid(form)
 
 class ParceiroLoginView(LoginView):
@@ -50,6 +50,11 @@ class ParceiroLoginView(LoginView):
             return self.form_invalid(form)
         
         return super().form_valid(form)
+    
+    def form_invalid(self, form):
+        messages.error(self.request, 'Usuário ou senha inválidos.')
+        return super().form_invalid(form)
+
 
 class CustomLogoutView(LogoutView):
     next_page = reverse_lazy('accounts:cliente_login')

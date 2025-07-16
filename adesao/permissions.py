@@ -1,29 +1,88 @@
-from accounts.permissions import ClienteViewOnlyMixin, EmpresaAccessMixin
+from accounts.permissions import BasePermissionMixin, EmpresaAccessMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.shortcuts import redirect
+from django.contrib import messages
 
-class AdesaoClientePermissionMixin(ClienteViewOnlyMixin, EmpresaAccessMixin):
+class AdesaoPermissionMixin(EmpresaAccessMixin):
     """
-    Mixin específico para permissões de adesão para clientes.
-    - Requer que o usuário seja cliente (via ClienteViewOnlyMixin)
-    - Restringe a apenas visualizar (sem editar, adicionar ou excluir)
-    - Verifica se o cliente tem acesso à empresa associada à adesão
+    Mixin específico para permissões de adesão para clientes e parceiros.
+    - Para clientes: Restringe a apenas visualizar suas próprias adesões
+    - Para parceiros: Permite visualizar adesões de todos os seus clientes
+    - Verifica se o usuário tem acesso à empresa associada à adesão
     """
-    permission_denied_message = "Você só tem permissão para visualizar adesões da sua empresa."
+    permission_denied_message = "Você só tem permissão para visualizar adesões permitidas para seu perfil."
     
     def get_queryset(self):
-        """Filtra o queryset para mostrar apenas adesões da empresa do cliente"""
+        """Filtra o queryset baseado no tipo de usuário (cliente ou parceiro)"""
         queryset = super().get_queryset()
         
-        # Se não é superuser ou staff, filtra pelo acesso da empresa
-        if not (self.request.user.is_superuser or self.request.user.is_staff):
-            empresas_acessiveis = self.request.user.profile.get_empresas_acessiveis()
-            empresa_ids = [empresa.id for empresa in empresas_acessiveis]
+        # Se é superuser ou staff, tem acesso a tudo
+        if self.request.user.is_superuser or self.request.user.is_staff:
+            return queryset
             
-            # Filtrar por empresa_vinculada se o modelo tiver este campo
-            if hasattr(queryset.model, 'empresa_vinculada'):
-                queryset = queryset.filter(empresa_vinculada__id__in=empresa_ids)
-            elif hasattr(queryset.model, 'empresa'):
-                queryset = queryset.filter(empresa__id__in=empresa_ids)
-            elif hasattr(queryset.model, 'id_company_vinculada'):
-                queryset = queryset.filter(id_company_vinculada__id__in=empresa_ids)
+        # Se não tem perfil, nega acesso
+        if not hasattr(self.request.user, 'profile'):
+            return queryset.none()
+            
+        profile = self.request.user.profile
+        empresas_acessiveis = profile.get_empresas_acessiveis()
+        empresa_ids = [empresa.id for empresa in empresas_acessiveis]
+        
+        # Se não tem empresas acessíveis, nega acesso
+        if not empresa_ids:
+            return queryset.none()
+            
+        # Filtrar baseado no campo de empresa no modelo
+        # Verifica diferentes possíveis campos de relacionamento com empresa
+        if hasattr(queryset.model, 'cliente'):
+            # Assumindo que adesão tem um campo 'cliente' que se relaciona com empresa
+            # Filtra por empresa do cliente da adesão
+            queryset = queryset.filter(cliente__id_company_vinculada__id__in=empresa_ids)
+        elif hasattr(queryset.model, 'empresa_vinculada'):
+            queryset = queryset.filter(empresa_vinculada__id__in=empresa_ids)
+        elif hasattr(queryset.model, 'empresa'):
+            queryset = queryset.filter(empresa__id__in=empresa_ids)
+        elif hasattr(queryset.model, 'id_company_vinculada'):
+            queryset = queryset.filter(id_company_vinculada__id__in=empresa_ids)
                 
         return queryset
+
+class AdesaoClienteViewOnlyMixin(AdesaoPermissionMixin):
+    """
+    Mixin específico para clientes que só podem visualizar adesões.
+    Herda de AdesaoPermissionMixin mas adiciona restrição de apenas visualização.
+    """
+    
+    def dispatch(self, request, *args, **kwargs):
+        # Para clientes, permite apenas métodos GET (visualização)
+        if hasattr(request.user, 'profile') and request.user.profile.eh_cliente:
+            if request.method != 'GET':
+                from django.contrib import messages
+                from django.shortcuts import redirect
+                messages.error(request, "Clientes têm permissão apenas para visualização.")
+                return redirect('accounts:cliente_dashboard')
+        return super().dispatch(request, *args, **kwargs)
+
+# Mantém o nome antigo por compatibilidade
+AdesaoClientePermissionMixin = AdesaoPermissionMixin
+
+class AdminRequiredMixin(UserPassesTestMixin):
+    """
+    Mixin que restringe o acesso a apenas administradores (staff ou superuser).
+    Útil para views que só devem ser acessíveis por administradores, como a adição de adesões.
+    Exibe uma mensagem de acesso negado em vez de redirecionar.
+    """
+    permission_denied_message = "Acesso negado. Somente administradores podem acessar esta página."
+    
+    def test_func(self):
+        return self.request.user.is_authenticated and (self.request.user.is_staff or self.request.user.is_superuser)
+    
+    def handle_no_permission(self):
+        from django.shortcuts import render
+        messages.error(self.request, self.permission_denied_message)
+        return render(
+            self.request, 
+            'forbidden.html', 
+            {'message': self.permission_denied_message},
+            status=403
+        )

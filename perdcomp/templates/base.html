@@ -48,9 +48,13 @@
                           <i class="bi bi-building me-1"></i>Empresas
                         </a>
                         <ul class="dropdown-menu">
+                          {% if user.is_superuser or user.is_staff %}
                           <li><a class="dropdown-item" href="{% url 'empresas:cadastro_empresa' %}"><i class="bi bi-plus me-1"></i>Cadastrar</a></li>
+                          {% endif %}
                           <li><a class="dropdown-item" href="{% url 'empresas:lista_empresas' %}"><i class="bi bi-list me-1"></i>Listar Empresas</a></li>
+                          {% if user.is_superuser or user.is_staff %}
                           <li><a class="dropdown-item" href="{% url 'tipo_relacionamento' %}"><i class="bi bi-pencil me-1"></i>Tipo de parceria</a></li>
+                          {% endif %}
                         </ul>
                       </li>
                       
@@ -59,7 +63,9 @@
                           <i class="bi bi-people me-1"></i>Clientes
                         </a>
                         <ul class="dropdown-menu">
+                          {% if user.is_superuser or user.is_staff %}
                           <li><a class="dropdown-item" href="{% url 'cadastrar_cliente_parceiro' %}"><i class="bi bi-person-plus me-1"></i>Cadastrar Cliente</a></li>
+                          {% endif %}
                           <li><a class="dropdown-item" href="{% url 'lista_clientes_parceiros' %}"><i class="bi bi-list me-1"></i>Listar Clientes</a></li>
                         </ul>
                       </li>
@@ -69,7 +75,9 @@
                           <i class="bi bi-journal-text me-1"></i>Teses de Crédito</a>
                         <ul class="dropdown-menu">
                           <li><a class="dropdown-item" href="{% url 'correcao:tese_credito_list' %}"><i class="bi bi-list me-1"></i>Listar Teses</a></li>
+                          {% if user.is_superuser or user.is_staff %}
                           <li><a class="dropdown-item" href="{% url 'correcao:tese_credito_create' %}"><i class="bi bi-plus me-1"></i>Nova Tese</a></li>
+                          {% endif %}
                           <li><hr class="dropdown-divider"></li>
                           <li><a class="dropdown-item" href="{% url 'correcao:tipo_tese_list' %}"><i class="bi bi-tags me-1"></i>Tipos de Tese</a></li>
                         </ul>
@@ -80,7 +88,9 @@
                           <i class="bi bi-pencil-square me-1"></i>Correções</a>
                         <ul class="dropdown-menu">
                           <li><a class="dropdown-item" href="{% url 'correcao:list' %}"><i class="bi bi-list me-1"></i>Listar Correções</a></li>
+                          {% if user.is_superuser or user.is_staff %}
                           <li><a class="dropdown-item" href="{% url 'correcao:create' %}"><i class="bi bi-plus me-1"></i>Nova Correção</a></li>
+                          {% endif %}
                         </ul>
                       </li>
                     {% endif %}
@@ -92,7 +102,9 @@
                           <i class="bi bi-file-earmark-plus me-1"></i>Adesões</a>
                         <ul class="dropdown-menu">
                           <li><a class="dropdown-item" href="{% url 'adesao:list' %}"><i class="bi bi-list me-1"></i>Listar Adesões</a></li>
+                          {% if user.is_superuser or user.is_staff %}
                           <li><a class="dropdown-item" href="{% url 'adesao:create' %}"><i class="bi bi-plus me-1"></i>Nova Adesão</a></li>
+                          {% endif %}
                         </ul>
                       </li>
                       
@@ -101,7 +113,9 @@
                           <i class="bi bi-cash-stack me-1"></i>Lançamentos</a>
                         <ul class="dropdown-menu">
                           <li><a class="dropdown-item" href="{% url 'lancamentos:list' %}"><i class="bi bi-list me-1"></i>Listar Lançamentos</a></li>
+                          {% if user.is_superuser or user.is_staff %}
                           <li><a class="dropdown-item" href="{% url 'lancamentos:create' %}"><i class="bi bi-plus me-1"></i>Novo Lançamento</a></li>
+                          {% endif %}
                         </ul>
                       </li>
                     {% endif %}
@@ -118,7 +132,7 @@
                       
                       <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                          <i class="bi bi-cash-stack me-1"></i>Lançamentos</a>
+                          <i class="bi bi-cash-stack me-1"></i>Lançamentos 123</a>
                         <ul class="dropdown-menu">
                           <li><a class="dropdown-item" href="{% url 'lancamentos:list' %}"><i class="bi bi-list me-1"></i>Listar Lançamentos</a></li>
                         </ul>

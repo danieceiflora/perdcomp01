@@ -5,9 +5,9 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import Adesao
 from .forms import AdesaoForm
-from .permissions import AdesaoClientePermissionMixin
+from .permissions import AdesaoPermissionMixin, AdesaoClienteViewOnlyMixin, AdminRequiredMixin
 
-class AdesaoListView(AdesaoClientePermissionMixin, ListView):
+class AdesaoListView(AdesaoClienteViewOnlyMixin, ListView):
     model = Adesao
     template_name = 'adesao/adesao_list.html'
     context_object_name = 'adesoes'
@@ -17,7 +17,7 @@ class AdesaoListView(AdesaoClientePermissionMixin, ListView):
         queryset = super().get_queryset().select_related('cliente__id_company_vinculada', 'tese_credito_id')
         return queryset
 
-class AdesaoCreateView(LoginRequiredMixin, CreateView):
+class AdesaoCreateView(AdminRequiredMixin, CreateView):
     model = Adesao
     form_class = AdesaoForm
     template_name = 'adesao/adesao_form.html'
@@ -27,7 +27,7 @@ class AdesaoCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, 'Adesão cadastrada com sucesso!')
         return super().form_valid(form)
 
-class AdesaoUpdateView(LoginRequiredMixin, UpdateView):
+class AdesaoUpdateView(AdminRequiredMixin, UpdateView):
     model = Adesao
     form_class = AdesaoForm
     template_name = 'adesao/adesao_form.html'
@@ -37,7 +37,7 @@ class AdesaoUpdateView(LoginRequiredMixin, UpdateView):
         messages.success(self.request, 'Adesão atualizada com sucesso!')
         return super().form_valid(form)
 
-class AdesaoDeleteView(LoginRequiredMixin, DeleteView):
+class AdesaoDeleteView(AdminRequiredMixin, DeleteView):
     model = Adesao
     template_name = 'adesao/adesao_confirm_delete.html'
     success_url = reverse_lazy('adesao:list')

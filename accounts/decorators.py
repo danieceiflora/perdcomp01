@@ -1,6 +1,7 @@
 from django.http import HttpResponseForbidden
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from functools import wraps
+from django.contrib import messages
 from accounts.permissions import eh_cliente_apenas_visualizacao
 from lancamentos.models import Lancamentos
 from adesao.models import Adesao
@@ -74,4 +75,25 @@ def cliente_can_view_adesao(view_func):
                         
         return HttpResponseForbidden("Acesso negado. Você não tem permissão para visualizar esta adesão.")
     
+    return _wrapped_view
+
+def admin_required(view_func):
+    """
+    Decorator para views baseadas em função que restringe o acesso a apenas administradores.
+    Exibe uma página de acesso negado em vez de redirecionar.
+    """
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        if request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser):
+            return view_func(request, *args, **kwargs)
+            
+        message = "Acesso negado. Somente administradores podem acessar esta página."
+        messages.error(request, message)
+        from django.shortcuts import render
+        return render(
+            request, 
+            'forbidden.html', 
+            {'message': message},
+            status=403
+        )
     return _wrapped_view

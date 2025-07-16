@@ -4,6 +4,7 @@ from django.urls import reverse_lazy
 from django.contrib import messages
 from .models import Correcao, tipoTese, TeseCredito
 from .forms import CorrecaoForm, tipoTeseForm, TeseCreditoForm
+from .permissions import AdminRequiredMixin
 
 class CorrecaoListView(ListView):
     model = Correcao
@@ -11,7 +12,7 @@ class CorrecaoListView(ListView):
     context_object_name = 'correcoes'
     paginate_by = 10
 
-class CorrecaoCreateView(CreateView):
+class CorrecaoCreateView(AdminRequiredMixin, CreateView):
     model = Correcao
     form_class = CorrecaoForm
     template_name = 'correcao/correcao_form.html'
@@ -21,7 +22,7 @@ class CorrecaoCreateView(CreateView):
         messages.success(self.request, 'Correção cadastrada com sucesso!')
         return super().form_valid(form)
 
-class CorrecaoUpdateView(UpdateView):
+class CorrecaoUpdateView(AdminRequiredMixin, UpdateView):
     model = Correcao
     form_class = CorrecaoForm
     template_name = 'correcao/correcao_form.html'
@@ -31,7 +32,7 @@ class CorrecaoUpdateView(UpdateView):
         messages.success(self.request, 'Correção atualizada com sucesso!')
         return super().form_valid(form)
 
-class CorrecaoDeleteView(DeleteView):
+class CorrecaoDeleteView(AdminRequiredMixin, DeleteView):
     model = Correcao
     template_name = 'correcao/correcao_confirm_delete.html'
     success_url = reverse_lazy('correcao:list')
@@ -47,7 +48,7 @@ class tipoTeseListView(ListView):
     context_object_name = 'tipos_tese'
     paginate_by = 10
 
-class tipoTeseCreateView(CreateView):
+class tipoTeseCreateView(AdminRequiredMixin, CreateView):
     model = tipoTese
     form_class = tipoTeseForm
     template_name = 'correcao/tipo_tese_form.html'
@@ -57,7 +58,7 @@ class tipoTeseCreateView(CreateView):
         messages.success(self.request, 'Tipo de tese cadastrado com sucesso!')
         return super().form_valid(form)
 
-class tipoTeseUpdateView(UpdateView):
+class tipoTeseUpdateView(AdminRequiredMixin, UpdateView):
     model = tipoTese
     form_class = tipoTeseForm
     template_name = 'correcao/tipo_tese_form.html'
@@ -67,7 +68,7 @@ class tipoTeseUpdateView(UpdateView):
         messages.success(self.request, 'Tipo de tese atualizado com sucesso!')
         return super().form_valid(form)
 
-class tipoTeseDeleteView(DeleteView):
+class tipoTeseDeleteView(AdminRequiredMixin, DeleteView):
     model = tipoTese
     template_name = 'correcao/tipo_tese_confirm_delete.html'
     success_url = reverse_lazy('correcao:tipo_tese_list')
@@ -83,7 +84,7 @@ class TeseCreditoListView(ListView):
     context_object_name = 'teses_credito'
     paginate_by = 10
 
-class TeseCreditoCreateView(CreateView):
+class TeseCreditoCreateView(AdminRequiredMixin, CreateView):
     model = TeseCredito
     form_class = TeseCreditoForm
     template_name = 'correcao/tese_credito_form.html'
@@ -93,7 +94,7 @@ class TeseCreditoCreateView(CreateView):
         messages.success(self.request, 'Tese de crédito cadastrada com sucesso!')
         return super().form_valid(form)
 
-class TeseCreditoUpdateView(UpdateView):
+class TeseCreditoUpdateView(AdminRequiredMixin, UpdateView):
     model = TeseCredito
     form_class = TeseCreditoForm
     template_name = 'correcao/tese_credito_form.html'
@@ -103,7 +104,7 @@ class TeseCreditoUpdateView(UpdateView):
         messages.success(self.request, 'Tese de crédito atualizada com sucesso!')
         return super().form_valid(form)
 
-class TeseCreditoDeleteView(DeleteView):
+class TeseCreditoDeleteView(AdminRequiredMixin, DeleteView):
     model = TeseCredito
     template_name = 'correcao/tese_credito_confirm_delete.html'
     success_url = reverse_lazy('correcao:tese_credito_list')
