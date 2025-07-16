@@ -26,9 +26,11 @@
                             </div>
                         </form>
                     </div>
+                    {% if not user.profile.eh_cliente %}
                     <a href="{% url 'lancamentos:create' %}" class="btn btn-primary">
                         <i class="bi bi-plus"></i> Novo Lançamento
                     </a>
+                    {% endif %}
                 </div>
                 <div class="card-body">
                     <div class="alert alert-info mb-3">
@@ -49,7 +51,9 @@
                                         <th>Status</th>
                                         <th>Saldo Restante</th>
                                         <th>Anexos</th>
+                                        {% if not user.profile.eh_cliente %}
                                         <th>Ações</th>
+                                        {% endif %}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -80,7 +84,15 @@
                                         </td>
                                         <td>
                                             <span class="badge bg-info">{{ lancamento.anexos.count }} anexo(s)</span>
+                                            {% if user.profile.eh_cliente %}
+                                                <br><small>
+                                                    <a href="{% url 'lancamentos:detail' lancamento.pk %}" class="text-decoration-none">
+                                                        <i class="bi bi-eye"></i> Ver detalhes
+                                                    </a>
+                                                </small>
+                                            {% endif %}
                                         </td>
+                                        {% if not user.profile.eh_cliente %}
                                         <td>
                                             <a href="{% url 'lancamentos:detail' lancamento.pk %}" class="btn btn-sm btn-info">
                                                 <i class="bi bi-eye"></i> Detalhes
@@ -102,6 +114,7 @@
                                                 </a>
                                             {% endif %}
                                         </td>
+                                        {% endif %}
                                     </tr>
                                     {% endfor %}
                                 </tbody>

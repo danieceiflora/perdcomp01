@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, ListView, DetailView, UpdateView, DeleteView
 from .models import ClientesParceiros, TipoRelacionamento
-from .forms import TipoRelacionamentoForm, EmpresaClienteParceiroForm, ClientesParceirosForm
+from .forms import TipoRelacionamentoForm, EmpresaClienteParceiroForm, ClientesParceirosForm, ClienteParceiroUpdateForm
 from contatos.models import Contatos
 from django.contrib import messages
 class NewTipoRelacionamentoView(CreateView):
@@ -119,7 +119,7 @@ class ListClienteParceiroView(ListView):
 class ClienteParceiroUpdateView(UpdateView):
     model = ClientesParceiros
     template_name = 'editar_cliente_parceiro.html'
-    fields = ['id_tipo_relacionamento', 'nome_referencia', 'cargo_referencia', 'data_inicio_parceria', 'ativo']
+    form_class = ClienteParceiroUpdateForm
     success_url = reverse_lazy('lista_clientes_parceiros')
     
     def get_context_data(self, **kwargs):
@@ -139,6 +139,14 @@ class ClienteParceiroUpdateView(UpdateView):
         return context
     
     def form_valid(self, form):
+        # Processar a atualização da logomarca se fornecida
+        nova_logomarca = self.request.FILES.get('atualizar_logomarca')
+        if nova_logomarca:
+            # Atualizar a logomarca da empresa vinculada
+            empresa_vinculada = self.object.id_company_vinculada
+            empresa_vinculada.logomarca = nova_logomarca
+            empresa_vinculada.save()
+            
         messages.success(self.request, 'Cliente/Parceiro atualizado com sucesso!')
         return super().form_valid(form)
 

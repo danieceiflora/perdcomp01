@@ -10,9 +10,11 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h3 class="card-title">Lista de Adesões</h3>
+                    {% if not user.profile.eh_cliente %}
                     <a href="{% url 'adesao:create' %}" class="btn btn-primary">
                         <i class="bi bi-plus"></i> Nova Adesão
                     </a>
+                    {% endif %}
                 </div>
                 <div class="card-body">
                     {% if adesoes %}
@@ -27,7 +29,9 @@
                                         <th>Saldo</th>
                                         <th>Free Rate</th>
                                         <th>Status</th>
+                                        {% if not user.profile.eh_cliente %}
                                         <th>Ações</th>
+                                        {% endif %}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -46,6 +50,7 @@
                                                 <span class="badge bg-danger">Inativo</span>
                                             {% endif %}
                                         </td>
+                                        {% if not user.profile.eh_cliente %}
                                         <td>
                                             <a href="{% url 'adesao:update' adesao.pk %}" class="btn btn-sm btn-warning">
                                                 <i class="bi bi-pencil"></i> Editar
@@ -54,6 +59,7 @@
                                                 <i class="bi bi-trash"></i> Excluir
                                             </a>
                                         </td>
+                                        {% endif %}
                                     </tr>
                                     {% endfor %}
                                 </tbody>

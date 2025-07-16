@@ -26,6 +26,10 @@ class ClienteLoginView(LoginView):
             return self.form_invalid(form)
         
         return super().form_valid(form)
+    
+    def form_invalid(self, form):
+        messages.error(self.request, 'Usuário ou senha inválidos. Por favor, tente novamente.')
+        return super().form_invalid(form)
 
 class ParceiroLoginView(LoginView):
     template_name = 'accounts/parceiro/login.html'
@@ -48,8 +52,7 @@ class ParceiroLoginView(LoginView):
         return super().form_valid(form)
 
 class CustomLogoutView(LogoutView):
-    template_name = 'accounts/logout.html'
-    next_page = reverse_lazy('accounts:login_selector')
+    next_page = reverse_lazy('accounts:cliente_login')
     
     def dispatch(self, request, *args, **kwargs):
         # Captura o nome do usuário antes de fazer logout
@@ -59,13 +62,12 @@ class CustomLogoutView(LogoutView):
         if request.user.is_authenticated:
             messages.success(request, f'Até logo, {user_name}! Você saiu do sistema com sucesso.')
         
-        # Se for uma requisição AJAX ou redirect, use o next_page
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.GET.get('next'):
-            self.template_name = None
+        # Faz o logout e redireciona diretamente
+        from django.contrib.auth import logout
+        logout(request)
         
-        # Garante que a sessão seja encerrada adequadamente
-        response = super().dispatch(request, *args, **kwargs)
-        return response
+        # Redireciona diretamente para a página de login do cliente
+        return redirect('accounts:cliente_login')
 
 class LoginSelectorView(TemplateView):
     template_name = 'accounts/login_selector.html'

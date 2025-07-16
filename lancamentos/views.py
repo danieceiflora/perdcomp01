@@ -6,10 +6,12 @@ from django.db import transaction
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from accounts.decorators import cliente_can_view_lancamento
 from .models import Lancamentos, Anexos
 from .forms import LancamentosForm, AnexosFormSet
+from .permissions import LancamentoClientePermissionMixin
 
-class LancamentosListView(ListView):
+class LancamentosListView(LancamentoClientePermissionMixin, ListView):
     model = Lancamentos
     template_name = 'lancamentos/lancamentos_list.html'
     context_object_name = 'lancamentos'
@@ -39,7 +41,7 @@ class LancamentosListView(ListView):
         context['current_filters'] = self.request.GET.dict()
         return context
 
-class LancamentoDetailView(DetailView):
+class LancamentoDetailView(LancamentoClientePermissionMixin, DetailView):
     model = Lancamentos
     template_name = 'lancamentos/lancamentos_detail.html'
     context_object_name = 'lancamento'
@@ -56,7 +58,7 @@ class LancamentoDetailView(DetailView):
         context['anexos'] = self.object.anexos.all()
         return context
 
-class LancamentoCreateView(CreateView):
+class LancamentoCreateView(LoginRequiredMixin, CreateView):
     model = Lancamentos
     form_class = LancamentosForm
     template_name = 'lancamentos/lancamentos_form.html'
@@ -106,7 +108,7 @@ class LancamentoCreateView(CreateView):
         messages.error(self.request, 'Erro ao cadastrar lançamento. Verifique os campos.')
         return super().form_invalid(form)
 
-class LancamentoUpdateView(UpdateView):
+class LancamentoUpdateView(LoginRequiredMixin, UpdateView):
     model = Lancamentos
     form_class = LancamentosForm
     template_name = 'lancamentos/lancamentos_form.html'
@@ -180,7 +182,7 @@ class LancamentoUpdateView(UpdateView):
         messages.error(self.request, 'Erro ao atualizar lançamento. Verifique os campos.')
         return super().form_invalid(form)
 
-class LancamentoDeleteView(DeleteView):
+class LancamentoDeleteView(LoginRequiredMixin, DeleteView):
     model = Lancamentos
     template_name = 'lancamentos/lancamentos_confirm_delete.html'
     success_url = reverse_lazy('lancamentos:list')
@@ -199,6 +201,7 @@ class LancamentoDeleteView(DeleteView):
         return super().delete(request, *args, **kwargs)
 
 @login_required
+@cliente_can_view_lancamento
 def confirmar_lancamento(request, pk):
     """Confirma um lançamento, tornando-o não mais editável.
     Essa view ainda é mantida para compatibilidade com os links de confirmação
@@ -271,6 +274,7 @@ class AnexosUpdateView(LoginRequiredMixin, UpdateView):
             )
 
 @login_required
+@cliente_can_view_lancamento
 def estornar_lancamento(request, pk):
     """Cria um estorno para um lançamento."""
     lancamento = get_object_or_404(Lancamentos, pk=pk)

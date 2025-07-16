@@ -72,4 +72,33 @@ class ClientesParceirosForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
                 field.widget.attrs['class'] = 'form-control'
+                
+class ClienteParceiroUpdateForm(forms.ModelForm):
+    atualizar_logomarca = forms.ImageField(
+        label='Atualizar Logomarca',
+        required=False,
+        help_text='Deixe em branco para manter a logomarca atual'
+    )
+    
+    class Meta:
+        model = ClientesParceiros
+        fields = ['id_tipo_relacionamento', 'nome_referencia', 'cargo_referencia', 'data_inicio_parceria', 'ativo']
+        widgets = {
+            'data_inicio_parceria': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'nome_referencia': forms.TextInput(attrs={'class': 'form-control'}),
+            'cargo_referencia': forms.TextInput(attrs={'class': 'form-control'}),
+            'id_tipo_relacionamento': forms.Select(attrs={'class': 'form-control'}),
+            'ativo': forms.CheckboxInput(attrs={'class': 'form-check-input', 'role': 'switch'})
+        }
+        labels = {
+            'id_tipo_relacionamento': 'Tipo de Relacionamento',
+            'nome_referencia': 'Nome da Referência',
+            'cargo_referencia': 'Cargo da Referência',
+            'data_inicio_parceria': 'Data de Início da Parceria',
+            'ativo': 'Relacionamento Ativo'
+        }
+        help_texts = {
+            'ativo': 'Indica se o relacionamento está ativo',
+            'data_inicio_parceria': 'Data em que a parceria foi iniciada'
+        }
     

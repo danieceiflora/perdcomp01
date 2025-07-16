@@ -72,9 +72,21 @@ class UserProfile(models.Model):
             return [self.empresa_vinculada]
         return []
     
-    def pode_acessar_empresa(self, empresa):
-        """Verifica se pode acessar dados de uma empresa específica"""
-        return empresa in self.get_empresas_acessiveis()
+    def pode_acessar_empresa(self, empresa_id):
+        """Verifica se pode acessar dados de uma empresa específica pelo ID"""
+        # Se for superuser, tem acesso a tudo
+        if self.user.is_superuser:
+            return True
+            
+        # Converte para inteiro se for string
+        if isinstance(empresa_id, str) and empresa_id.isdigit():
+            empresa_id = int(empresa_id)
+            
+        # Obtém IDs das empresas acessíveis
+        empresas_acessiveis = self.get_empresas_acessiveis()
+        empresa_ids = [e.id for e in empresas_acessiveis]
+        
+        return empresa_id in empresa_ids
     
     class Meta:
         verbose_name = 'Perfil de Usuário'

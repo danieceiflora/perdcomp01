@@ -1,14 +1,47 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1 class="text-center my-4">Editar Cliente/Parceiro</h1>
+<div class="container">
+  <div class="rounded-4 shadow-sm bg-white p-4 my-4" style="border: 2px solid #e3e6f0;">
+    <h1 class="text-center mb-0" style="color: #3a3b45;">Editar Cliente</h1>
+  </div>
+</div>
+
+<style>
+  /* Estilização para o campo de switch/toggle */
+  .form-check-input[role="switch"] {
+    width: 3em;
+    height: 1.5em;
+    margin-top: 0.25em;
+  }
+  
+  /* Adiciona um pouco de espaço entre o label e o campo */
+  .form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Estiliza campos somente leitura */
+  .form-control[readonly] {
+    background-color: #f8f9fa;
+    cursor: not-allowed;
+  }
+  
+  /* Estilo para contêiner de logomarca */
+  .logo-container {
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+    text-align: center;
+  }
+</style>
 
 <div class="container">
-  <form class="form-control p-4" method="post">
+  <form class="form-control p-4" method="post" enctype="multipart/form-data">
     {% csrf_token %}
 
     <div class="card mb-4">
-      <div class="card-header bg-primary text-white">
+      <div class="card-header bg-light text-black">
         <h3>Informações da Empresa Base</h3>
       </div>
       <div class="card-body">
@@ -32,7 +65,7 @@
     </div>
 
     <div class="card mb-4">
-      <div class="card-header bg-primary text-white">
+      <div class="card-header bg-light text-black">
         <h3>Informações da Empresa Vinculada</h3>
       </div>
       <div class="card-body">
@@ -52,21 +85,79 @@
             <input type="text" class="form-control" value="{{ empresa_vinculada.nome_fantasia }}" readonly>
           </div>
         </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Logomarca Atual</label>
+            <div class="d-flex align-items-center">
+              {% if empresa_vinculada.logomarca %}
+                <div class="border rounded p-2 me-2" style="width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                  <img src="{{ empresa_vinculada.logomarca.url }}" alt="Logomarca" class="img-fluid" style="max-width: 100%; max-height: 100%;">
+                </div>
+              {% else %}
+                <div class="border rounded p-2 text-center bg-light" style="width: 100px; height: 100px; display: flex; align-items: center; justify-content: center;">
+                  <i class="bi bi-image text-secondary" style="font-size: 2rem;"></i>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="{{ form.atualizar_logomarca.id_for_label }}" class="form-label">{{ form.atualizar_logomarca.label }}</label><br>
+            {{ form.atualizar_logomarca }}
+            {% if form.atualizar_logomarca.errors %}
+              <div class="alert alert-danger mt-1">
+                {% for error in form.atualizar_logomarca.errors %}
+                  {{ error }}
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="card mb-4">
-      <div class="card-header bg-primary text-white">
+      <div class="card-header bg-light text-black">
         <h3>Dados do Relacionamento</h3>
       </div>
       <div class="card-body">
-        {{ form.as_p }}
+        {% for field in form %}
+          {% if field.name == 'ativo' %}
+          <div class="mb-3 form-switch">
+            <div class="d-flex align-items-center">
+              {{ field }}
+              <label for="{{ field.id_for_label }}" class="form-check-label ms-2">{{ field.label }}</label>
+            </div>
+            {% if field.errors %}
+            <div class="alert alert-danger mt-1">
+              {% for error in field.errors %}
+              {{ error }}
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+          {% elif field.name != 'atualizar_logomarca' %}
+          <div class="mb-3">
+            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}
+            <small class="form-text text-muted">{{ field.help_text }}</small>
+            {% endif %}
+            {% if field.errors %}
+            <div class="alert alert-danger mt-1">
+              {% for error in field.errors %}
+              {{ error }}
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+          {% endif %}
+        {% endfor %}
       </div>
     </div>
 
     {% if contatos %}
     <div class="card mb-4">
-      <div class="card-header bg-primary text-white">
+      <div class="card-header bg-light text-black">
         <h3>Contatos</h3>
       </div>
       <div class="card-body">
@@ -96,9 +187,13 @@
     </div>
     {% endif %}
 
-    <div class="text-center mt-4">
-      <button type="submit" class="btn btn-success">Salvar Alterações</button>
-      <a href="{% url 'lista_clientes_parceiros' %}" class="btn btn-secondary">Cancelar</a>
+    <div class="d-flex justify-content-between mt-4">
+      <a href="{% url 'lista_clientes_parceiros' %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Voltar
+      </a>
+      <button type="submit" class="btn btn-success">
+        <i class="bi bi-check-circle me-1"></i> Salvar Alterações
+      </button>
     </div>
   </form>
 </div>
