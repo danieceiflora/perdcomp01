@@ -63,10 +63,6 @@ class CustomLogoutView(LogoutView):
         # Captura o nome do usuário antes de fazer logout
         user_name = request.user.get_full_name() or request.user.username if request.user.is_authenticated else "Visitante"
         
-        # Adiciona mensagem de feedback antes de fazer logout
-        if request.user.is_authenticated:
-            messages.success(request, f'Até logo, {user_name}! Você saiu do sistema com sucesso.')
-        
         # Faz o logout e redireciona diretamente
         from django.contrib.auth import logout
         logout(request)

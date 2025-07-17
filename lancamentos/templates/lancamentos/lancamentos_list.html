@@ -3,15 +3,94 @@
 
 {% block title %}Lista de Lançamentos{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Estilos para os cards de lançamento */
+    .card-lancamento {
+        margin-bottom: 1rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+        overflow: hidden;
+    }
+    
+    .card-lancamento:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .card-lancamento .card-header {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    
+    .card-lancamento .info-item {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .card-lancamento .info-item:last-child {
+        border-bottom: none;
+    }
+    
+    .card-lancamento .info-label {
+        font-weight: bold;
+        color: #6c757d;
+        font-size: 0.85rem;
+        margin-bottom: 0.2rem;
+    }
+    
+    .card-lancamento .info-value {
+        font-weight: 500;
+    }
+    
+    .card-lancamento .status-badge {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .card-lancamento .card-footer {
+        background-color: rgba(0,0,0,0.02);
+        padding: 0.75rem 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .button-container {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+    
+    .button-container .btn {
+        margin-bottom: 0.25rem;
+    }
+    
+    @media (max-width: 767.98px) {
+        .info-item {
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            margin-bottom: 0.5rem;
+        }
+        
+        .card-body .row > div:last-child .info-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3 class="card-title">Lista de Lançamentos</h3>
-                    <div>
-                        <form class="d-flex me-2" method="get">
+                <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+                    <h3 class="card-title mb-2 mb-md-0">Lançamentos</h3>
+                    <div class="d-flex flex-column flex-md-row gap-2 align-items-center">
+                        <form class="d-flex me-md-2 w-100 w-md-auto" method="get">
                             <div class="input-group">
                                 <input type="text" name="perdcomp" class="form-control" placeholder="Buscar por PERDCOMP" 
                                        value="{{ request.GET.perdcomp|default:'' }}">
@@ -25,12 +104,12 @@
                                 {% endif %}
                             </div>
                         </form>
+                        {% if user.is_staff or user.is_superuser %}
+                            <a href="{% url 'lancamentos:create' %}" class="btn btn-primary w-100 w-md-auto">
+                                <i class="bi bi-plus"></i> Novo Lançamento
+                            </a>
+                        {% endif %}
                     </div>
-                    {% if not user.profile.eh_cliente %}
-                    <a href="{% url 'lancamentos:create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus"></i> Novo Lançamento
-                    </a>
-                    {% endif %}
                 </div>
                 <div class="card-body">
                     <div class="alert alert-info mb-3">
@@ -39,86 +118,107 @@
                     </div>
                     
                     {% if lancamentos %}
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Adesão (PERDCOMP)</th>
-                                        <th>Data</th>
-                                        <th>Valor</th>
-                                        <th>Tipo</th>
-                                        <th>Status</th>
-                                        <th>Saldo Restante</th>
-                                        <th>Anexos</th>
-                                        {% if not user.profile.eh_cliente %}
-                                        <th>Ações</th>
+                        <!-- Visualização de cards -->
+                         
+                        <div class="row">
+                            {% for lancamento in lancamentos %}
+                            <div class="col-12">
+                                <br>
+                                <div class="card card-lancamento">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">{{ lancamento.id_adesao.perdcomp }}</h5>
+                                        {% if lancamento.status == 'PENDENTE' %}
+                                            <span class="badge bg-warning status-badge">Pendente</span>
+                                        {% elif lancamento.status == 'CONFIRMADO' %}
+                                            <span class="badge bg-success status-badge">Confirmado</span>
+                                        {% elif lancamento.status == 'ESTORNADO' %}
+                                            <span class="badge bg-danger status-badge">Estornado</span>
                                         {% endif %}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for lancamento in lancamentos %}
-                                    <tr>
-                                        <td>{{ lancamento.id }}</td>
-                                        <td>{{ lancamento.id_adesao.perdcomp }}</td>
-                                        <td>{{ lancamento.data_lancamento|date:"d/m/Y" }}</td>
-                                        <td class="{% if lancamento.sinal == '+' %}text-success{% else %}text-danger{% endif %}">
-                                            {{ lancamento.sinal }} R$ {{ lancamento.valor|floatformat:2 }}
-                                        </td>
-                                        <td>{{ lancamento.tipo|default:"--" }}</td>
-                                        <td>
-                                            {% if lancamento.status == 'PENDENTE' %}
-                                                <span class="badge bg-warning">Pendente</span>
-                                            {% elif lancamento.status == 'CONFIRMADO' %}
-                                                <span class="badge bg-success">Confirmado</span>
-                                            {% elif lancamento.status == 'ESTORNADO' %}
-                                                <span class="badge bg-danger">Estornado</span>
-                                            {% endif %}
-                                        </td>
-                                        <td class="text-end fw-bold {% if lancamento.saldo_restante > 0 %}text-success{% elif lancamento.saldo_restante < 0 %}text-danger{% endif %}">
-                                            {% if lancamento.saldo_restante != None %}
-                                                R$ {{ lancamento.saldo_restante|floatformat:2 }}
-                                            {% else %}
-                                                <span class="text-muted">--</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-info">{{ lancamento.anexos.count }} anexo(s)</span>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="row m-0">
+                                            <div class="col-md-4">
+                                                <div class="info-item px-3">
+                                                    <div class="info-label"><strong>Cliente</strong></div>
+                                                    <div class="info-value">
+                                                        {% if lancamento.id_adesao.cliente.id_company_vinculada %}
+                                                            {{ lancamento.id_adesao.cliente.id_company_vinculada.razao_social }}
+                                                        {% else %}
+                                                            {{ lancamento.id_adesao.cliente }}
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="info-item px-3">
+                                                    <div class="info-label"><strong>Data</strong></div>
+                                                    <div class="info-value">{{ lancamento.data_lancamento|date:"d/m/Y" }}</div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="col-md-4">
+
+                                                <div class="info-item px-3">
+                                                    <div class="info-label"><strong>Valor</strong></div>
+                                                    <div class="info-value {% if lancamento.sinal == '+' %}text-success{% else %}text-danger{% endif %}">
+                                                        <strong>{{ lancamento.sinal }} R$ {{ lancamento.valor|floatformat:2 }}</strong>
+                                                    </div>
+                                                </div>
+                                            
+                                            </div>
+                                            
+                                            <div class="col-md-4">
+                                                <div class="info-item px-3">
+                                                    <div class="info-label"><strong>Saldo Restante</strong></div>
+                                                    <div class="info-value fw-bold {% if lancamento.saldo_restante > 0 %}text-success{% elif lancamento.saldo_restante < 0 %}text-danger{% endif %}">
+                                                        {% if lancamento.saldo_restante != None %}
+                                                            R$ {{ lancamento.saldo_restante|floatformat:2 }}
+                                                        {% else %}
+                                                            <span class="text-muted">--</span>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="info-item px-3">
+                                                    <div class="info-label"><strong>Anexos</strong></div>
+                                                    <div class="info-value">
+                                                        <span class="badge bg-info">{{ lancamento.anexos.count }} anexo(s)</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card-footer d-flex justify-content-between align-items-center">
+                                        <div class="text-muted small">
+                                            <i class="bi bi-calendar-check me-1"></i> Última atualização: {{ lancamento.data_atualizacao|date:"d/m/Y H:i" }}
+                                        </div>
+                                        <div class="button-container">
                                             {% if user.profile.eh_cliente %}
-                                                <br><small>
-                                                    <a href="{% url 'lancamentos:detail' lancamento.pk %}" class="text-decoration-none">
-                                                        <i class="bi bi-eye"></i> Ver detalhes
+                                                <a href="{% url 'lancamentos:detail' lancamento.pk %}" class="btn btn-sm btn-primary">
+                                                    <i class="bi bi-eye"></i> Ver detalhes
+                                                </a>
+                                            {% else %}
+                                                <a href="{% url 'lancamentos:detail' lancamento.pk %}" class="btn btn-sm btn-info">
+                                                    <i class="bi bi-eye"></i> Detalhes
+                                                </a>
+                                                {% if lancamento.status == 'PENDENTE' %}
+                                                    <a href="{% url 'lancamentos:update' lancamento.pk %}" class="btn btn-sm btn-warning">
+                                                        <i class="bi bi-pencil"></i> Editar
                                                     </a>
-                                                </small>
+                                                    <a href="{% url 'lancamentos:delete' lancamento.pk %}" class="btn btn-sm btn-danger">
+                                                        <i class="bi bi-trash"></i> Excluir
+                                                    </a>
+                                                {% elif lancamento.status == 'CONFIRMADO' or lancamento.status == 'ESTORNADO' %}
+                                                    <a href="{% url 'lancamentos:editar_anexos' lancamento.pk %}" class="btn btn-sm btn-warning">
+                                                        <i class="bi bi-paperclip"></i> Anexos
+                                                    </a>
+                                                {% endif %}
                                             {% endif %}
-                                        </td>
-                                        {% if not user.profile.eh_cliente %}
-                                        <td>
-                                            <a href="{% url 'lancamentos:detail' lancamento.pk %}" class="btn btn-sm btn-info">
-                                                <i class="bi bi-eye"></i> Detalhes
-                                            </a>
-                                            {% if lancamento.status == 'PENDENTE' %}
-                                                <a href="{% url 'lancamentos:update' lancamento.pk %}" class="btn btn-sm btn-warning">
-                                                    <i class="bi bi-pencil"></i> Editar
-                                                </a>
-                                                <a href="{% url 'lancamentos:delete' lancamento.pk %}" class="btn btn-sm btn-danger">
-                                                    <i class="bi bi-trash"></i> Excluir
-                                                </a>
-                                            {% elif lancamento.status == 'CONFIRMADO' %}
-                                                <a href="{% url 'lancamentos:editar_anexos' lancamento.pk %}" class="btn btn-sm btn-warning">
-                                                    <i class="bi bi-paperclip"></i> Anexos
-                                                </a>
-                                            {% elif lancamento.status == 'ESTORNADO' %}
-                                                <a href="{% url 'lancamentos:editar_anexos' lancamento.pk %}" class="btn btn-sm btn-warning">
-                                                    <i class="bi bi-paperclip"></i> Anexos
-                                                </a>
-                                            {% endif %}
-                                        </td>
-                                        {% endif %}
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
                         </div>
                         
                         {% if is_paginated %}

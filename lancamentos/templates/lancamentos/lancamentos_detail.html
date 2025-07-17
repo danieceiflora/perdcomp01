@@ -25,40 +25,33 @@
                             <a href="{% url 'lancamentos:confirmar' lancamento.pk %}" class="btn btn-success">
                                 <i class="bi bi-check-circle"></i> Confirmar
                             </a>
-                        {% elif lancamento.status == 'CONFIRMADO' %}
-                            <a href="{% url 'lancamentos:editar_anexos' lancamento.pk %}" class="btn btn-warning">
-                                <i class="bi bi-paperclip"></i> Editar Anexos
-                            </a>
+                        {% elif lancamento.status == 'CONFIRMADO' and user.is_admin %}
                             <a href="{% url 'lancamentos:estornar' lancamento.pk %}" class="btn btn-danger">
                                 <i class="bi bi-arrow-counterclockwise"></i> Estornar
-                            </a>
-                        {% elif lancamento.status == 'ESTORNADO' %}
-                            <a href="{% url 'lancamentos:editar_anexos' lancamento.pk %}" class="btn btn-warning">
-                                <i class="bi bi-paperclip"></i> Editar Anexos
                             </a>
                         {% endif %}
                     </div>
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <h5 class="border-bottom pb-2">Informações do Lançamento</h5>
                             <table class="table table-sm">
                                 <tr>
-                                    <th style="width: 30%">Adesão (PERDCOMP):</th>
+                                    <th style="width: 30%">Perdcomp:</th>
                                     <td>{{ lancamento.id_adesao.perdcomp }}</td>
                                 </tr>
                                 <tr>
-                                    <th>Saldo Atual da Adesão:</th>
+                                    <th><strong>Saldo Atual:</strong></th>
                                     <td class="fw-bold">R$ {{ lancamento.id_adesao.saldo_atual|floatformat:2 }}</td>
                                 </tr>
                                 <tr>
-                                    <th>Saldo Restante:</th>
+                                    <th><strong>Saldo Restante:</strong></th>
                                     <td class="fw-bold {% if lancamento.saldo_restante > 0 %}text-success{% elif lancamento.saldo_restante < 0 %}text-danger{% endif %}">
                                         {% if lancamento.saldo_restante != None %}
                                             R$ {{ lancamento.saldo_restante|floatformat:2 }}
                                         {% else %}
-                                            <span class="text-muted">Não disponível para lançamentos pendentes</span>
+                                            <span class="text-muted">Não disponível</span>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -68,14 +61,11 @@
                                 </tr>
                                 <tr>
                                     <th>Valor:</th>
-                                    <td class="text-{{ lancamento.sinal|yesno:"success,danger" }}">
+                                    <td class="{% if lancamento.sinal == '+' %}text-success{% else %}text-danger{% endif %}">
                                         <strong>{{ lancamento.sinal }} R$ {{ lancamento.valor|floatformat:2 }}</strong>
                                     </td>
                                 </tr>
-                                <tr>
-                                    <th>Tipo:</th>
-                                    <td>{{ lancamento.tipo|default:"Não especificado" }}</td>
-                                </tr>
+                                
                                 <tr>
                                     <th>Status:</th>
                                     <td>
@@ -106,10 +96,11 @@
                                     <th>Observação:</th>
                                     <td>{{ lancamento.observacao|linebreaks|default:"Nenhuma observação" }}</td>
                                 </tr>
+                                
                             </table>
                         </div>
                         
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <h5 class="border-bottom pb-2">Anexos</h5>
                             {% if anexos %}
                                 <div class="table-responsive">

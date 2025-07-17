@@ -25,6 +25,13 @@
             outline: 2px solid #0d6efd;
             outline-offset: 2px;
         }
+        .user-avatar {
+            object-fit: contain;
+            border-radius: 4px;
+            background-color: white;
+            border: 1px solid rgba(0,0,0,0.1);
+            padding: 1px;
+        }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
@@ -132,20 +139,42 @@
                       
                       <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                          <i class="bi bi-cash-stack me-1"></i>Lançamentos 123</a>
+                          <i class="bi bi-cash-stack me-1"></i>Lançamentos</a>
                         <ul class="dropdown-menu">
                           <li><a class="dropdown-item" href="{% url 'lancamentos:list' %}"><i class="bi bi-list me-1"></i>Listar Lançamentos</a></li>
                         </ul>
                       </li>
                     {% endif %}
 
-                    {% if user.is_authenticated %}
+                    {% if user.is_authenticated and user.profile.eh_cliente %}
+                      <!-- dashboard -->
+                      <li class="nav-item">
+                        <a class="nav-link" href="{% url 'accounts:cliente_dashboard' %}">
+                          <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                        </a>
+                      </li>
+                    {% elif user.is_authenticated and user.profile.eh_parceiro %}
+                      <!-- dashboard -->
+                      <li class="nav-item">
+                        <a class="nav-link" href="{% url 'accounts:parceiro_dashboard' %}">
+                          <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                        </a>
+
                       <!-- Menu de Perfil -->
                       <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                          <i class="bi bi-person-circle me-1"></i>{{ user.username }}
+                            {% if user.profile.empresa_vinculada and user.profile.empresa_vinculada.logomarca %}
+                            <img src="{{ user.profile.empresa_vinculada.logomarca.url }}" alt="{{ user.profile.empresa_vinculada.nome_fantasia|default:user.profile.empresa_vinculada.razao_social }}" class="user-avatar me-1" width="24" height="24">
+                            {% elif user.profile.empresa_base and user.profile.empresa_base.logomarca %}
+                            <img src="{{ user.profile.empresa_base.logomarca.url }}" alt="{{ user.profile.empresa_base.nome_fantasia|default:user.profile.empresa_base.razao_social }}" class="user-avatar me-1" width="24" height="24">
+                            {% else %}
+                            <i class="bi bi-person-circle me-1"></i>
+                            {% endif %}
+                            {{ user.username }}
                         </a>
                         <ul class="dropdown-menu">
+                          <li><a class="dropdown-item" href="{% url 'accounts:profile' %}"><i class="bi bi-person me-1"></i>Meu Perfil</a></li>
+                          <li><hr class="dropdown-divider"></li>
                           <li><a class="dropdown-item" href="{% url 'accounts:logout' %}"><i class="bi bi-box-arrow-right me-1"></i>Sair</a></li>
                         </ul>
                       </li>

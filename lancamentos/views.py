@@ -10,6 +10,7 @@ from accounts.decorators import cliente_can_view_lancamento, admin_required
 from .models import Lancamentos, Anexos
 from .forms import LancamentosForm, AnexosFormSet
 from .permissions import LancamentoPermissionMixin, LancamentoClienteViewOnlyMixin, AdminRequiredMixin
+from django.http import Http404
 
 class LancamentosListView(LancamentoClienteViewOnlyMixin, ListView):
     model = Lancamentos
@@ -19,12 +20,36 @@ class LancamentosListView(LancamentoClienteViewOnlyMixin, ListView):
     
     def get_queryset(self):
         """
-        Retorna os lançamentos ordenados por data, com as adesões relacionadas carregadas
-        para evitar consultas N+1 e otimizar a exibição do saldo atual.
-        
-        Permite filtrar por PERDCOMP se o parâmetro 'perdcomp' estiver na query string.
+        Filtra os lançamentos por permissões e permite busca por PERDCOMP.
         """
         queryset = super().get_queryset().select_related('id_adesao').order_by('-data_lancamento')
+        
+        # Filtragem por permissões
+        if self.request.user.is_superuser or self.request.user.is_staff:
+            # Admins veem tudo
+            pass
+        elif hasattr(self.request.user, 'profile'):
+            profile = self.request.user.profile
+            
+            # Para clientes, filtra diretamente pela empresa vinculada
+            if profile.eh_cliente and profile.empresa_vinculada:
+                queryset = queryset.filter(
+                    id_adesao__cliente__id_company_vinculada=profile.empresa_vinculada
+                )
+                
+            # Para parceiros, filtra pelas empresas acessíveis
+            elif not profile.eh_cliente:
+                empresas_acessiveis = profile.get_empresas_acessiveis()
+                if empresas_acessiveis:
+                    queryset = queryset.filter(
+                        id_adesao__cliente__id_company_vinculada__in=empresas_acessiveis
+                    )
+                else:
+                    return queryset.none()
+            else:
+                return queryset.none()
+        else:
+            return queryset.none()
         
         # Filtro por PERDCOMP
         perdcomp = self.request.GET.get('perdcomp')
@@ -48,16 +73,69 @@ class LancamentoDetailView(LancamentoClienteViewOnlyMixin, DetailView):
     
     def get_queryset(self):
         """
-        Carrega a adesão relacionada para evitar consultas N+1 e 
-        otimizar a exibição do saldo atual.
+        Filtra o queryset para que clientes só vejam seus próprios lançamentos.
         """
-        return super().get_queryset().select_related('id_adesao')
+        queryset = super().get_queryset()
+        
+        if self.request.user.is_superuser or self.request.user.is_staff:
+            # Admins veem tudo
+            return queryset
+            
+        if hasattr(self.request.user, 'profile'):
+            profile = self.request.user.profile
+            
+            # Para clientes, filtra diretamente pela empresa vinculada
+            if profile.eh_cliente and profile.empresa_vinculada:
+                return queryset.filter(
+                    id_adesao__cliente__id_company_vinculada=profile.empresa_vinculada
+                )
+                
+            # Para parceiros, filtra pelas empresas acessíveis
+            elif not profile.eh_cliente:
+                empresas_acessiveis = profile.get_empresas_acessiveis()
+                if empresas_acessiveis:
+                    return queryset.filter(
+                        id_adesao__cliente__id_company_vinculada__in=empresas_acessiveis
+                    )
+                    
+        # Se chegou aqui, não tem acesso a nada
+        return queryset.none()
+    
+    def get_object(self, queryset=None):
+        """
+        Verifica se o objeto existe no queryset filtrado.
+        Se existir, permite o acesso. Caso contrário, mostra página de acesso negado.
+        """
+        if queryset is None:
+            queryset = self.get_queryset()
+            
+        # Obtém o ID do objeto
+        pk = self.kwargs.get(self.pk_url_kwarg)
+        
+        try:
+            # Tenta obter o objeto do queryset filtrado
+            obj = queryset.get(pk=pk)
+            return obj
+        except self.model.DoesNotExist:
+            # Verifica se o objeto existe no banco, mas o usuário não tem permissão
+            if self.model.objects.filter(pk=pk).exists():
+                from django.shortcuts import render
+                messages.error(self.request, "Você não tem permissão para visualizar este lançamento.")
+                return render(
+                    self.request, 
+                    'forbidden.html', 
+                    {'message': "Você não tem permissão para visualizar este lançamento."},
+                    status=403
+                )
+            else:
+                # Se não existe no banco, é um 404 legítimo
+                raise Http404(f"Lançamento com ID {pk} não encontrado.")
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['anexos'] = self.object.anexos.all()
         return context
-
+        
 class LancamentoCreateView(AdminRequiredMixin, CreateView):
     model = Lancamentos
     form_class = LancamentosForm
