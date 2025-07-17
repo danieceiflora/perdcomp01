@@ -57,18 +57,30 @@ class ParceiroLoginView(LoginView):
 
 
 class CustomLogoutView(LogoutView):
-    next_page = reverse_lazy('accounts:cliente_login')
-    
+     
     def dispatch(self, request, *args, **kwargs):
-        # Captura o nome do usuário antes de fazer logout
-        user_name = request.user.get_full_name() or request.user.username if request.user.is_authenticated else "Visitante"
+        # Determina para onde redirecionar após o logout com base no tipo de usuário
+        redirect_url = 'accounts:login_selector'  # Padrão: seletor de login
         
-        # Faz o logout e redireciona diretamente
+        if request.user.is_authenticated:
+            try:
+                # Verifica o tipo de usuário antes de fazer logout
+                profile = request.user.profile
+                
+                if profile.eh_parceiro:
+                    redirect_url = 'accounts:login_selector'
+                elif profile.eh_cliente:
+                    redirect_url = 'accounts:cliente_login'
+            except Exception:
+                # Se houver algum erro, usa o redirecionamento padrão
+                pass
+        
+        # Faz o logout
         from django.contrib.auth import logout
         logout(request)
         
-        # Redireciona diretamente para a página de login do cliente
-        return redirect('accounts:cliente_login')
+        # Redireciona com base no tipo de usuário
+        return redirect(redirect_url)
 
 class LoginSelectorView(TemplateView):
     template_name = 'accounts/login_selector.html'

@@ -153,13 +153,18 @@
                           <i class="bi bi-speedometer2 me-1"></i>Dashboard
                         </a>
                       </li>
-                    {% elif user.is_authenticated and user.profile.eh_parceiro %}
+                    {% endif %}
+                    {% if user.is_authenticated and user.profile.eh_parceiro %}
                       <!-- dashboard -->
                       <li class="nav-item">
                         <a class="nav-link" href="{% url 'accounts:parceiro_dashboard' %}">
                           <i class="bi bi-speedometer2 me-1"></i>Dashboard
                         </a>
+                      </li>
+                    {% endif %}
 
+                    {% if user.is_authenticated %}
+                    
                       <!-- Menu de Perfil -->
                       <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
