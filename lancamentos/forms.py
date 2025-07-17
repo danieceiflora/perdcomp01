@@ -12,7 +12,7 @@ class LancamentosForm(forms.ModelForm):
     
     class Meta:
         model = Lancamentos
-        fields = ['id_adesao', 'data_lancamento', 'valor', 'sinal', 'tipo', 'observacao', 'status']
+        fields = ['id_adesao', 'data_lancamento', 'valor', 'sinal', 'tipo', 'observacao']
         widgets = {
             'id_adesao': forms.Select(attrs={
                 'class': 'form-select',
@@ -36,9 +36,6 @@ class LancamentosForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Observações adicionais',
                 'rows': 3
-            }),
-            'status': forms.Select(attrs={
-                'class': 'form-select',
             }),
         }
 

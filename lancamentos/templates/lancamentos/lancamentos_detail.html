@@ -15,18 +15,12 @@
                             <i class="bi bi-arrow-left"></i> Voltar
                         </a>
                         
-                        {% if lancamento.status == 'PENDENTE' %}
-                            <a href="{% url 'lancamentos:update' lancamento.pk %}" class="btn btn-warning">
-                                <i class="bi bi-pencil"></i> Editar
+                        <!-- Botões de ação -->
+                        {% if user.is_admin or user.is_superuser %}
+                            <a href="{% url 'lancamentos:editar_anexos' lancamento.pk %}" class="btn btn-warning">
+                                <i class="bi bi-paperclip"></i> Editar Anexos
                             </a>
-                            <a href="{% url 'lancamentos:delete' lancamento.pk %}" class="btn btn-danger">
-                                <i class="bi bi-trash"></i> Excluir
-                            </a>
-                            <a href="{% url 'lancamentos:confirmar' lancamento.pk %}" class="btn btn-success">
-                                <i class="bi bi-check-circle"></i> Confirmar
-                            </a>
-                        {% elif lancamento.status == 'CONFIRMADO' and user.is_admin %}
-                            <a href="{% url 'lancamentos:estornar' lancamento.pk %}" class="btn btn-danger">
+                            <a href="{% url 'lancamentos:criar_estorno' lancamento.pk %}" class="btn btn-danger">
                                 <i class="bi bi-arrow-counterclockwise"></i> Estornar
                             </a>
                         {% endif %}
@@ -66,28 +60,7 @@
                                     </td>
                                 </tr>
                                 
-                                <tr>
-                                    <th>Status:</th>
-                                    <td>
-                                        {% if lancamento.status == 'PENDENTE' %}
-                                            <span class="badge bg-warning">Pendente</span>
-                                        {% elif lancamento.status == 'CONFIRMADO' %}
-                                            <span class="badge bg-success">Confirmado</span>
-                                            {% if lancamento.data_confirmacao %}
-                                                <small class="text-muted d-block">
-                                                    Confirmado em: {{ lancamento.data_confirmacao|date:"d/m/Y H:i" }}
-                                                </small>
-                                            {% endif %}
-                                        {% elif lancamento.status == 'ESTORNADO' %}
-                                            <span class="badge bg-danger">Estornado</span>
-                                            {% if lancamento.lancamento_original %}
-                                                <small class="text-muted d-block">
-                                                    Estorno do lançamento: #{{ lancamento.lancamento_original.id }}
-                                                </small>
-                                            {% endif %}
-                                        {% endif %}
-                                    </td>
-                                </tr>
+                                <!-- Removida linha do status, já que não é mais necessária -->
                                 <tr>
                                     <th>Data de Criação:</th>
                                     <td>{{ lancamento.data_criacao|date:"d/m/Y H:i" }}</td>

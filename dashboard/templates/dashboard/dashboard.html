@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard Administrativo{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-4">Dashboard Administrativo</h1>
+            <p class="lead">Visão geral de parceiros, clientes e créditos recuperados</p>
+        </div>
+    </div>
+
+    <!-- Cards com os dados principais -->
+    <div class="row mb-4">
+        <!-- Total de parceiros -->
+        <div class="col-md-4">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Parceiros</h5>
+                    <p class="card-text display-3">{{ total_parceiros }}</p>
+                    <p>Total de parceiros cadastrados</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Total de clientes -->
+        <div class="col-md-4">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Clientes</h5>
+                    <p class="card-text display-3">{{ total_clientes }}</p>
+                    <p>Total de clientes cadastrados</p>
+                </div>
+            </div>
+        </div>
+            
+    </div>
+
+
+    <!-- Top parceiros e clientes -->
+    <div class="row mb-4">
+        <!-- Top parceiros -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title">Parceiros com Mais Clientes</h5>
+                </div>
+                <div class="card-body">
+                    {% if top_parceiros %}
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Parceiro</th>
+                                <th>Total de Clientes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for parceiro in top_parceiros %}
+                            <tr>
+                                <td>{{ parceiro.id_company_base__razao_social }}</td>
+                                <td>{{ parceiro.total_clientes }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p>Nenhum parceiro encontrado.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Top clientes -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title">Clientes com Mais Crédito Recuperado</h5>
+                </div>
+                <div class="card-body">
+                    {% if top_clientes %}
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Crédito Recuperado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cliente in top_clientes %}
+                            <tr>
+                                <td>{{ cliente.id_adesao__cliente__id_company_vinculada__razao_social }}</td>
+                                <td>R$ {{ cliente.total_credito|floatformat:2|cut:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p>Nenhum cliente encontrado.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Crédito por Parceiro -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Crédito Recuperado por Parceiro</h5>
+                </div>
+                <div class="card-body">
+                    {% if credito_por_parceiro %}
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Parceiro</th>
+                                <th>Total de Crédito Recuperado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in credito_por_parceiro %}
+                            <tr>
+                                <td>{{ item.parceiro }}</td>
+                                <td>R$ {{ item.total_credito|floatformat:2|cut:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p>Nenhum parceiro encontrado.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

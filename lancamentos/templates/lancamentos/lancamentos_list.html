@@ -127,13 +127,9 @@
                                 <div class="card card-lancamento">
                                     <div class="card-header d-flex justify-content-between align-items-center">
                                         <h5 class="mb-0">{{ lancamento.id_adesao.perdcomp }}</h5>
-                                        {% if lancamento.status == 'PENDENTE' %}
-                                            <span class="badge bg-warning status-badge">Pendente</span>
-                                        {% elif lancamento.status == 'CONFIRMADO' %}
-                                            <span class="badge bg-success status-badge">Confirmado</span>
-                                        {% elif lancamento.status == 'ESTORNADO' %}
-                                            <span class="badge bg-danger status-badge">Estornado</span>
-                                        {% endif %}
+                                        <span class="badge bg-{{ lancamento.sinal|yesno:'success,danger' }} status-badge">
+                                            {{ lancamento.sinal|yesno:'Crédito,Débito' }}
+                                        </span>
                                     </div>
                                     <div class="card-body p-0">
                                         <div class="row m-0">

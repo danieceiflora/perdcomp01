@@ -5,9 +5,9 @@ from .models import Adesao
 @admin.register(Adesao)
 class AdesaoAdmin(admin.ModelAdmin):
     list_display = ('perdcomp', 'cliente_info', 'tese_credito', 'data_inicio', 'saldo_inicial', 'saldo_atual_display', 'free_rate_display', 'ativo_display', 'lancamentos_count')
-    list_filter = ('ativo', 'cliente__id_company_base', 'tese_credito_id__id_tipo_tese')
-    search_fields = ('perdcomp', 'cliente__nome_referencia', 'cliente__id_company_base__razao_social')
-    date_hierarchy = 'data_inicio'
+    list_filter = ('cliente__id_company_base', 'tese_credito_id__id_tipo_tese')
+    search_fields = ('perdcomp', 'cliente__nome_referencia', 'cliente__empresa_vinculada__razao_social')
+    
     
     fieldsets = (
         ('Identificação', {
@@ -56,7 +56,7 @@ class AdesaoAdmin(admin.ModelAdmin):
     free_rate_display.short_description = 'Free Rate'
     
     def cliente_info(self, obj):
-        empresa = obj.cliente.id_company_base.nome_fantasia or obj.cliente.id_company_base.razao_social
+        empresa = obj.cliente.id_company_vinculada.razao_social
         return f"{obj.cliente.nome_referencia} ({empresa})"
     cliente_info.short_description = 'Cliente'
     

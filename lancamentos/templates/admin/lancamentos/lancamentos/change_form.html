@@ -1,0 +1,31 @@
+{% extends "admin/change_form.html" %}
+{% load static %}
+
+{% block extrahead %}
+{{ block.super }}
+{% if read_only_transaction %}
+<style>
+    .read-only-warning {
+        background-color: #fff3cd;
+        border: 1px solid #ffeeba;
+        color: #856404;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 4px;
+        font-weight: 500;
+    }
+    .read-only-warning i {
+        margin-right: 5px;
+    }
+</style>
+{% endif %}
+{% endblock %}
+
+{% block form_top %}
+    {% if message %}
+    <div class="read-only-warning">
+        <i class="fas fa-exclamation-triangle"></i> {{ message }}
+    </div>
+    {% endif %}
+    {{ block.super }}
+{% endblock %}

@@ -98,8 +98,11 @@ class ClienteDashboardView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         profile = self.request.user.profile
         
-        # Importa o modelo necessário
+        # Importa os modelos necessários
         from clientes_parceiros.models import ClientesParceiros
+        from lancamentos.models import Lancamentos
+        from django.db.models import Sum
+        from django.utils import timezone
         
         # Esclarecendo:
         # - O usuário cliente está vinculado a uma empresa que é cliente de algum parceiro
@@ -127,12 +130,30 @@ class ClienteDashboardView(LoginRequiredMixin, TemplateView):
                 'data_inicio': relacionamento_com_parceiro.data_inicio_parceria
             }
         
+        # Calcular o total de crédito recuperado para este cliente
+        # Considerando apenas lançamentos com sinal='-' que representam créditos recuperados
+        credito_recuperado = 0
+        if relacionamento_com_parceiro:
+            # Obtém os últimos 12 meses
+            doze_meses_atras = timezone.now() - timezone.timedelta(days=365)
+            
+            # Calcula o total de crédito recuperado (lançamentos com sinal '-')
+            resultado = Lancamentos.objects.filter(
+                id_adesao__cliente=relacionamento_com_parceiro,
+                sinal='-',  # Sinal negativo representa crédito recuperado/utilizado
+                data_lancamento__gte=doze_meses_atras
+            ).aggregate(total=Sum('valor'))
+            
+            # O resultado pode ser None se não houver lançamentos
+            credito_recuperado = abs(resultado['total'] or 0)
+        
         context.update({
             'profile': profile,
             'empresa': profile.empresa_vinculada,  # Empresa do cliente logado
             'tipo_acesso': 'Cliente',
             'empresas_acessiveis': empresas_acessiveis,  # Apenas a própria empresa
             'parceiro_info': parceiro_info,  # Informações sobre o parceiro que atende este cliente
+            'credito_recuperado': credito_recuperado,  # Total de crédito recuperado
         })
         return context
 

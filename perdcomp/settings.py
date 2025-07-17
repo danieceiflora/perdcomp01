@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'correcao',
     'adesao',
     'lancamentos',
+    'dashboard'
 ]
 
 MIDDLEWARE = [
@@ -142,6 +143,7 @@ JAZZMIN_SETTINGS = {
             "correcao.Correcao": "fas fa-tools",
             "auth.User": "fas fa-user",
             "auth.Group": "fas fa-users-cog",
+            "accounts.UserProfile": "fas fa-user-cog",
         }
 }
 

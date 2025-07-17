@@ -128,11 +128,12 @@
                 <div class="d-flex align-items-center">
                     <div class="flex-grow-1">
                         <h1 class="h3 mb-1">Bem-vindo, {{ user.get_full_name|default:user.username }}!</h1>
-                        <p class="mb-0 {% block header_subtitle_class %}opacity-75{% endblock %}">
-                            {% block header_subtitle %}
-                            {{ empresa.nome_fantasia|default:empresa.razao_social }} - {{ tipo_acesso }}
-                            {% endblock %}
-                        </p>
+                        <span class="badge bg-light text-success px-2 py-1 rounded-pill fs-8">
+                            {{ tipo_acesso }}
+                        </span>
+                        <span class="badge bg-light text-success px-2 py-1 rounded-pill fs-8">
+                            {{ empresa.nome_fantasia|default:empresa.razao_social }}
+                        </span>
                     </div>
                 </div>
             </div>

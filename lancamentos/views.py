@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from accounts.decorators import cliente_can_view_lancamento, admin_required
+from django.core.exceptions import ValidationError
 from .models import Lancamentos, Anexos
 from .forms import LancamentosForm, AnexosFormSet
 from .permissions import LancamentoPermissionMixin, LancamentoClienteViewOnlyMixin, AdminRequiredMixin
@@ -154,166 +155,54 @@ class LancamentoCreateView(AdminRequiredMixin, CreateView):
         context = self.get_context_data()
         anexos_formset = context['anexos_formset']
         
-        with transaction.atomic():
-            # Salva o lançamento
-            self.object = form.save(commit=False)
-            
-            # Se o status for CONFIRMADO, registra a data de confirmação
-            if self.object.status == 'CONFIRMADO':
-                self.object.data_confirmacao = timezone.now()
-            
-            self.object.save()
-            
-            # Atualiza o saldo da adesão se o lançamento foi confirmado
-            if self.object.status == 'CONFIRMADO':
-                self.object.atualizar_saldo_adesao()
-            
-            # Salva os anexos se forem válidos
-            if anexos_formset.is_valid():
-                anexos_formset.instance = self.object
-                anexos_formset.save()
-            else:
-                return self.form_invalid(form)
-            
-        status_msg = ""
-        if self.object.status == 'CONFIRMADO':
-            status_msg = " com status 'Confirmado'"
-            
-        messages.success(self.request, f'Lançamento cadastrado com sucesso{status_msg}!')
-        return super().form_valid(form)
+        try:
+            with transaction.atomic():
+                # Prepara o lançamento
+                self.object = form.save(commit=False)
+                
+                # Limpa o objeto para que validações específicas sejam aplicadas
+                self.object.clean()
+                
+                # Salva o lançamento (a validação já foi feita pelo clean())
+                self.object.save()
+                
+                # Salva anexos
+                if anexos_formset.is_valid():
+                    anexos_formset.instance = self.object
+                    anexos_formset.save()
+                else:
+                    return self.form_invalid(form)
+                
+                # Mensagem de sucesso
+                messages.success(self.request, 'Lançamento cadastrado com sucesso!')
+                return super().form_valid(form)
+        
+        except ValidationError as e:
+            # Transfere erros de validação do modelo para o formulário
+            for field, errors in e.message_dict.items():
+                for error in errors:
+                    form.add_error(field, error)
+            messages.error(self.request, "Erro ao cadastrar lançamento. Verifique os campos.")
+            return self.form_invalid(form)
+        except Exception as e:
+            # Log do erro para depuração
+            import logging
+            logging.error(f"Erro ao salvar lançamento: {str(e)}")
+            messages.error(self.request, f"Erro ao processar lançamento: {str(e)}")
+            return self.form_invalid(form)
     
     def form_invalid(self, form):
         messages.error(self.request, 'Erro ao cadastrar lançamento. Verifique os campos.')
         return super().form_invalid(form)
 
-class LancamentoUpdateView(AdminRequiredMixin, UpdateView):
-    model = Lancamentos
-    form_class = LancamentosForm
-    template_name = 'lancamentos/lancamentos_form.html'
-    success_url = reverse_lazy('lancamentos:list')
-    
-    def dispatch(self, request, *args, **kwargs):
-        """Verifica se o lançamento ainda pode ser editado"""
-        self.object = self.get_object()
-        if not self.object.pode_editar():
-            messages.error(request, "Este lançamento não pode mais ser editado. Apenas os anexos podem ser modificados.")
-            return redirect('lancamentos:editar_anexos', pk=self.object.pk)
-        return super().dispatch(request, *args, **kwargs)
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        if self.request.POST:
-            context['anexos_formset'] = AnexosFormSet(
-                self.request.POST, 
-                self.request.FILES, 
-                instance=self.object
-            )
-        else:
-            context['anexos_formset'] = AnexosFormSet(instance=self.object)
-        return context
-    
-    def form_valid(self, form):
-        context = self.get_context_data()
-        anexos_formset = context['anexos_formset']
-        
-        old_status = self.object.status
-        new_status = form.cleaned_data.get('status')
-        
-        with transaction.atomic():
-            self.object = form.save(commit=False)
-            
-            # Se o status mudou para CONFIRMADO, registra a data de confirmação
-            if old_status != 'CONFIRMADO' and new_status == 'CONFIRMADO':
-                self.object.data_confirmacao = timezone.now()
-                
-            self.object.save()
-            
-            # Atualiza o saldo da adesão se o status foi alterado para ou de CONFIRMADO
-            if (old_status != 'CONFIRMADO' and new_status == 'CONFIRMADO') or \
-               (old_status == 'CONFIRMADO' and new_status != 'CONFIRMADO'):
-                # Se o lançamento agora está confirmado, atualizamos o saldo
-                if new_status == 'CONFIRMADO':
-                    self.object.atualizar_saldo_adesao()
-                # Se estava confirmado e agora não está, revertemos o efeito no saldo
-                else:
-                    # Invertemos o sinal para reverter o efeito anterior
-                    original_sinal = self.object.sinal
-                    self.object.sinal = '+' if original_sinal == '-' else '-'
-                    self.object.atualizar_saldo_adesao()
-                    # Restauramos o sinal original
-                    self.object.sinal = original_sinal
-                    self.object.save(update_fields=['sinal'])
-            
-            if anexos_formset.is_valid():
-                anexos_formset.instance = self.object
-                anexos_formset.save()
-            else:
-                return self.form_invalid(form)
-                
-        if old_status != new_status:
-            messages.success(self.request, f'Status do lançamento alterado para {self.object.get_status_display()}!')
-        else:
-            messages.success(self.request, 'Lançamento atualizado com sucesso!')
-        return super().form_valid(form)
-    
-    def form_invalid(self, form):
-        messages.error(self.request, 'Erro ao atualizar lançamento. Verifique os campos.')
-        return super().form_invalid(form)
-
-class LancamentoDeleteView(AdminRequiredMixin, DeleteView):
-    model = Lancamentos
-    template_name = 'lancamentos/lancamentos_confirm_delete.html'
-    success_url = reverse_lazy('lancamentos:list')
-    context_object_name = 'lancamento'
-    
-    def dispatch(self, request, *args, **kwargs):
-        """Verifica se o lançamento pode ser excluído"""
-        self.object = self.get_object()
-        if not self.object.pode_excluir():
-            messages.error(request, "Este lançamento não pode ser excluído pois já foi confirmado.")
-            return redirect('lancamentos:detail', pk=self.object.pk)
-        return super().dispatch(request, *args, **kwargs)
-    
-    def delete(self, request, *args, **kwargs):
-        messages.success(self.request, 'Lançamento excluído com sucesso!')
-        return super().delete(request, *args, **kwargs)
-
-@login_required
-@admin_required
-def confirmar_lancamento(request, pk):
-    """Confirma um lançamento, tornando-o não mais editável.
-    Essa view ainda é mantida para compatibilidade com os links de confirmação
-    existentes e para permitir confirmar rapidamente sem editar o lançamento.
-    
-    Ao confirmar o lançamento, o saldo atual da adesão é atualizado de acordo
-    com o valor e sinal do lançamento.
-    """
-    lancamento = get_object_or_404(Lancamentos, pk=pk)
-    
-    if lancamento.status != 'PENDENTE':
-        messages.error(request, "Este lançamento já foi confirmado ou estornado.")
-        return redirect('lancamentos:detail', pk=pk)
-    
-    with transaction.atomic():
-        lancamento.status = 'CONFIRMADO'
-        lancamento.data_confirmacao = timezone.now()
-        lancamento.save()
-        
-        # Atualiza o saldo da adesão
-        lancamento.atualizar_saldo_adesao()
-        
-        messages.success(request, "Lançamento confirmado com sucesso!")
-    
-    return redirect('lancamentos:detail', pk=pk)
+# Removemos as views LancamentoUpdateView, LancamentoDeleteView e confirmar_lancamento
+# já que lançamentos não podem mais ser editados ou excluídos
 
 class AnexosUpdateView(AdminRequiredMixin, UpdateView):
     """View para editar apenas os anexos de um lançamento.
     
-    Permite a edição de anexos mesmo para lançamentos que já foram confirmados
-    ou estornados, pois apenas os anexos são modificáveis após a confirmação.
-    
-    Para lançamentos no status PENDENTE, também é possível editar os dados do
-    lançamento pela view de edição normal.
+    Permite a edição de anexos, pois apenas os anexos são modificáveis
+    após a criação do lançamento.
     """
     model = Lancamentos
     template_name = 'lancamentos/anexos_form.html'
@@ -351,52 +240,42 @@ class AnexosUpdateView(AdminRequiredMixin, UpdateView):
                 self.get_context_data(anexos_formset=anexos_formset)
             )
 
+# Função para criar um estorno através de um novo lançamento com o sinal inverso
 @login_required
 @admin_required
-def estornar_lancamento(request, pk):
-    """Cria um estorno para um lançamento."""
+def criar_estorno(request, pk):
+    """Cria um lançamento de estorno (com sinal oposto) para anular o efeito de um lançamento."""
     lancamento = get_object_or_404(Lancamentos, pk=pk)
     
-    if lancamento.status != 'CONFIRMADO':
-        messages.error(request, "Apenas lançamentos confirmados podem ser estornados.")
-        return redirect('lancamentos:detail', pk=pk)
-    
-    # Verifica se já existe um estorno para este lançamento
-    if Lancamentos.objects.filter(lancamento_original=lancamento).exists():
-        messages.error(request, "Este lançamento já possui um estorno.")
-        return redirect('lancamentos:detail', pk=pk)
-    
-    with transaction.atomic():
-        # Marca o lançamento original como estornado
-        lancamento.status = 'ESTORNADO'
-        
-        # Revertemos o efeito do lançamento original no saldo
-        # Invertemos o sinal para reverter o efeito anterior
-        original_sinal = lancamento.sinal
-        lancamento.sinal = '+' if original_sinal == '-' else '-'
-        lancamento.atualizar_saldo_adesao()
-        # Restauramos o sinal original
-        lancamento.sinal = original_sinal
-        
-        lancamento.save()
-        
-        # Cria o lançamento de estorno com sinal contrário
-        estorno = Lancamentos(
-            id_adesao=lancamento.id_adesao,
-            data_lancamento=timezone.now().date(),
-            valor=lancamento.valor,
-            sinal='+' if lancamento.sinal == '-' else '-',
-            tipo=lancamento.tipo,
-            observacao=f"Estorno do lançamento #{lancamento.id}",
-            status='CONFIRMADO',
-            data_confirmacao=timezone.now(),
-            lancamento_original=lancamento
-        )
-        estorno.save()
-        
-        # Atualizamos o saldo com o lançamento de estorno
-        estorno.atualizar_saldo_adesao()
-        
-        messages.success(request, "Lançamento estornado com sucesso!")
-    
-    return redirect('lancamentos:detail', pk=estorno.pk)
+    try:
+        with transaction.atomic():
+            # Cria o lançamento de estorno com o sinal oposto ao original para anular seu efeito
+            sinal_estorno = '+' if lancamento.sinal == '-' else '-'
+            
+            estorno = Lancamentos(
+                id_adesao=lancamento.id_adesao,
+                data_lancamento=timezone.now(),
+                valor=lancamento.valor,
+                sinal=sinal_estorno,  # Usamos o sinal oposto para anular o efeito do lançamento original
+                tipo='Correção',
+                observacao=f"Estorno do lançamento #{lancamento.id}"
+            )
+            
+            # Aplica validações do modelo
+            estorno.clean()
+            
+            # Salva o estorno se validações passaram
+            estorno.save()
+            
+            messages.success(request, "Estorno criado com sucesso!")
+            return redirect('lancamentos:detail', pk=estorno.pk)
+            
+    except ValidationError as e:
+        messages.error(request, str(e))
+        return redirect('lancamentos:detail', pk=lancamento.pk)
+    except Exception as e:
+        # Log do erro para depuração
+        import logging
+        logging.error(f"Erro ao criar estorno: {str(e)}")
+        messages.error(request, f"Erro ao criar estorno: {str(e)}")
+        return redirect('lancamentos:detail', pk=lancamento.pk)

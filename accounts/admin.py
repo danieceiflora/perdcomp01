@@ -13,7 +13,7 @@ class UserProfileInline(admin.StackedInline):
     verbose_name_plural = 'Perfil de Acesso'
     
     fieldsets = (
-        ('Vinculação Empresarial', {
+        ('Vinculo com Empresa', {
             'fields': ('relacionamento', 'telefone', 'ativo'),
             'description': 'Configure o relacionamento empresarial do usuário'
         }),
@@ -61,7 +61,7 @@ class UserAdmin(BaseUserAdmin):
             pass
         return format_html('<span class="text-muted">Não vinculado</span>')
     get_empresa_base.short_description = 'Empresa Base'
-    get_empresa_base.admin_order_field = 'profile__relacionamento__id_company_base__nome_fantasia'
+    get_empresa_base.admin_order_field = 'profile__relacionamento__id_company_base__razao_social'
     
     def get_tipo_acesso(self, obj):
         """Exibe o tipo de acesso do usuário"""
@@ -84,8 +84,7 @@ class UserProfileAdmin(admin.ModelAdmin):
     """Admin para gerenciar perfis de usuário diretamente"""
     list_display = ('get_usuario', 'get_empresa_base', 'get_empresa_vinculada', 
                     'get_tipo_relacionamento', 'telefone', 'ativo', 'data_criacao')
-    list_filter = ('ativo', 'data_criacao', 
-                   'relacionamento__id_tipo_relacionamento__tipo_relacionamento')
+    list_filter = ('relacionamento__id_tipo_relacionamento__tipo_relacionamento',)
     search_fields = ('user__username', 'user__first_name', 'user__last_name', 
                     'user__email', 'telefone',
                     'relacionamento__id_company_base__razao_social',

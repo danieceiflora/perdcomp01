@@ -4,12 +4,6 @@ from django.urls import reverse
 from datetime import datetime, timedelta
 
 class Lancamentos(models.Model):
-    STATUS_CHOICES = [
-        ('PENDENTE', 'Pendente'),
-        ('CONFIRMADO', 'Confirmado'),
-        ('ESTORNADO', 'Estornado'),
-    ]
-    
     id_adesao = models.ForeignKey(
         Adesao,
         on_delete=models.PROTECT,
@@ -17,7 +11,7 @@ class Lancamentos(models.Model):
         verbose_name='Adesão'
     )
     
-    data_lancamento = models.DateField(
+    data_lancamento = models.DateTimeField(
         verbose_name='Data do Lançamento',
         help_text='Data em que o lançamento foi realizado'
     )
@@ -61,28 +55,6 @@ class Lancamentos(models.Model):
         verbose_name='Observação'
     )
     
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default='PENDENTE',
-        verbose_name='Status do Lançamento'
-    )
-    
-    lancamento_original = models.ForeignKey(
-        'self',
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name='lancamentos_estorno',
-        verbose_name='Lançamento Original'
-    )
-    
-    data_confirmacao = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name='Data de Confirmação'
-    )
-    
     saldo_restante = models.FloatField(
         verbose_name='Saldo Restante',
         help_text='Saldo da adesão após este lançamento',
@@ -93,32 +65,53 @@ class Lancamentos(models.Model):
     def __str__(self):
         return f"{self.id_adesao.perdcomp} - {self.sinal}{self.valor} - {self.data_lancamento}"
     
-    def pode_editar(self):
+    def clean(self):
         """
-        Verifica se o lançamento ainda pode ser editado.
-        Um lançamento só pode ser editado se estiver no status PENDENTE.
+        Validação do modelo para garantir regras de negócio:
+        - Lançamentos de débito não podem deixar o saldo negativo
         """
-        if self.status != 'PENDENTE':
-            return False
-            
-        return True
+        from django.core.exceptions import ValidationError
         
-    def pode_excluir(self):
-        """
-        Verifica se o lançamento pode ser excluído.
-        Um lançamento só pode ser excluído se estiver no status PENDENTE.
-        """
-        return self.status == 'PENDENTE'
-    
+        # Se for um novo lançamento de débito, verifica se o saldo ficaria negativo
+        if not self.pk and self.sinal == '-':
+            adesao = self.id_adesao
+            valor_numerico = self.valor
+            novo_saldo = adesao.saldo_atual - valor_numerico
+            
+            if novo_saldo < 0:
+                raise ValidationError({
+                    'valor': f"O saldo não pode ficar negativo. Saldo atual: R$ {adesao.saldo_atual}, Valor do débito: R$ {valor_numerico}"
+                })
+            
     def pode_editar_anexos(self):
         """
         Verifica se os anexos do lançamento podem ser editados.
-        Os anexos podem ser editados independentemente do status do lançamento.
+        Os anexos sempre podem ser editados.
         """
         return True
         
     def get_absolute_url(self):
         return reverse('lancamentos:detail', kwargs={'pk': self.pk})
+    
+    def save(self, *args, **kwargs):
+        """
+        Sobrescreve o método save para gerenciar a atualização do saldo
+        sempre que um novo lançamento for adicionado.
+        """
+        from django.db import transaction
+        
+        # Verifica se é um novo lançamento
+        is_novo = not self.pk
+        
+        with transaction.atomic():
+            # Salva o lançamento
+            super().save(*args, **kwargs)
+            
+            # Atualiza o saldo apenas para novos lançamentos
+            if is_novo:
+                self.atualizar_saldo_adesao()
+                
+        return self
     
     def atualizar_saldo_adesao(self):
         """
@@ -127,24 +120,20 @@ class Lancamentos(models.Model):
         Esta função deve ser chamada dentro de um bloco de transação para garantir a atomicidade.
         """
         adesao = self.id_adesao
+        valor_numerico = self.valor
         
-        # Apenas lançamentos confirmados afetam o saldo
-        if self.status == 'CONFIRMADO':
-            valor_numerico = self.valor
+        # Atualiza o saldo conforme o sinal do lançamento
+        if self.sinal == '-':
+            adesao.saldo_atual -= valor_numerico
+        else:
+            adesao.saldo_atual += valor_numerico
+        
+        # Registra o saldo restante no lançamento (registro histórico)
+        self.saldo_restante = adesao.saldo_atual
+        Lancamentos.objects.filter(pk=self.pk).update(saldo_restante=self.saldo_restante)
             
-            # Se for débito (sinal -), subtrai do saldo atual
-            if self.sinal == '-':
-                adesao.saldo_atual -= valor_numerico
-            # Se for crédito (sinal +), adiciona ao saldo atual
-            else:
-                adesao.saldo_atual += valor_numerico
-            
-            # Registra o saldo restante no lançamento (registro histórico)
-            self.saldo_restante = adesao.saldo_atual
-            self.save(update_fields=['saldo_restante'])
-                
-            # Salva a adesão com o novo saldo
-            adesao.save(update_fields=['saldo_atual'])
+        # Salva a adesão com o novo saldo
+        adesao.save(update_fields=['saldo_atual'])
 
 class Anexos(models.Model):
     id_lancamento = models.ForeignKey(
