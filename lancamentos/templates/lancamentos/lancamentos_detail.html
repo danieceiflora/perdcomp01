@@ -36,10 +36,6 @@
                                     <td>{{ lancamento.id_adesao.perdcomp }}</td>
                                 </tr>
                                 <tr>
-                                    <th><strong>Saldo Atual:</strong></th>
-                                    <td class="fw-bold">R$ {{ lancamento.id_adesao.saldo_atual|floatformat:2 }}</td>
-                                </tr>
-                                <tr>
                                     <th><strong>Saldo Restante:</strong></th>
                                     <td class="fw-bold {% if lancamento.saldo_restante > 0 %}text-success{% elif lancamento.saldo_restante < 0 %}text-danger{% endif %}">
                                         {% if lancamento.saldo_restante != None %}
@@ -54,7 +50,7 @@
                                     <td>{{ lancamento.data_lancamento|date:"d/m/Y" }}</td>
                                 </tr>
                                 <tr>
-                                    <th>Valor:</th>
+                                    <th>Valor do Lançamento:</th>
                                     <td class="{% if lancamento.sinal == '+' %}text-success{% else %}text-danger{% endif %}">
                                         <strong>{{ lancamento.sinal }} R$ {{ lancamento.valor|floatformat:2 }}</strong>
                                     </td>
@@ -91,7 +87,7 @@
                                                 <td>{{ anexo.data_upload|date:"d/m/Y H:i" }}</td>
                                                 <td>
                                                     <a href="{{ anexo.arquivo.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                                        <i class="bi bi-file-earmark"></i> Baixar
+                                                        <i class="bi bi-file-earmark"></i> Visualizar
                                                     </a>
                                                 </td>
                                             </tr>
