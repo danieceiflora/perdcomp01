@@ -32,11 +32,24 @@ class LancamentosAdmin(admin.ModelAdmin):
     readonly_fields = ('data_criacao', 'saldo_restante')
     inlines = [AnexosInline]
     
-    # Método básico para controlar permissões
-    def has_delete_permission(self, request, obj=None):
-        return super().has_delete_permission(request, obj)
+    # Impede a edição de qualquer lançamento no admin
+    def has_change_permission(self, request, obj=None):
+        # Retorna False para impedir qualquer edição
+        # Poderia adicionar exceção para superusuários se necessário:
+        # if request.user.is_superuser:
+        #     return True
+        return False
     
-    # Método básico para campos somente leitura baseados no status
+    # Impede a exclusão de qualquer lançamento no admin
+    def has_delete_permission(self, request, obj=None):
+        # Retorna False para impedir qualquer exclusão
+        # Poderia adicionar exceção para superusuários se necessário:
+        # if request.user.is_superuser:
+        #     return True
+        return False
+    
+    # Como não permitimos edição, todos os campos serão somente leitura
+    # mas mantemos este método para mostrar os campos como era antes
     def get_readonly_fields(self, request, obj=None):
         readonly = list(self.readonly_fields)
         return readonly
@@ -52,3 +65,11 @@ class AnexosAdmin(admin.ModelAdmin):
     list_filter = ('data_upload',)
     search_fields = ('nome_anexo', 'descricao')
     readonly_fields = ('data_upload',)
+    
+    # Impede a edição de anexos no admin
+    def has_change_permission(self, request, obj=None):
+        return False
+        
+    # Impede a exclusão de anexos no admin
+    def has_delete_permission(self, request, obj=None):
+        return False

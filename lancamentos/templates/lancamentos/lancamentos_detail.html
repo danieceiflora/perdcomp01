@@ -61,10 +61,7 @@
                                 </tr>
                                 
                                 <!-- Removida linha do status, já que não é mais necessária -->
-                                <tr>
-                                    <th>Data de Criação:</th>
-                                    <td>{{ lancamento.data_criacao|date:"d/m/Y H:i" }}</td>
-                                </tr>
+                                
                                 <tr>
                                     <th>Observação:</th>
                                     <td>{{ lancamento.observacao|linebreaks|default:"Nenhuma observação" }}</td>

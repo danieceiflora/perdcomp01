@@ -111,19 +111,28 @@
                                             
                                             <div class="col-md-4">
                                                 <div class="info-item px-3">
-                                                    <div class="info-label"><strong>Saldo</strong></div>
-                                                    <div class="info-value fw-bold {% if adesao.saldo > 0 %}text-success{% elif adesao.saldo < 0 %}text-danger{% endif %}">
+                                                    <div class="info-label"><strong>Saldo Inicial</strong></div>
+                                                    <div class="info-value fw-bold {% if adesao.saldo > 0 %}text-secondary{% elif adesao.saldo < 0 %}text-danger{% endif %}">
                                                         R$ {{ adesao.saldo|floatformat:2 }}
                                                     </div>
                                                 </div>
                                                 
                                                 <div class="info-item px-3">
-                                                    <div class="info-label"><strong>Free Rate</strong></div>
-                                                    <div class="info-value">{{ adesao.free_rate|floatformat:2 }}%</div>
+                                                    <div class="info-label"><strong>Fee Rate</strong></div>
+                                                    <div class="info-value">{{ adesao.fee_rate|floatformat:2 }}%</div>
                                                 </div>
+
+                                                
                                             </div>
                                             
                                             <div class="col-md-4">
+
+                                                <div class="info-item px-3">
+                                                    <div class="info-label"><strong>Saldo Restante</strong></div>
+                                                    <div class="info-value fw-bold {% if adesao.saldo > 0 %}text-success{% elif adesao.saldo < 0 %}text-danger{% endif %}">
+                                                   R$ {{ adesao.saldo_atual|floatformat:2 }}
+                                                    </div>
+                                                </div>
                                                 
                                                 <div class="info-item px-3">
                                                     <div class="info-label"><strong>Status</strong></div>

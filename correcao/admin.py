@@ -24,7 +24,7 @@ class TipoTeseAdmin(admin.ModelAdmin):
 class TeseInline(admin.TabularInline):
     model = TeseCredito
     extra = 0
-    fields = ('cod_origem', 'descricao', 'corrige', 'correcao')
+    fields = ('cod_origem', 'descricao', 'corrige',)
     show_change_link = True
 
 @admin.register(TeseCredito)

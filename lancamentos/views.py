@@ -240,42 +240,4 @@ class AnexosUpdateView(AdminRequiredMixin, UpdateView):
                 self.get_context_data(anexos_formset=anexos_formset)
             )
 
-# Função para criar um estorno através de um novo lançamento com o sinal inverso
-@login_required
-@admin_required
-def criar_estorno(request, pk):
-    """Cria um lançamento de estorno (com sinal oposto) para anular o efeito de um lançamento."""
-    lancamento = get_object_or_404(Lancamentos, pk=pk)
-    
-    try:
-        with transaction.atomic():
-            # Cria o lançamento de estorno com o sinal oposto ao original para anular seu efeito
-            sinal_estorno = '+' if lancamento.sinal == '-' else '-'
-            
-            estorno = Lancamentos(
-                id_adesao=lancamento.id_adesao,
-                data_lancamento=timezone.now(),
-                valor=lancamento.valor,
-                sinal=sinal_estorno,  # Usamos o sinal oposto para anular o efeito do lançamento original
-                tipo='Correção',
-                observacao=f"Estorno do lançamento #{lancamento.id}"
-            )
-            
-            # Aplica validações do modelo
-            estorno.clean()
-            
-            # Salva o estorno se validações passaram
-            estorno.save()
-            
-            messages.success(request, "Estorno criado com sucesso!")
-            return redirect('lancamentos:detail', pk=estorno.pk)
-            
-    except ValidationError as e:
-        messages.error(request, str(e))
-        return redirect('lancamentos:detail', pk=lancamento.pk)
-    except Exception as e:
-        # Log do erro para depuração
-        import logging
-        logging.error(f"Erro ao criar estorno: {str(e)}")
-        messages.error(request, f"Erro ao criar estorno: {str(e)}")
-        return redirect('lancamentos:detail', pk=lancamento.pk)
+
