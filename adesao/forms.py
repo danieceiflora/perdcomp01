@@ -5,7 +5,7 @@ from clientes_parceiros.models import ClientesParceiros, TipoRelacionamento
 class AdesaoForm(forms.ModelForm):
     class Meta:
         model = Adesao
-        fields = ['cliente', 'tese_credito_id', 'data_inicio', 'perdcomp', 'saldo', 'free_rate', 'ativo', 'saldo_atual']
+        fields = ['cliente', 'tese_credito_id', 'data_inicio', 'perdcomp', 'saldo', 'fee_rate', 'ativo', 'saldo_atual']
         widgets = {
             'cliente': forms.Select(attrs={
                 'class': 'form-select',
@@ -26,9 +26,9 @@ class AdesaoForm(forms.ModelForm):
                 'placeholder': 'Saldo',
                 'step': '0.01'
             }),
-            'free_rate': forms.NumberInput(attrs={
+            'fee_rate': forms.NumberInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Free Rate',
+                'placeholder': 'Fee Rate',
                 'step': '0.01'
             }),
             'ativo': forms.CheckboxInput(attrs={
@@ -53,16 +53,21 @@ class AdesaoForm(forms.ModelForm):
             self.fields['saldo_atual'].widget.attrs['readonly'] = True
             self.fields['saldo_atual'].help_text = 'Este campo é atualizado automaticamente pelos lançamentos'
         
-        # Filtra apenas clientes_parceiros com tipo_relacionamento=1 (Cliente) e ativos
+        # Filtra ESTRITAMENTE apenas clientes_parceiros com tipo_relacionamento=1 (Cliente) e ativos
+        # Sem tentar buscar por nome ou outras tentativas
         try:
-            tipo_cliente = TipoRelacionamento.objects.get(pk=1)  # Tipo Cliente (id=1)
+            # Filtra diretamente por id_tipo_relacionamento__id=1, que representa Cliente
+            # Isso é mais direto e evita problemas se a referência não for encontrada
             self.fields['cliente'].queryset = ClientesParceiros.objects.filter(
-                id_tipo_relacionamento=tipo_cliente,
+                id_tipo_relacionamento__id=1,  # Filtra diretamente pelo ID do tipo de relacionamento
                 ativo=True
             ).select_related('id_company_vinculada')
-        except TipoRelacionamento.DoesNotExist:
-            # Se não encontrar o tipo 1, mostra uma lista vazia ou todos os clientes
-            self.fields['cliente'].queryset = ClientesParceiros.objects.filter(ativo=True)
+            
+        except Exception as e:
+            # Log do erro para diagnóstico
+            print(f"Erro ao filtrar clientes: {e}")
+            # Se ocorrer qualquer erro, não mostra nada
+            self.fields['cliente'].queryset = ClientesParceiros.objects.none()
         
         # Personaliza o label para mostrar o nome da empresa cliente
         self.fields['cliente'].label_from_instance = lambda obj: f"{obj.id_company_vinculada.nome_fantasia or obj.id_company_vinculada.razao_social} ({obj.nome_referencia})"

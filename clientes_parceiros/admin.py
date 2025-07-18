@@ -25,11 +25,10 @@ class ClientesParceirosInline(admin.TabularInline):
 @admin.register(ClientesParceiros)
 class ClientesParceirosAdmin(admin.ModelAdmin):
     list_display = ('nome_referencia', 'cargo_referencia', 'empresa_base', 'empresa_vinculada', 
-                   'tipo_relacionamento', 'data_inicio', 'status_ativo')
-    list_filter = ('ativo', 'id_tipo_relacionamento', 'data_inicio_parceria')
+                   'tipo_relacionamento', 'status_ativo')
+    list_filter = ('ativo', 'id_tipo_relacionamento',)
     search_fields = ('nome_referencia', 'cargo_referencia', 
                     'id_company_base__razao_social', 'id_company_vinculada__razao_social')
-    date_hierarchy = 'data_inicio_parceria'
     fieldsets = (
         ('Informações da Parceria', {
             'fields': ('id_tipo_relacionamento', 'nome_referencia', 'cargo_referencia')
@@ -38,7 +37,7 @@ class ClientesParceirosAdmin(admin.ModelAdmin):
             'fields': ('id_company_base', 'id_company_vinculada')
         }),
         ('Detalhes', {
-            'fields': ('data_inicio_parceria', 'ativo')
+            'fields': ('ativo',)
         }),
     )
     
@@ -54,11 +53,6 @@ class ClientesParceirosAdmin(admin.ModelAdmin):
         return obj.id_tipo_relacionamento.tipo_relacionamento
     tipo_relacionamento.short_description = 'Tipo'
     
-    def data_inicio(self, obj):
-        if obj.data_inicio_parceria:
-            return obj.data_inicio_parceria.strftime('%d/%m/%Y')
-        return '-'
-    data_inicio.short_description = 'Início'
     
     def status_ativo(self, obj):
         return format_html('<span style="color:{};font-weight:bold">{}</span>', 

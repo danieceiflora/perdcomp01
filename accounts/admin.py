@@ -2,22 +2,47 @@ from django.contrib import admin
 from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.html import format_html
+from django import forms
 from .models import UserProfile
 from clientes_parceiros.models import ClientesParceiros
 
-class UserProfileInline(admin.StackedInline):
-    """Inline para exibir/editar perfil do usuário junto com o usuário"""
-    model = UserProfile
-    can_delete = False
-    verbose_name = 'Perfil de Acesso'
-    verbose_name_plural = 'Perfil de Acesso'
-    
-    fieldsets = (
-        ('Vinculo com Empresa', {
-            'fields': ('relacionamento', 'telefone', 'ativo'),
-            'description': 'Configure o relacionamento empresarial do usuário'
-        }),
+# Formulário que adiciona campos do perfil diretamente
+class CustomUserForm(forms.ModelForm):
+    # Campos do perfil como parte do formulário do usuário
+    relacionamento = forms.ModelChoiceField(
+        queryset=ClientesParceiros.objects.all(),
+        required=False,
+        label='Relacionamento Empresarial'
     )
+    telefone = forms.CharField(max_length=20, required=False, label='Telefone')
+    perfil_ativo = forms.BooleanField(required=False, initial=True, label='Perfil Ativo')
+    
+    class Meta:
+        model = User
+        fields = '__all__'
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Preenche os campos do perfil se o usuário já existe
+        if self.instance.pk:
+            try:
+                profile = UserProfile.objects.get(user=self.instance)
+                self.fields['relacionamento'].initial = profile.relacionamento
+                self.fields['telefone'].initial = profile.telefone
+                self.fields['perfil_ativo'].initial = profile.ativo
+            except UserProfile.DoesNotExist:
+                pass
+    
+    def save(self, commit=True):
+        user = super().save(commit)
+        if commit:
+            # Cria ou atualiza o perfil
+            profile, created = UserProfile.objects.get_or_create(user=user)
+            profile.relacionamento = self.cleaned_data.get('relacionamento')
+            profile.telefone = self.cleaned_data.get('telefone', '')
+            profile.ativo = self.cleaned_data.get('perfil_ativo', True)
+            profile.save()
+        return user
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related(
@@ -27,16 +52,54 @@ class UserProfileInline(admin.StackedInline):
             'relacionamento__id_tipo_relacionamento'
         )
 
+class UserProfileInline(admin.StackedInline):
+    model = UserProfile
+    can_delete = False
+    verbose_name_plural = 'Perfil do Usuário'
+    fk_name = 'user'
+
 class UserAdmin(BaseUserAdmin):
     """Admin customizado para User com perfil integrado"""
-    inlines = (UserProfileInline,)
+    form = CustomUserForm
+    inlines = [UserProfileInline]
     
-    list_display = ('username', 'get_full_name', 'email', 'get_empresa_base', 
-                    'get_tipo_acesso', 'is_active', 'date_joined')
+    # Sobrescreve get_form para garantir que os campos customizados sejam reconhecidos
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        return form
+    
+    fieldsets = (
+        (None, {
+            'fields': (
+                'username', 'password',
+                'first_name', 'last_name', 'email',
+                'is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions',
+                'last_login', 'date_joined'
+            )
+        }),
+    )
+
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': (
+                'username', 'password1', 'password2',
+                'first_name', 'last_name', 'email',
+                'is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions',
+            ),
+        }),
+    )
+    
+    list_display = (
+        'username', 'get_full_name', 'email', 'get_empresa_base', 
+        'get_tipo_acesso', 'is_active', 'date_joined'
+    )
     list_filter = ('is_active', 'is_staff', 'date_joined', 'profile__ativo')
-    search_fields = ('username', 'first_name', 'last_name', 'email',
-                    'profile__relacionamento__id_company_base__razao_social',
-                    'profile__relacionamento__id_company_vinculada__razao_social')
+    search_fields = (
+        'username', 'first_name', 'last_name', 'email',
+        'profile__relacionamento__id_company_base__razao_social',
+        'profile__relacionamento__id_company_vinculada__razao_social'
+    )
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related(
@@ -79,93 +142,9 @@ class UserAdmin(BaseUserAdmin):
     get_tipo_acesso.short_description = 'Tipo de Acesso'
     get_tipo_acesso.admin_order_field = 'profile__relacionamento__id_tipo_relacionamento__tipo_relacionamento'
 
-@admin.register(UserProfile)
-class UserProfileAdmin(admin.ModelAdmin):
-    """Admin para gerenciar perfis de usuário diretamente"""
-    list_display = ('get_usuario', 'get_empresa_base', 'get_empresa_vinculada', 
-                    'get_tipo_relacionamento', 'telefone', 'ativo', 'data_criacao')
-    list_filter = ('relacionamento__id_tipo_relacionamento__tipo_relacionamento',)
-    search_fields = ('user__username', 'user__first_name', 'user__last_name', 
-                    'user__email', 'telefone',
-                    'relacionamento__id_company_base__razao_social',
-                    'relacionamento__id_company_vinculada__razao_social')
-    raw_id_fields = ('user', 'relacionamento')
-    readonly_fields = ('data_criacao',)
-    
-    fieldsets = (
-        ('Usuário', {
-            'fields': ('user',)
-        }),
-        ('Vinculação Empresarial', {
-            'fields': ('relacionamento',),
-            'description': 'Selecione o relacionamento que define as empresas e tipo de acesso'
-        }),
-        ('Informações Adicionais', {
-            'fields': ('telefone', 'ativo', 'data_criacao'),
-            'classes': ('collapse',)
-        }),
-    )
-    
-    def get_queryset(self, request):
-        return super().get_queryset(request).select_related(
-            'user',
-            'relacionamento',
-            'relacionamento__id_company_base',
-            'relacionamento__id_company_vinculada',
-            'relacionamento__id_tipo_relacionamento'
-        )
-    
-    def get_usuario(self, obj):
-        """Exibe informações do usuário"""
-        user = obj.user
-        nome = user.get_full_name() or user.username
-        return format_html(
-            '<strong>{}</strong><br><small class="text-muted">{}</small>',
-            nome,
-            user.email or user.username
-        )
-    get_usuario.short_description = 'Usuário'
-    get_usuario.admin_order_field = 'user__username'
-    
-    def get_empresa_base(self, obj):
-        """Exibe a empresa base"""
-        if obj.relacionamento and obj.relacionamento.id_company_base:
-            empresa = obj.relacionamento.id_company_base
-            return format_html(
-                '<span title="{}">{}</span>',
-                empresa.razao_social,
-                empresa.nome_fantasia or empresa.razao_social[:30]
-            )
-        return '-'
-    get_empresa_base.short_description = 'Empresa Base'
-    get_empresa_base.admin_order_field = 'relacionamento__id_company_base__nome_fantasia'
-    
-    def get_empresa_vinculada(self, obj):
-        """Exibe a empresa vinculada"""
-        if obj.relacionamento and obj.relacionamento.id_company_vinculada:
-            empresa = obj.relacionamento.id_company_vinculada
-            return format_html(
-                '<span title="{}">{}</span>',
-                empresa.razao_social,
-                empresa.nome_fantasia or empresa.razao_social[:30]
-            )
-        return '-'
-    get_empresa_vinculada.short_description = 'Empresa Vinculada'
-    get_empresa_vinculada.admin_order_field = 'relacionamento__id_company_vinculada__nome_fantasia'
-    
-    def get_tipo_relacionamento(self, obj):
-        """Exibe o tipo de relacionamento"""
-        if obj.relacionamento and obj.relacionamento.id_tipo_relacionamento:
-            tipo = obj.relacionamento.id_tipo_relacionamento.tipo_relacionamento
-            if 'cliente' in tipo.lower():
-                return format_html('<span style="color: #007bff;">👤 {}</span>', tipo)
-            elif 'parceiro' in tipo.lower():
-                return format_html('<span style="color: #28a745;">🤝 {}</span>', tipo)
-            return tipo
-        return '-'
-    get_tipo_relacionamento.short_description = 'Tipo de Relacionamento'
-    get_tipo_relacionamento.admin_order_field = 'relacionamento__id_tipo_relacionamento__tipo_relacionamento'
-
 # Desregistrar o User admin padrão e registrar o customizado
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
+
+# UserProfile será gerenciado apenas através do inline do User
+# Removido o registro separado para evitar duplicação

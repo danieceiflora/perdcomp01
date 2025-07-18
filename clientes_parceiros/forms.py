@@ -29,16 +29,11 @@ class EmpresaClienteParceiroForm(forms.ModelForm):
     codigo_origem = forms.CharField(max_length=20, label='Código de Origem da Nova Empresa', required=False)
     logomarca = forms.ImageField(label='Logomarca da Nova Empresa', required=False)
     
-    # Outros campos
-    data_inicio_parceria = forms.DateField(
-        widget=forms.DateInput(attrs={'type': 'date'}),
-        required=False,
-        label='Data de Início da Parceria'
-    )
+
     
     class Meta:
         model = ClientesParceiros
-        fields = ['id_tipo_relacionamento', 'nome_referencia', 'cargo_referencia', 'data_inicio_parceria']
+        fields = ['id_tipo_relacionamento', 'nome_referencia', 'cargo_referencia']
         
     def clean(self):
         cleaned_data = super().clean()
@@ -82,9 +77,8 @@ class ClienteParceiroUpdateForm(forms.ModelForm):
     
     class Meta:
         model = ClientesParceiros
-        fields = ['id_tipo_relacionamento', 'nome_referencia', 'cargo_referencia', 'data_inicio_parceria', 'ativo']
+        fields = ['id_tipo_relacionamento', 'nome_referencia', 'cargo_referencia', 'ativo']
         widgets = {
-            'data_inicio_parceria': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'nome_referencia': forms.TextInput(attrs={'class': 'form-control'}),
             'cargo_referencia': forms.TextInput(attrs={'class': 'form-control'}),
             'id_tipo_relacionamento': forms.Select(attrs={'class': 'form-control'}),
@@ -94,11 +88,9 @@ class ClienteParceiroUpdateForm(forms.ModelForm):
             'id_tipo_relacionamento': 'Tipo de Relacionamento',
             'nome_referencia': 'Nome da Referência',
             'cargo_referencia': 'Cargo da Referência',
-            'data_inicio_parceria': 'Data de Início da Parceria',
             'ativo': 'Relacionamento Ativo'
         }
         help_texts = {
             'ativo': 'Indica se o relacionamento está ativo',
-            'data_inicio_parceria': 'Data em que a parceria foi iniciada'
         }
     

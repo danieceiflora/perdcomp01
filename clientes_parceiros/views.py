@@ -66,11 +66,7 @@ class NewClienteParceiroView(CreateView):
         cliente_parceiro = form.instance
         cliente_parceiro.id_company_base = empresa_base
         cliente_parceiro.id_company_vinculada = empresa_vinculada
-        # Verificar se a data de início foi fornecida e processá-la corretamente
-        data_inicio = form.cleaned_data.get('data_inicio_parceria')
-        if data_inicio:
-            cliente_parceiro.data_inicio_parceria = data_inicio
-        cliente_parceiro.save()
+       
         
         # Processar os contatos (obrigatório)
         contact_count = int(self.request.POST.get('contact_count', 0))

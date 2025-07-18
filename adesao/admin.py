@@ -1,25 +1,36 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from django import forms
 from .models import Adesao
+from clientes_parceiros.models import ClientesParceiros
+
+class AdesaoAdminForm(forms.ModelForm):
+    class Meta:
+        model = Adesao
+        fields = '__all__'
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Filtra apenas clientes (tipo_relacionamento=1) e ativos
+        try:
+            self.fields['cliente'].queryset = ClientesParceiros.objects.filter(
+                id_tipo_relacionamento__id=1,  # Apenas clientes
+                ativo=True
+            ).select_related('id_company_vinculada')
+        except Exception as e:
+            print(f"Erro ao filtrar clientes no admin: {e}")
+            self.fields['cliente'].queryset = ClientesParceiros.objects.none()
 
 @admin.register(Adesao)
 class AdesaoAdmin(admin.ModelAdmin):
-    list_display = ('perdcomp', 'cliente_info', 'tese_credito', 'data_inicio', 'saldo_inicial', 'saldo_atual_display', 'free_rate_display', 'ativo_display', 'lancamentos_count')
+    form = AdesaoAdminForm  # Usa o formulário personalizado
+    list_display = ('perdcomp', 'cliente_info', 'tese_credito', 'data_inicio', 'saldo_inicial', 'saldo_atual_display', 'fee_rate_display', 'ativo_display', 'lancamentos_count')
     list_filter = ('cliente__id_company_base', 'tese_credito_id__id_tipo_tese')
     search_fields = ('perdcomp', 'cliente__nome_referencia', 'cliente__empresa_vinculada__razao_social')
     
     
-    fieldsets = (
-        ('Identificação', {
-            'fields': ('perdcomp', 'cliente', 'tese_credito_id')
-        }),
-        ('Valores', {
-            'fields': ('saldo', 'saldo_atual', 'free_rate')
-        }),
-        ('Situação', {
-            'fields': ('data_inicio', 'ativo')
-        }),
-    )
+    fields = ('perdcomp', 'cliente', 'tese_credito_id', 'saldo', 'saldo_atual', 'fee_rate', 'data_inicio', 'ativo')
     
     def saldo_inicial(self, obj):
         if obj.saldo is None:
@@ -44,16 +55,16 @@ class AdesaoAdmin(admin.ModelAdmin):
             return format_html('<span>R$ {}</span>', str(obj.saldo_atual))
     saldo_atual_display.short_description = 'Saldo Atual'
     
-    def free_rate_display(self, obj):
-        if obj.free_rate is None:
+    def fee_rate_display(self, obj):
+        if obj.fee_rate is None:
             return '-'
         try:
-            rate = float(obj.free_rate) / 100
+            rate = float(obj.fee_rate) / 100
             valor_fmt = '{:.2%}'.format(rate)
             return format_html('{}', valor_fmt)
         except (ValueError, TypeError):
-            return format_html('{}%', str(obj.free_rate))
-    free_rate_display.short_description = 'Free Rate'
+            return format_html('{}%', str(obj.fee_rate))
+    fee_rate_display.short_description = 'Fee Rate'
     
     def cliente_info(self, obj):
         empresa = obj.cliente.id_company_vinculada.razao_social

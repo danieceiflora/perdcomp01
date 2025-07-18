@@ -144,7 +144,12 @@ JAZZMIN_SETTINGS = {
             "auth.User": "fas fa-user",
             "auth.Group": "fas fa-users-cog",
             "accounts.UserProfile": "fas fa-user-cog",
-        }
+        },
+    "changeform_format": "single",  # <- Exibe tudo junto, sem abas nem colapsáveis
+    "changeform_format_overrides": {
+        "auth.user": "single",  # <- Garante isso no admin do User também
+        "auth.group": "single",  # (opcional)
+    }
 }
 
 JAZZMIN_UI_TWEAKS = {

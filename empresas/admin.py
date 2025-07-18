@@ -10,11 +10,10 @@ class ContatosInline(admin.TabularInline):
     extra = 1  # Número de formulários vazios a serem exibidos
     verbose_name = "Contato"
     verbose_name_plural = "Contatos"
-    fields = ('tipo_contato', 'empresa_vinculada', 'telefone', 'email', 'site')
+    fields = ('tipo_contato', 'telefone', 'email', 'site')
 
 class ContatosVinculadosInline(admin.TabularInline):
     model = Contatos
-    fk_name = 'empresa_vinculada'  # Especifica o outro campo ForeignKey
     extra = 0  # Apenas mostrar contatos existentes
     verbose_name = "Contato de Empresa Vinculada"
     verbose_name_plural = "Contatos de Empresas Vinculadas"
@@ -60,6 +59,6 @@ class EmpresaAdmin(admin.ModelAdmin):
 # Registrando o modelo Contatos no admin também
 @admin.register(Contatos)
 class ContatosAdmin(admin.ModelAdmin):
-    list_display = ('tipo_contato', 'empresa_base', 'empresa_vinculada', 'telefone', 'email')
+    list_display = ('tipo_contato', 'empresa_base', 'telefone', 'email')
     list_filter = ('tipo_contato',)
-    search_fields = ('telefone', 'email', 'empresa_base__razao_social', 'empresa_vinculada__razao_social')
+    search_fields = ('telefone', 'email', 'empresa_base__razao_social',)

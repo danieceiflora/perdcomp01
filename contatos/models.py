@@ -9,7 +9,6 @@ class Contatos(models.Model):
   )
   tipo_contato = models.CharField(max_length=20, choices=tipo_contato_options, default='Comercial')
   empresa_base = models.ForeignKey(Empresa, on_delete=models.CASCADE, related_name='empresa_base_contato')
-  empresa_vinculada = models.ForeignKey(Empresa, on_delete=models.CASCADE, related_name='empresa_vinculada_contato')
   telefone = models.CharField(max_length=20)
   email = models.EmailField(max_length=100)
   site = models.CharField(max_length=100)
@@ -19,4 +18,4 @@ class Contatos(models.Model):
     verbose_name_plural = 'Contatos'
 
   def __str__(self):
-    return f"{self.tipo_contato} - {self.empresa_base} - {self.empresa_vinculada} - {self.telefone}"
+    return f"{self.tipo_contato} - {self.empresa_base} - {self.telefone}"

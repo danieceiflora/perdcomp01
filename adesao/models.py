@@ -12,7 +12,8 @@ class Adesao(models.Model):
     tese_credito_id = models.ForeignKey(
         TeseCredito,
         on_delete=models.CASCADE,
-        related_name='adesoes'
+        related_name='adesoes',
+        verbose_name='Tese de Crédito'
     )
 
     data_inicio = models.DateField(
@@ -26,11 +27,11 @@ class Adesao(models.Model):
     )
 
     saldo = models.FloatField(
-        verbose_name='Saldo'
+        verbose_name='Saldo Inicial'
     )
     
-    free_rate = models.FloatField(
-        verbose_name='Free Rate'
+    fee_rate = models.FloatField(
+        verbose_name='Fee Rate'
     )
 
     ativo = models.BooleanField(
@@ -39,7 +40,9 @@ class Adesao(models.Model):
     )
     saldo_atual = models.FloatField(
         verbose_name='Saldo Atual',
-        help_text='Saldo atual da adesão, atualizado automaticamente pelos lançamentos'
+        help_text='Saldo atual da adesão, atualizado automaticamente pelos lançamentos',
+        blank=True,
+        null=True
     )
     
     def save(self, *args, **kwargs):
