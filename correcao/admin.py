@@ -3,9 +3,9 @@ from .models import Correcao, tipoTese, TeseCredito
 
 @admin.register(Correcao)
 class CorrecaoAdmin(admin.ModelAdmin):
-    list_display = ('cod_origem', 'descricao', 'fonte_correcao', 'teses_count')
+    list_display = ('descricao', '' 'fonte_correcao', 'teses_count')
     list_filter = ('cod_origem',)
-    search_fields = ('cod_origem', 'descricao', 'fonte_correcao')
+    search_fields = ('descricao', 'fonte_correcao')
     ordering = ('descricao',)
     
     def teses_count(self, obj):
@@ -29,15 +29,15 @@ class TeseInline(admin.TabularInline):
 
 @admin.register(TeseCredito)
 class TeseCreditoAdmin(admin.ModelAdmin):
-    list_display = ('cod_origem', 'descricao', 'tipo_tese', 'correcao_display', 'corrige_display', 'adesoes_count')
+    list_display = ('descricao', 'tipo_tese', 'corrige_display', 'adesoes_count')
     list_filter = ('id_tipo_tese', 'corrige', 'id_correcao')
-    search_fields = ('cod_origem', 'descricao', 'jurisprudencia')
+    search_fields = ('descricao', 'jurisprudencia')
     fieldsets = (
         ('Identificação', {
-            'fields': ('cod_origem', 'descricao', 'id_tipo_tese')
+            'fields': ('descricao', 'id_tipo_tese','cod_origem')
         }),
         ('Correção', {
-            'fields': ('id_correcao', 'corrige', 'correcao')
+            'fields': ('id_correcao', 'corrige',)
         }),
         ('Detalhes', {
             'fields': ('jurisprudencia',)
@@ -48,9 +48,6 @@ class TeseCreditoAdmin(admin.ModelAdmin):
         return obj.id_tipo_tese.descricao
     tipo_tese.short_description = 'Tipo de Tese'
     
-    def correcao_display(self, obj):
-        return obj.id_correcao.descricao
-    correcao_display.short_description = 'Correção'
     
     def corrige_display(self, obj):
         return 'Sim' if obj.corrige else 'Não'

@@ -42,7 +42,7 @@ class tipoTeseForm(forms.ModelForm):
 class TeseCreditoForm(forms.ModelForm):
     class Meta:
         model = TeseCredito
-        fields = ['id_correcao', 'id_tipo_tese', 'cod_origem', 'descricao', 'jurisprudencia', 'corrige', 'correcao']
+        fields = ['id_correcao', 'id_tipo_tese', 'cod_origem', 'descricao', 'jurisprudencia', 'corrige',]
         widgets = {
             'id_correcao': forms.Select(attrs={
                 'class': 'form-select',
@@ -65,10 +65,6 @@ class TeseCreditoForm(forms.ModelForm):
             'corrige': forms.CheckboxInput(attrs={
                 'class': 'form-check-input',
             }),
-            'correcao': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Valor da correção'
-            }),
         }
         labels = {
             'id_correcao': 'Correção',
@@ -76,6 +72,5 @@ class TeseCreditoForm(forms.ModelForm):
             'cod_origem': 'Código de Origem',
             'descricao': 'Descrição',
             'jurisprudencia': 'Jurisprudência',
-            'corrige': 'Aplicar Correção',
-            'correcao': 'Valor da Correção',
+            'corrige': 'Aplicar Correção'
         }

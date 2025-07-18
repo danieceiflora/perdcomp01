@@ -144,6 +144,7 @@ JAZZMIN_SETTINGS = {
             "auth.User": "fas fa-user",
             "auth.Group": "fas fa-users-cog",
             "accounts.UserProfile": "fas fa-user-cog",
+            "lancamentos.Anexos": "fas fa-paperclip",
         },
     "changeform_format": "single",  # <- Exibe tudo junto, sem abas nem colapsáveis
     "changeform_format_overrides": {
