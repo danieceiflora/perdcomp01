@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}Lista de Tipos de Relacionamento{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-header mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-link"></i> Tipos de Relacionamento
+                    </h1>
+                    <a href="{% url 'tipo_relacionamento' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Novo Tipo
+                    </a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    {% if tipos_relacionamento %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Tipo de Relacionamento</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for tipo in tipos_relacionamento %}
+                                        <tr>
+                                            <td>{{ tipo.id }}</td>
+                                            <td>{{ tipo.tipo_relacionamento }}</td>
+                                            <td>
+                                                <a href="{% url 'editar_tipo_relacionamento' tipo.pk %}" 
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-edit"></i> Editar
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-link fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Nenhum tipo de relacionamento cadastrado</h5>
+                            <p class="text-muted">Cadastre o primeiro tipo de relacionamento!</p>
+                            <a href="{% url 'tipo_relacionamento' %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Cadastrar Primeiro Tipo
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

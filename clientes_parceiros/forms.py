@@ -1,106 +1,117 @@
 from django import forms
-from clientes_parceiros.models import ClientesParceiros, TipoRelacionamento
+from django.forms import formset_factory
+from .models import ClientesParceiros, TipoRelacionamento
 from empresas.models import Empresa
 from contatos.models import Contatos
 
-class TipoRelacionamentoForm(forms.ModelForm):
-    class Meta:
-        model = TipoRelacionamento
-        fields = ['tipo_relacionamento']
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for field in self.fields.values():
-                field.widget.attrs['class'] = 'form-control'
-
-class EmpresaClienteParceiroForm(forms.ModelForm):
-    # Campo para selecionar a empresa base (já existente)
-    empresa_base = forms.ModelChoiceField(
+class NovoClienteForm(forms.ModelForm):
+    """
+    Formulário para cadastrar novo cliente com seções:
+    1. Seleção do Parceiro (empresa_base)
+    2. Dados do Cliente (empresa_vinculada) 
+    3. Seleção do Vínculo
+    """
+    
+    # Seção 1: Seleção do Parceiro
+    parceiro = forms.ModelChoiceField(
         queryset=Empresa.objects.all(),
-        label='Empresa Base',
-        required=True,
-        empty_label="Selecione a empresa base"
+        empty_label="Selecione o parceiro...",
+        widget=forms.Select(attrs={
+            'class': 'form-control',
+            'id': 'id_parceiro'
+        }),
+        label="Parceiro",
+        help_text="Selecione a empresa parceira"
     )
     
-    # Campo oculto para empresa vinculada existente (usado para parceiros)
-    empresa_vinculada = forms.ModelChoiceField(
-        queryset=Empresa.objects.all(),
+
+    
+    nome_referencia = forms.CharField(
+        max_length=200,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Nome da pessoa de referência'
+        }),
+        label="Nome de Referência",
+        help_text="Nome da pessoa responsável pelo relacionamento"
+    )
+    
+    cargo_referencia = forms.CharField(
+        max_length=100,
         required=False,
-        widget=forms.HiddenInput()
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Cargo da pessoa de referência'
+        }),
+        label="Cargo de Referência",
+        help_text="Cargo da pessoa responsável (opcional)"
     )
     
-    # Campos para nova empresa vinculada
-    cnpj = forms.CharField(max_length=20, label='CNPJ da Nova Empresa', required=True)
-    razao_social = forms.CharField(max_length=100, label='Razão Social da Nova Empresa', required=True)
-    nome_fantasia = forms.CharField(max_length=100, label='Nome Fantasia da Nova Empresa', required=False)
-    codigo_origem = forms.CharField(max_length=20, label='Código de Origem da Nova Empresa', required=False)
-    logomarca = forms.ImageField(label='Logomarca da Nova Empresa', required=False)
-    
+    # Seção 3: Seleção do Vínculo
+    vinculo = forms.ModelChoiceField(
+        queryset=TipoRelacionamento.objects.all(),
+        empty_label="Selecione o tipo de vínculo...",
+        widget=forms.Select(attrs={
+            'class': 'form-control',
+            'id': 'id_vinculo'
+        }),
+        label="Tipo de Vínculo",
+        help_text="Selecione o tipo de relacionamento entre as empresas"
+    )
 
-    
     class Meta:
         model = ClientesParceiros
-        fields = ['id_tipo_relacionamento', 'nome_referencia', 'cargo_referencia']
+        fields = ['nome_referencia', 'cargo_referencia']
         
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        # Se o usuário estiver logado, podemos filtrar as empresas
+        if self.user:
+            # Aqui você pode adicionar lógica para filtrar empresas baseado no usuário
+            pass
+            
     def clean(self):
         cleaned_data = super().clean()
-        empresa_base = cleaned_data.get('empresa_base')
-        cnpj = cleaned_data.get('cnpj')
-        razao_social = cleaned_data.get('razao_social')
-        
-        # Empresa base é obrigatória apenas se não tiver campo escondido
-        if not empresa_base and 'empresa_base_hidden' not in self.data:
-            self.add_error('empresa_base', 'É necessário selecionar uma empresa base.')
-        
-        # Para parceiros, pode não ser necessário validar estes campos
-        # se eles já têm uma empresa vinculada
-        if 'empresa_vinculada_hidden' not in self.data:
-            # Validar campos da nova empresa vinculada apenas se não for parceiro
-            if not cnpj:
-                self.add_error('cnpj', 'CNPJ da nova empresa é obrigatório.')
-            if not razao_social:
-                self.add_error('razao_social', 'Razão Social da nova empresa é obrigatória.')
-        
+        # A validação de cliente agora é feita na view, pois a empresa será criada pelo EmpresaForm
         return cleaned_data
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for field in self.fields.values():
-            field.widget.attrs['class'] = 'form-control'
 
-class ClientesParceirosForm(forms.ModelForm):
+class ContatoForm(forms.ModelForm):
+    """
+    Formulário para dados de contato do cliente
+    """
     class Meta:
-        model = ClientesParceiros
-        fields = '__all__'
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for field in self.fields.values():
-                field.widget.attrs['class'] = 'form-control'
-                
-class ClienteParceiroUpdateForm(forms.ModelForm):
-    atualizar_logomarca = forms.ImageField(
-        label='Atualizar Logomarca',
-        required=False,
-        help_text='Deixe em branco para manter a logomarca atual'
-    )
-    
-    class Meta:
-        model = ClientesParceiros
-        fields = ['id_tipo_relacionamento', 'nome_referencia', 'cargo_referencia', 'ativo']
+        model = Contatos
+        fields = ['tipo_contato', 'telefone', 'email', 'site']
         widgets = {
-            'nome_referencia': forms.TextInput(attrs={'class': 'form-control'}),
-            'cargo_referencia': forms.TextInput(attrs={'class': 'form-control'}),
-            'id_tipo_relacionamento': forms.Select(attrs={'class': 'form-control'}),
-            'ativo': forms.CheckboxInput(attrs={'class': 'form-check-input', 'role': 'switch'})
+            'tipo_contato': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'telefone': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '(11) 99999-9999'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'exemplo@email.com'
+            }),
+            'site': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://www.exemplo.com.br'
+            })
         }
-        labels = {
-            'id_tipo_relacionamento': 'Tipo de Relacionamento',
-            'nome_referencia': 'Nome da Referência',
-            'cargo_referencia': 'Cargo da Referência',
-            'ativo': 'Relacionamento Ativo'
-        }
-        help_texts = {
-            'ativo': 'Indica se o relacionamento está ativo',
-        }
-    
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Torna o campo site opcional
+        self.fields['site'].required = False
+
+# Criando um formset para múltiplos contatos
+ContatoFormSet = formset_factory(
+    ContatoForm, 
+    extra=1,  # Começa com 1 formulário vazio
+    can_delete=True,
+    min_num=1,  # Pelo menos 1 contato obrigatório
+    validate_min=True
+)

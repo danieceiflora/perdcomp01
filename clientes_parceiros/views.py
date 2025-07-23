@@ -1,369 +1,273 @@
-from django.shortcuts import render
-from django.urls import reverse_lazy
-from django.views.generic import CreateView, ListView, DetailView, UpdateView
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django import forms
-from .models import ClientesParceiros, TipoRelacionamento
-from .forms import TipoRelacionamentoForm, EmpresaClienteParceiroForm, ClientesParceirosForm, ClienteParceiroUpdateForm
-from contatos.models import Contatos
-from empresas.models import Empresa
+
+# === IMPORTS ===
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-class NewTipoRelacionamentoView(CreateView):
-    model = TipoRelacionamento
-    template_name = 'cadastrar_tipo_relacionamento.html'
-    form_class = TipoRelacionamentoForm
-    success_url = '/clientes-parceiros/tipo-relacionamento/'
-    def form_valid(self, form):
-        form.save()
-        return super().form_valid(form)
+from django.views.generic import CreateView, ListView, UpdateView
+from django.urls import reverse_lazy
+from django.db import transaction
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views import View
+import json
+
+from .models import ClientesParceiros, TipoRelacionamento
+from .forms import NovoClienteForm, ContatoFormSet
+from empresas.forms import EmpresaForm
+from empresas.models import Empresa
+from contatos.models import Contatos
+
+# === FIM IMPORTS ===
+
+# View para editar cliente usando o mesmo formulário e template do cadastro
+class EditarClienteView(LoginRequiredMixin, UpdateView):
+    model = ClientesParceiros
+    form_class = NovoClienteForm
+    template_name = 'clientes_parceiros/cadastrar_cliente.html'
+    success_url = reverse_lazy('lista_clientes_parceiros')
+
+    def get_object(self, queryset=None):
+        return get_object_or_404(ClientesParceiros, pk=self.kwargs['pk'])
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['tipos_relacionamento'] = TipoRelacionamento.objects.all()
+        cliente_parceiro = self.object
+        # Empresa vinculada (cliente)
+        if self.request.POST:
+            context['empresa_form'] = EmpresaForm(self.request.POST, self.request.FILES, instance=cliente_parceiro.id_company_vinculada, prefix='empresa')
+            contatos_qs = cliente_parceiro.id_company_vinculada.empresa_base_contato.all()
+            context['contato_formset'] = ContatoFormSet(self.request.POST, initial=[{'tipo_contato': c.tipo_contato, 'telefone': c.telefone, 'email': c.email, 'site': c.site} for c in contatos_qs])
+        else:
+            context['empresa_form'] = EmpresaForm(instance=cliente_parceiro.id_company_vinculada, prefix='empresa')
+            contatos_qs = cliente_parceiro.id_company_vinculada.empresa_base_contato.all()
+            initial = [{'tipo_contato': c.tipo_contato, 'telefone': c.telefone, 'email': c.email, 'site': c.site} for c in contatos_qs]
+            context['contato_formset'] = ContatoFormSet(initial=initial)
+        context['parceiros'] = Empresa.objects.all()
+        context['vinculos'] = TipoRelacionamento.objects.all()
         return context
-    
-class TipoRelacionamentoListView(ListView):
-    model = TipoRelacionamento
-    template_name = 'cadastrar_tipo_relacionamento.html'
-    context_object_name = 'tipos_relacionamento'
 
-class TipoRelacionamentoUpdateView(UpdateView):
-    model = TipoRelacionamento
-    template_name = 'cadastrar_tipo_relacionamento.html'
-    form_class = TipoRelacionamentoForm
-    success_url = '/clientes-parceiros/tipo-relacionamento/'
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
 
-# Classe de exclusão removida conforme solicitado
+    def form_valid(self, form):
+        context = self.get_context_data()
+        empresa_form = context['empresa_form']
+        contato_formset = context['contato_formset']
+        cliente_parceiro = self.object
+        if form.is_valid() and empresa_form.is_valid() and contato_formset.is_valid():
+            with transaction.atomic():
+                try:
+                    # Atualiza empresa vinculada
+                    empresa = empresa_form.save()
+                    # Atualiza vínculo
+                    cliente_parceiro.id_company_base = form.cleaned_data['parceiro']
+                    cliente_parceiro.id_company_vinculada = empresa
+                    cliente_parceiro.id_tipo_relacionamento = form.cleaned_data['vinculo']
+                    cliente_parceiro.nome_referencia = form.cleaned_data['nome_referencia']
+                    cliente_parceiro.cargo_referencia = form.cleaned_data['cargo_referencia']
+                    cliente_parceiro.save()
+                    # Atualiza contatos: remove todos e recria
+                    empresa.empresa_base_contato.all().delete()
+                    for contato_form in contato_formset:
+                        if contato_form.cleaned_data and not contato_form.cleaned_data.get('DELETE', False):
+                            contato = contato_form.save(commit=False)
+                            contato.empresa_base = empresa
+                            contato.save()
+                    messages.success(self.request, f'Cliente "{empresa}" atualizado com sucesso!')
+                    return redirect(self.success_url)
+                except Exception as e:
+                    messages.error(self.request, f'Erro ao atualizar cliente: {str(e)}')
+                    return self.form_invalid(form)
+        else:
+            if not empresa_form.is_valid():
+                messages.error(self.request, 'Há erros no cadastro da empresa.')
+            if not contato_formset.is_valid():
+                messages.error(self.request, 'Há erros nos dados de contato. Verifique os campos.')
+            return self.form_invalid(form)
 
-class NewClienteParceiroView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
-    template_name = 'cadastrar_cliente_parceiro.html'
-    form_class = EmpresaClienteParceiroForm
+class NovoClienteView(LoginRequiredMixin, CreateView):
+    """
+    View para cadastrar novo cliente com parceiro, dados de contato e vínculo
+    """
+    model = ClientesParceiros
+    form_class = NovoClienteForm
+    template_name = 'clientes_parceiros/cadastrar_cliente.html'
     success_url = reverse_lazy('lista_clientes_parceiros')
     
-    def test_func(self):
-        # Permite acesso para administradores, staff e usuários do tipo parceiro
-        return (self.request.user.is_superuser or 
-                self.request.user.is_staff or 
-                (hasattr(self.request.user, 'profile') and 
-                 getattr(self.request.user.profile, 'eh_parceiro', False)))
-
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        
-        # Filtra para mostrar apenas o vínculo do tipo "Cliente"
-        if 'id_tipo_relacionamento' in form.fields:
-            # Tenta encontrar o tipo de relacionamento "Cliente"
-            try:
-                tipo_cliente = TipoRelacionamento.objects.filter(tipo_relacionamento__icontains='cliente').first()
-                if tipo_cliente:
-                    # Se encontrou, limita o queryset apenas a esse tipo
-                    form.fields['id_tipo_relacionamento'].queryset = TipoRelacionamento.objects.filter(id=tipo_cliente.id)
-                    form.fields['id_tipo_relacionamento'].initial = tipo_cliente
-                    # Mantém o campo ativo (removendo readonly e disabled)
-                    
-                    # Campo escondido para garantir que o valor seja enviado
-                    form.fields['id_tipo_relacionamento_hidden'] = forms.ModelChoiceField(
-                        queryset=TipoRelacionamento.objects.filter(id=tipo_cliente.id),
-                        initial=tipo_cliente,
-                        widget=forms.HiddenInput()
-                    )
-            except Exception as e:
-                # Se não encontrar, não faz nada
-                pass
-        
-        # Se for parceiro, pré-seleciona a empresa base e vinculada como a do parceiro
-        if hasattr(self.request.user, 'profile') and not (self.request.user.is_superuser or self.request.user.is_staff):
-            if self.request.user.profile.relacionamento:
-                # Define a empresa vinculada como a do parceiro logado
-                empresa_vinculada = self.request.user.profile.relacionamento.id_company_vinculada
-                # Define a empresa base como a empresa vinculada do parceiro logado
-                empresa_base = empresa_vinculada
-                
-                # Pré-seleciona o campo empresa_base mas mantém ativo
-                if 'empresa_base' in form.fields:
-                    form.fields['empresa_base'].initial = empresa_base
-                    form.fields['empresa_base'].queryset = form.fields['empresa_base'].queryset.filter(id=empresa_base.id)
-                    
-                    # Campo escondido para garantir que o valor seja enviado
-                    form.fields['empresa_base_hidden'] = forms.ModelChoiceField(
-                        queryset=form.fields['empresa_base'].queryset.filter(id=empresa_base.id),
-                        initial=empresa_base,
-                        widget=forms.HiddenInput()
-                    )
-                
-                # Também configura o campo empresa_vinculada
-                if 'empresa_vinculada' in form.fields:
-                    form.fields['empresa_vinculada'].initial = empresa_vinculada
-                    # Adiciona campo escondido para empresa_vinculada
-                    form.fields['empresa_vinculada_hidden'] = forms.ModelChoiceField(
-                        queryset=Empresa.objects.filter(id=empresa_vinculada.id),
-                        initial=empresa_vinculada,
-                        widget=forms.HiddenInput()
-                    )
-                    if not self.request.user.is_superuser and not self.request.user.is_staff:
-                        form.fields['empresa_vinculada'].widget.attrs['readonly'] = True
-                        
-        
-        return form
-        
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['tipos_contato_options'] = Contatos.tipo_contato_options
-        
-        # Adiciona informação se o usuário é parceiro (para uso no template)
-        context['is_partner'] = (
-            hasattr(self.request.user, 'profile') and 
-            getattr(self.request.user.profile, 'eh_parceiro', False) and
-            not self.request.user.is_superuser and 
-            not self.request.user.is_staff
-        )
-        
+        # Obter empresa vinculada ao usuário logado
+        empresa_vinculada = None
+        if hasattr(self.request.user, 'profile'):
+            empresa_vinculada = self.request.user.profile.empresa_vinculada
+        # Formulário de nova empresa
+        if self.request.POST:
+            context['empresa_form'] = EmpresaForm(self.request.POST, self.request.FILES, prefix='empresa')
+            context['contato_formset'] = ContatoFormSet(self.request.POST)
+        else:
+            context['empresa_form'] = EmpresaForm(prefix='empresa')
+            context['contato_formset'] = ContatoFormSet()
+        # Só mostra a empresa vinculada ao usuário
+        context['parceiros'] = Empresa.objects.filter(id=empresa_vinculada.id) if empresa_vinculada else Empresa.objects.none()
+        # Só mostra o vínculo 'cliente'
+        context['vinculos'] = TipoRelacionamento.objects.filter(tipo_relacionamento__iexact='cliente')
         return context
-        
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        # Filtra o campo parceiro e vinculo no formulário
+        if hasattr(self.request.user, 'profile'):
+            empresa_vinculada = self.request.user.profile.empresa_vinculada
+            if empresa_vinculada:
+                self.form_class.base_fields['parceiro'].queryset = Empresa.objects.filter(id=empresa_vinculada.id)
+        self.form_class.base_fields['vinculo'].queryset = TipoRelacionamento.objects.filter(tipo_relacionamento__iexact='cliente')
+        return kwargs
+    
     def form_valid(self, form):
-        # Imprime os dados recebidos para debug
-        print("=== DEBUGGING FORM SUBMISSION ===")
-        print("Formulário recebido:", dict(self.request.POST))
-        print("Arquivos recebidos:", dict(self.request.FILES))
-        print("Form is_valid():", form.is_valid())
-        print("Form errors:", form.errors)
-        print("Form cleaned_data:", form.cleaned_data)
+        context = self.get_context_data()
+        empresa_form = context['empresa_form']
+        contato_formset = context['contato_formset']
         
-        # Verificar se o formulário é válido antes de prosseguir
-        if not form.is_valid():
-            print("Formulário inválido, retornando form_invalid")
+        # Validar todos os formulários
+        if form.is_valid() and empresa_form.is_valid() and contato_formset.is_valid():
+            with transaction.atomic():
+                try:
+                    # Salvar nova empresa
+                    nova_empresa = empresa_form.save()
+                    # Pegar os dados do formulário principal
+                    parceiro = form.cleaned_data['parceiro']
+                    cliente = nova_empresa
+                    vinculo = form.cleaned_data['vinculo']
+                    # Criar o relacionamento cliente-parceiro
+                    cliente_parceiro = ClientesParceiros(
+                        id_company_base=parceiro,
+                        id_company_vinculada=cliente,
+                        id_tipo_relacionamento=vinculo,
+                        nome_referencia=form.cleaned_data['nome_referencia'],
+                        cargo_referencia=form.cleaned_data['cargo_referencia']
+                    )
+                    cliente_parceiro.save()
+                    # Salvar os contatos associados ao cliente
+                    for contato_form in contato_formset:
+                        if contato_form.cleaned_data and not contato_form.cleaned_data.get('DELETE', False):
+                            contato = contato_form.save(commit=False)
+                            contato.empresa_base = cliente  # Associa ao cliente
+                            contato.save()
+                    messages.success(
+                        self.request, 
+                        f'Cliente "{cliente}" cadastrado com sucesso como "{vinculo}" do parceiro "{parceiro}"!'
+                    )
+                    return redirect(self.success_url)
+                except Exception as e:
+                    messages.error(
+                        self.request, 
+                        f'Erro ao cadastrar cliente: {str(e)}'
+                    )
+                    return self.form_invalid(form)
+        else:
+            if not empresa_form.is_valid():
+                messages.error(self.request, 'Há erros no cadastro da nova empresa.')
+            if not contato_formset.is_valid():
+                messages.error(self.request, 'Há erros nos dados de contato. Verifique os campos.')
             return self.form_invalid(form)
-        
-        try:
-            # Se tiver o campo escondido de tipo relacionamento, usa esse valor
-            if 'id_tipo_relacionamento_hidden' in form.cleaned_data:
-                form.instance.id_tipo_relacionamento = form.cleaned_data.get('id_tipo_relacionamento_hidden')
-            elif 'id_tipo_relacionamento' in form.cleaned_data:
-                form.instance.id_tipo_relacionamento = form.cleaned_data.get('id_tipo_relacionamento')
-            
-            # Se for parceiro e tiver o campo escondido de empresa base, usa esse valor
-            if (hasattr(self.request.user, 'profile') and 
-                getattr(self.request.user.profile, 'eh_parceiro', False) and 
-                not self.request.user.is_superuser and 
-                not self.request.user.is_staff and
-                'empresa_base_hidden' in form.cleaned_data):
-                empresa_base = form.cleaned_data.get('empresa_base_hidden')
-                print(f"Usando empresa_base_hidden: {empresa_base}")
-            else:
-                # Pegar a empresa base selecionada (já existente no sistema)
-                empresa_base = form.cleaned_data.get('empresa_base')
-                print(f"Usando empresa_base: {empresa_base}")
-                
-            if not empresa_base:
-                form.add_error('empresa_base', 'É necessário selecionar uma empresa base.')
-                return self.form_invalid(form)
-            
-            # Se for parceiro comum e tiver campo escondido para empresa vinculada, usa esse valor
-            if (hasattr(self.request.user, 'profile') and 
-                getattr(self.request.user.profile, 'eh_parceiro', False) and 
-                not self.request.user.is_superuser and 
-                not self.request.user.is_staff):
-                if 'empresa_vinculada_hidden' in form.cleaned_data:
-                    # Para parceiros, usamos a empresa vinculada deles diretamente
-                    empresa_vinculada = form.cleaned_data.get('empresa_vinculada_hidden')
-                    print(f"Usando empresa_vinculada_hidden: {empresa_vinculada}")
-                elif 'empresa_base_hidden' in form.cleaned_data:
-                    # Se a empresa base for a empresa vinculada do parceiro, usamos ela
-                    empresa_vinculada = empresa_base
-                    print(f"Usando empresa_base como empresa_vinculada: {empresa_vinculada}")
-                else:
-                    # Não deve acontecer, mas por segurança definimos como a empresa base
-                    empresa_vinculada = empresa_base
-                    print(f"Fallback: usando empresa_base como empresa_vinculada: {empresa_vinculada}")
-            else:
-                # Para outros usuários, criamos uma nova empresa vinculada
-                print("Criando nova empresa vinculada para usuário não-parceiro")
-                empresa_vinculada = Empresa.objects.create(
-                    cnpj=form.cleaned_data['cnpj'],
-                    razao_social=form.cleaned_data['razao_social'],
-                    nome_fantasia=form.cleaned_data['nome_fantasia'],
-                    codigo_origem=form.cleaned_data['codigo_origem'],
-                    logomarca=form.cleaned_data.get('logomarca')
-                )
-                print(f"Nova empresa criada: {empresa_vinculada}")
-            
-            # Não salvar o formulário diretamente, pois precisamos configurar os campos do modelo
-            cliente_parceiro = form.instance
-            cliente_parceiro.id_company_base = empresa_base
-            cliente_parceiro.id_company_vinculada = empresa_vinculada
-            cliente_parceiro.save()
-            print(f"Cliente/Parceiro salvo: {cliente_parceiro}")
-            
-            # Processar os contatos (obrigatório)
-            contact_count = int(self.request.POST.get('contact_count', 0))
-            print(f"Contact count recebido: {contact_count}")
-            
-            # Verificar se pelo menos um contato foi adicionado
-            if contact_count == 0:
-                print("Nenhum contato foi adicionado")
-                form.add_error(None, "É obrigatório adicionar pelo menos um contato.")
-                cliente_parceiro.delete()  # Remove o cliente criado
-                return self.form_invalid(form)
-                
-            # Processar cada formulário de contato
-            contato_adicionado = False
-            for i in range(1, contact_count + 1):
-                tipo_contato = self.request.POST.get(f'tipo_contato_{i}')
-                telefone = self.request.POST.get(f'telefone_{i}')
-                email = self.request.POST.get(f'email_{i}')
-                site = self.request.POST.get(f'site_{i}')
-                
-                print(f"Contato {i}: tipo={tipo_contato}, tel={telefone}, email={email}, site={site}")
-                
-                # Criar um novo registro de contato se os dados forem fornecidos
-                if telefone or email or site:
-                    try:
-                        contato = Contatos.objects.create(
-                            tipo_contato=tipo_contato or "OUTROS",
-                            empresa_base=empresa_base,
-                            empresa_vinculada=empresa_vinculada,
-                            telefone=telefone or "",
-                            email=email or "",
-                            site=site or ""
-                        )
-                        contato_adicionado = True
-                        print(f"Contato {i} criado com sucesso: {contato}")
-                    except Exception as e:
-                        print(f"Erro ao criar contato {i}: {str(e)}")
-                        form.add_error(None, f"Erro ao salvar contato: {str(e)}")
-                        cliente_parceiro.delete()  # Remove o cliente criado
-                        return self.form_invalid(form)
-                    
-            # Se nenhum contato foi adicionado (campos vazios), retornar um erro
-            if not contato_adicionado:
-                print("Nenhum contato foi adicionado (campos vazios)")
-                # Remover registros criados anteriormente para evitar dados orfãos
-                cliente_parceiro.delete()
-                
-                # Só excluímos a empresa vinculada se não for a de um parceiro
-                if (not hasattr(self.request.user, 'profile') or
-                    not getattr(self.request.user.profile, 'eh_parceiro', False) or
-                    self.request.user.is_superuser or
-                    self.request.user.is_staff or
-                    ('empresa_vinculada_hidden' not in form.cleaned_data and empresa_vinculada != empresa_base)):
-                    if empresa_vinculada != empresa_base:
-                        empresa_vinculada.delete()
-                        print(f"Empresa vinculada deletada: {empresa_vinculada}")
-                    
-                form.add_error(None, "É obrigatório preencher pelo menos um contato com telefone, email ou site.")
-                return self.form_invalid(form)
-            
-            print("=== SUCESSO: Cliente/Parceiro cadastrado ===")
-            messages.success(self.request, 'Cliente/Parceiro cadastrado com sucesso!')
-            return super().form_valid(form)
-            
-        except Exception as e:
-            print(f"ERRO GERAL no form_valid: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            form.add_error(None, f"Erro interno: {str(e)}")
-            return self.form_invalid(form)
+    
+    def form_invalid(self, form):
+        messages.error(
+            self.request, 
+            'Há erros no formulário. Verifique os dados e tente novamente.'
+        )
+        return super().form_invalid(form)
 
 class ListClienteParceiroView(LoginRequiredMixin, ListView):
+    """
+    View para listar clientes e parceiros cadastrados
+    """
     model = ClientesParceiros
-    template_name = 'lista_clientes_parceiros.html'
+    template_name = 'clientes_parceiros/lista_clientes.html'
     context_object_name = 'clientes_parceiros'
+    paginate_by = 20
     
     def get_queryset(self):
-        queryset = super().get_queryset()
-        
-        # Se for superusuário ou staff, mostra todos os registros
-        if self.request.user.is_superuser or self.request.user.is_staff:
-            return queryset
-            
-        # Se for parceiro, mostra apenas os clientes vinculados à empresa do parceiro
-        if hasattr(self.request.user, 'profile') and self.request.user.profile.relacionamento:
-            # Obtém a empresa vinculada do usuário parceiro
-            empresa_vinculada = self.request.user.profile.relacionamento.id_company_vinculada
-            # Filtra clientes onde a empresa vinculada é a mesma do parceiro
-            return queryset.filter(id_company_vinculada=empresa_vinculada)
-            
-        # Se não tiver perfil ou relacionamento, não mostra nada
-        return ClientesParceiros.objects.none()
+        return ClientesParceiros.objects.select_related(
+            'id_company_base', 
+            'id_company_vinculada', 
+            'id_tipo_relacionamento'
+        ).filter(ativo=True).order_by('-data_inicio_parceria')
 
-class ClienteParceiroUpdateView(LoginRequiredMixin, UpdateView):
-    model = ClientesParceiros
-    template_name = 'editar_cliente_parceiro.html'
-    form_class = ClienteParceiroUpdateForm
-    success_url = reverse_lazy('lista_clientes_parceiros')
-    
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-        
-        # Filtra para mostrar apenas o vínculo do tipo "Cliente"
-        if 'id_tipo_relacionamento' in form.fields:
-            # Tenta encontrar o tipo de relacionamento "Cliente"
-            try:
-                tipo_cliente = TipoRelacionamento.objects.filter(tipo_relacionamento__icontains='cliente').first()
-                if tipo_cliente:
-                    # Se encontrou, limita o queryset apenas a esse tipo
-                    form.fields['id_tipo_relacionamento'].queryset = TipoRelacionamento.objects.filter(id=tipo_cliente.id)
-                    form.fields['id_tipo_relacionamento'].initial = tipo_cliente
-                    # Mantém o campo ativo (removendo readonly e disabled)
-                    
-                    # Campo escondido para garantir que o valor seja enviado
-                    form.fields['id_tipo_relacionamento_hidden'] = forms.ModelChoiceField(
-                        queryset=TipoRelacionamento.objects.filter(id=tipo_cliente.id),
-                        initial=tipo_cliente,
-                        widget=forms.HiddenInput()
-                    )
-            except Exception as e:
-                # Se não encontrar, não faz nada
-                pass
-        
-        return form
-    
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        
-        # Se for superusuário ou staff, permite acesso a todos os registros
-        if self.request.user.is_superuser or self.request.user.is_staff:
-            return queryset
-            
-        # Se for parceiro, permite acesso apenas aos clientes vinculados à sua empresa
-        if hasattr(self.request.user, 'profile') and self.request.user.profile.relacionamento:
-            # Obtém a empresa vinculada do usuário parceiro
-            empresa_vinculada = self.request.user.profile.relacionamento.id_company_vinculada
-            # Filtra clientes onde a empresa vinculada é a mesma do parceiro
-            return queryset.filter(id_company_vinculada=empresa_vinculada)
-            
-        # Se não tiver perfil ou relacionamento, não permite acesso a nenhum
-        return ClientesParceiros.objects.none()
-    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Adicionar informações das empresas para exibição
-        cliente_parceiro = self.object
-        context['empresa_base'] = cliente_parceiro.id_company_base
-        context['empresa_vinculada'] = cliente_parceiro.id_company_vinculada
-        
-        # Buscar contatos relacionados
-        contatos = Contatos.objects.filter(
-            empresa_base=cliente_parceiro.id_company_base,
-            empresa_vinculada=cliente_parceiro.id_company_vinculada
-        )
-        context['contatos'] = contatos
-        
+        clientes_parceiros = context['clientes_parceiros']
+        context['total_relacionamentos'] = clientes_parceiros.count()
+        context['total_clientes_unicos'] = len(set(cp.id_company_vinculada_id for cp in clientes_parceiros))
+        context['total_parceiros_unicos'] = len(set(cp.id_company_base_id for cp in clientes_parceiros))
+        context['total_vinculos_unicos'] = len(set(cp.id_tipo_relacionamento_id for cp in clientes_parceiros))
         return context
-    
-    def form_valid(self, form):
-        # Se tiver o campo escondido de tipo relacionamento, usa esse valor
-        if 'id_tipo_relacionamento_hidden' in form.cleaned_data:
-            form.instance.id_tipo_relacionamento = form.cleaned_data.get('id_tipo_relacionamento_hidden')
-        
-        # Processar a atualização da logomarca se fornecida
-        nova_logomarca = self.request.FILES.get('atualizar_logomarca')
-        if nova_logomarca:
-            # Atualizar a logomarca da empresa vinculada
-            empresa_vinculada = self.object.id_company_vinculada
-            empresa_vinculada.logomarca = nova_logomarca
-            empresa_vinculada.save()
-            
-        messages.success(self.request, 'Cliente atualizado com sucesso!')
-        return super().form_valid(form)
 
-# Classe de exclusão removida conforme solicitado
+class ClienteParceiroUpdateView(LoginRequiredMixin, UpdateView):
+    """
+    View para editar relacionamento cliente-parceiro
+    """
+    model = ClientesParceiros
+    form_class = NovoClienteForm
+    template_name = 'clientes_parceiros/editar_cliente.html'
+    success_url = reverse_lazy('lista_clientes_parceiros')
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+    
+    def get_initial(self):
+        initial = super().get_initial()
+        if self.object:
+            initial['parceiro'] = self.object.id_company_base
+            initial['cliente'] = self.object.id_company_vinculada
+            initial['vinculo'] = self.object.id_tipo_relacionamento
+        return initial
+
+# Views para AJAX (se necessário)
+@method_decorator(csrf_exempt, name='dispatch')
+class EmpresasAjaxView(LoginRequiredMixin, View):
+    """
+    View para buscar empresas via AJAX
+    """
+    def get(self, request, *args, **kwargs):
+        term = request.GET.get('term', '')
+        empresas = Empresa.objects.filter(
+            razao_social__icontains=term
+        )[:10]
+        
+        results = []
+        for empresa in empresas:
+            results.append({
+                'id': empresa.id,
+                'text': empresa.razao_social,
+                'fantasia': empresa.nome_fantasia
+            })
+        
+        return JsonResponse({'results': results})
+
+# Views para Tipo de Relacionamento
+class NewTipoRelacionamentoView(LoginRequiredMixin, CreateView):
+    model = TipoRelacionamento
+    fields = ['tipo_relacionamento']
+    template_name = 'clientes_parceiros/cadastrar_tipo_relacionamento.html'
+    success_url = reverse_lazy('lista_tipos_relacionamento')
+
+class TipoRelacionamentoListView(LoginRequiredMixin, ListView):
+    model = TipoRelacionamento
+    template_name = 'clientes_parceiros/lista_tipos_relacionamento.html'
+    context_object_name = 'tipos_relacionamento'
+
+class TipoRelacionamentoUpdateView(LoginRequiredMixin, UpdateView):
+    model = TipoRelacionamento
+    fields = ['tipo_relacionamento']
+    template_name = 'clientes_parceiros/editar_tipo_relacionamento.html'
+    success_url = reverse_lazy('lista_tipos_relacionamento')
+
+# Mantendo compatibilidade com URLs existentes
+NewClienteParceiroView = NovoClienteView
