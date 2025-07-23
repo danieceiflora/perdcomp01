@@ -31,7 +31,8 @@ INSTALLED_APPS = [
     'correcao',
     'adesao',
     'lancamentos',
-    'dashboard'
+    'dashboard',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [

@@ -22,6 +22,13 @@ class EmpresaClienteParceiroForm(forms.ModelForm):
         empty_label="Selecione a empresa base"
     )
     
+    # Campo oculto para empresa vinculada existente (usado para parceiros)
+    empresa_vinculada = forms.ModelChoiceField(
+        queryset=Empresa.objects.all(),
+        required=False,
+        widget=forms.HiddenInput()
+    )
+    
     # Campos para nova empresa vinculada
     cnpj = forms.CharField(max_length=20, label='CNPJ da Nova Empresa', required=True)
     razao_social = forms.CharField(max_length=100, label='Razão Social da Nova Empresa', required=True)
@@ -41,15 +48,18 @@ class EmpresaClienteParceiroForm(forms.ModelForm):
         cnpj = cleaned_data.get('cnpj')
         razao_social = cleaned_data.get('razao_social')
         
-        # Empresa base é obrigatória
-        if not empresa_base:
+        # Empresa base é obrigatória apenas se não tiver campo escondido
+        if not empresa_base and 'empresa_base_hidden' not in self.data:
             self.add_error('empresa_base', 'É necessário selecionar uma empresa base.')
-            
-        # Validar campos da nova empresa vinculada
-        if not cnpj:
-            self.add_error('cnpj', 'CNPJ da nova empresa é obrigatório.')
-        if not razao_social:
-            self.add_error('razao_social', 'Razão Social da nova empresa é obrigatória.')
+        
+        # Para parceiros, pode não ser necessário validar estes campos
+        # se eles já têm uma empresa vinculada
+        if 'empresa_vinculada_hidden' not in self.data:
+            # Validar campos da nova empresa vinculada apenas se não for parceiro
+            if not cnpj:
+                self.add_error('cnpj', 'CNPJ da nova empresa é obrigatório.')
+            if not razao_social:
+                self.add_error('razao_social', 'Razão Social da nova empresa é obrigatória.')
         
         return cleaned_data
     

@@ -127,8 +127,14 @@
                                 <div class="card card-lancamento">
                                     <div class="card-header d-flex justify-content-between align-items-center">
                                         <h5 class="mb-0">Perdcomp -{{ lancamento.id_adesao.perdcomp }}</h5>
-                                        <span class="badge bg-{{ lancamento.sinal|yesno:'danger,success' }} status-badge">
-                                            {{ lancamento.sinal|yesno:'Débito,Crédito' }}
+                                        <span class="badge bg-{% if lancamento.sinal == '+' %}success{% else %}danger{% endif %} status-badge">
+                                            {% if lancamento.sinal == '+' %}
+                                                Crédito
+                                            {% elif lancamento.sinal == '-' %}
+                                                Débito
+                                            {% else %}
+                                                <span class="text-muted">Indefinido</span>
+                                            {% endif %}
                                         </span>
                                     </div>
                                     <div class="card-body p-0">
@@ -186,18 +192,7 @@
                                         </div>
                                     </div>
                                     
-                                    <div class="card-footer d-flex justify-content-between align-items-center">
-                                        <div class="text-muted small">
-                                            <i class="bi bi-calendar-check me-1"></i> Última atualização: {{ lancamento.data_atualizacao|date:"d/m/Y H:i" }}
-                                        </div>
-                                        <div class="button-container">
-                                            {% if user.profile.eh_cliente %}
-                                                <a href="{% url 'lancamentos:detail' lancamento.pk %}" class="btn btn-sm btn-primary">
-                                                    <i class="bi bi-eye"></i> Detalhes
-                                                </a>
-                                            {% endif %}
-                                        </div>
-                                    </div>
+                                    
                                 </div>
                             </div>
                             {% endfor %}

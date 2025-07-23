@@ -12,15 +12,18 @@ class AdesaoAdminForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Filtra apenas clientes (tipo_relacionamento=1) e ativos
-        try:
-            self.fields['cliente'].queryset = ClientesParceiros.objects.filter(
-                id_tipo_relacionamento__id=1,  # Apenas clientes
-                ativo=True
-            ).select_related('id_company_vinculada')
-        except Exception as e:
-            print(f"Erro ao filtrar clientes no admin: {e}")
-            self.fields['cliente'].queryset = ClientesParceiros.objects.none()
+        # Verifica se o campo 'cliente' existe no formulário
+        # (pode não existir quando estamos apenas visualizando um objeto)
+        if 'cliente' in self.fields:
+            # Filtra apenas clientes (tipo_relacionamento=1) e ativos
+            try:
+                self.fields['cliente'].queryset = ClientesParceiros.objects.filter(
+                    id_tipo_relacionamento__id=1,  # Apenas clientes
+                    ativo=True
+                ).select_related('id_company_vinculada')
+            except Exception as e:
+                print(f"Erro ao filtrar clientes no admin: {e}")
+                self.fields['cliente'].queryset = ClientesParceiros.objects.none()
 
 @admin.register(Adesao)
 class AdesaoAdmin(admin.ModelAdmin):
@@ -29,8 +32,35 @@ class AdesaoAdmin(admin.ModelAdmin):
     list_filter = ('cliente__id_company_base', 'tese_credito_id__id_tipo_tese')
     search_fields = ('perdcomp', 'cliente__nome_referencia', 'cliente__empresa_vinculada__razao_social')
     
-    
     fields = ('perdcomp', 'cliente', 'tese_credito_id', 'saldo', 'saldo_atual', 'fee_rate', 'data_inicio', 'ativo')
+    
+    # Controla a permissão para edição
+    def has_change_permission(self, request, obj=None):
+        # Permitimos acesso à página de visualização/edição
+        # (vamos tornar os campos somente leitura em vez de bloquear totalmente)
+        return True
+    
+    # Impede a exclusão de adesões
+    def has_delete_permission(self, request, obj=None):
+        # Não permite exclusão de nenhuma adesão
+        return False
+        
+    # Todos os campos serão somente leitura ao visualizar uma adesão existente
+    def get_readonly_fields(self, request, obj=None):
+        if obj:  # Se estiver visualizando um objeto existente
+            # Torna todos os campos somente leitura, incluindo 'cliente' e outros
+            return list(self.fields)
+        # Se for criação, nenhum campo é somente leitura, exceto os configurados anteriormente
+        return []
+        
+    # Método para impedir a alteração de qualquer campo, mesmo permitindo visualização
+    def save_model(self, request, obj, form, change):
+        # Se estiver alterando um objeto existente (não criando um novo)
+        if change:
+            # Não fazemos nada, efetivamente impedindo qualquer alteração
+            return
+        # Caso contrário, permite a criação normalmente
+        super().save_model(request, obj, form, change)
     
     def saldo_inicial(self, obj):
         if obj.saldo is None:

@@ -6,14 +6,6 @@
 <div class="container">
   <form class="form-control p-4" method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    
-    <!-- Campos ocultos -->
-    {% if form.empresa_vinculada %}
-      {{ form.empresa_vinculada }}
-    {% endif %}
-    {% if form.empresa_vinculada_hidden %}
-      {{ form.empresa_vinculada_hidden }}
-    {% endif %}
 
     <div class="card mb-4">
       <div class="card-header bg-primary text-white">
@@ -102,7 +94,7 @@
           <!-- Os contatos serão adicionados dinamicamente aqui -->
         </div>
         <input type="hidden" id="contact_count" name="contact_count" value="0">
-        <div id="debug-info" style="display: none;"></div>
+        <div id="debug-info" class="alert alert-info mb-3" style="display: none;"></div>
         <div class="text-center mt-3">
           <button type="button" id="add-contact-btn" class="btn btn-info">Adicionar Contato</button>
         </div>
@@ -122,70 +114,43 @@
     const contatosContainer = document.getElementById('contatos-container');
     const addContactBtn = document.getElementById('add-contact-btn');
     const contactCountInput = document.getElementById('contact_count');
-    const debugInfo = document.getElementById('debug-info');
     const form = document.querySelector('form');
-
-    // Mostrar debugInfo durante desenvolvimento
-    if (debugInfo) {
-      debugInfo.style.display = 'block';
-    }
+    const debugInfo = document.getElementById('debug-info');
+    
+    // Mostrar o debug info para testes
+    debugInfo.style.display = 'block';
 
     // Adicionar um contato automaticamente quando a página carregar
     addContact();
-    updateContactsInfo();
+    updateDebugInfo();
     
     // Add contact function
     addContactBtn.addEventListener('click', addContact);
     
-    // Função para atualizar informações dos contatos
-    function updateContactsInfo() {
-      // Atualiza o contador de contatos com base nos elementos existentes
-      const contactItems = document.querySelectorAll('.contact-item');
-      
-      // Antes de enviar o formulário, renumera os campos para corresponder ao índice esperado pelo backend
-      const existingContactIds = [];
-      contactItems.forEach((item, index) => {
-        existingContactIds.push(item.id.split('-')[1]);
-      });
-      
-      // Atualiza o valor do campo oculto com a contagem real de contatos
-      contactCountInput.value = contactItems.length;
-      
-      // Atualiza o campo de debug para ajudar na depuração
+    // Atualiza o debugInfo
+    function updateDebugInfo() {
       if (debugInfo) {
-        debugInfo.innerHTML = `Contatos: ${contactItems.length}<br>IDs: ${existingContactIds.join(', ')}`;
+        const contactItems = document.querySelectorAll('.contact-item');
+        contactCountInput.value = contactItems.length;
+        debugInfo.textContent = `Contatos ativos: ${contactItems.length}`;
       }
     }
     
     // Validar o formulário antes de enviar
     form.addEventListener('submit', function(event) {
-      console.log("=== FORM SUBMISSION DEBUG ===");
-      renumerateContactFields();
-      
-      // Debug: imprimir todos os dados do formulário
-      const formData = new FormData(form);
-      console.log("Dados do formulário:");
-      for (let [key, value] of formData.entries()) {
-        console.log(`${key}: ${value}`);
-      }
+      // Atualiza o contador de contatos com base nos elementos reais
+      const contactItems = document.querySelectorAll('.contact-item');
+      contactCountInput.value = contactItems.length;
+      updateDebugInfo();
       
       // Verificar se existe pelo menos um contato com dados preenchidos
       let contatoValido = false;
-      const contactItems = document.querySelectorAll('.contact-item');
       
-      console.log(`Número de contatos: ${contactItems.length}`);
-      
-      contactItems.forEach((item, index) => {
-        const contactIndex = index + 1; // Para o backend, começamos de 1
-        const telefoneEl = item.querySelector('input[name^="telefone_"]');
-        const emailEl = item.querySelector('input[name^="email_"]');
-        const siteEl = item.querySelector('input[name^="site_"]');
-        
-        console.log(`Contato ${contactIndex}:`, {
-          telefone: telefoneEl ? telefoneEl.value : 'N/A',
-          email: emailEl ? emailEl.value : 'N/A',
-          site: siteEl ? siteEl.value : 'N/A'
-        });
+      contactItems.forEach((item) => {
+        const itemId = item.id.split('-')[1];
+        const telefoneEl = document.getElementById(`telefone_${itemId}`);
+        const emailEl = document.getElementById(`email_${itemId}`);
+        const siteEl = document.getElementById(`site_${itemId}`);
         
         if ((telefoneEl && telefoneEl.value) || 
             (emailEl && emailEl.value) || 
@@ -194,56 +159,12 @@
         }
       });
       
-      console.log(`Contato válido: ${contatoValido}`);
-      
       if (!contatoValido) {
         event.preventDefault();
         alert("É obrigatório preencher pelo menos um contato com telefone, email ou site.");
-        return false;
       }
-      
-      console.log("Formulário sendo enviado...");
     });
     
-    // Renumera campos antes de enviar o formulário
-    function renumerateContactFields() {
-      const contactItems = document.querySelectorAll('.contact-item');
-      
-      contactItems.forEach((item, index) => {
-        const contactIndex = index + 1; // Backend espera índices a partir de 1
-        
-        // Atualiza os campos de cada contato para usar índices sequenciais
-        const tipoSelect = item.querySelector('select[name^="tipo_contato_"]');
-        const telefoneInput = item.querySelector('input[name^="telefone_"]');
-        const emailInput = item.querySelector('input[name^="email_"]');
-        const siteInput = item.querySelector('input[name^="site_"]');
-        
-        if (tipoSelect) {
-          tipoSelect.name = `tipo_contato_${contactIndex}`;
-          tipoSelect.id = `tipo_contato_${contactIndex}`;
-        }
-        
-        if (telefoneInput) {
-          telefoneInput.name = `telefone_${contactIndex}`;
-          telefoneInput.id = `telefone_${contactIndex}`;
-        }
-        
-        if (emailInput) {
-          emailInput.name = `email_${contactIndex}`;
-          emailInput.id = `email_${contactIndex}`;
-        }
-        
-        if (siteInput) {
-          siteInput.name = `site_${contactIndex}`;
-          siteInput.id = `site_${contactIndex}`;
-        }
-      });
-      
-      // Atualiza o contador para refletir o número real de contatos
-      contactCountInput.value = contactItems.length;
-    }
-    
-    // Função única para adicionar contatos
     function addContact() {
       contactCount++;
       
@@ -285,7 +206,7 @@
       `;
 
       contatosContainer.appendChild(contactDiv);
-      updateContactsInfo();
+      updateDebugInfo();
 
       // Add event listener to remove button
       const removeBtn = contactDiv.querySelector('.remove-contact');
@@ -299,10 +220,9 @@
         
         const contactId = this.getAttribute('data-id');
         const contactToRemove = document.getElementById(`contact-${contactId}`);
-        
         if (contactToRemove) {
           contactToRemove.remove();
-          updateContactsInfo();
+          updateDebugInfo();
         }
       });
     }
