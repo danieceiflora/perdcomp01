@@ -43,13 +43,25 @@ class EditarClienteView(LoginRequiredMixin, UpdateView):
             contatos_qs = cliente_parceiro.id_company_vinculada.empresa_base_contato.all()
             initial = [{'tipo_contato': c.tipo_contato, 'telefone': c.telefone, 'email': c.email, 'site': c.site} for c in contatos_qs]
             context['contato_formset'] = ContatoFormSet(initial=initial)
-        context['parceiros'] = Empresa.objects.all()
-        context['vinculos'] = TipoRelacionamento.objects.all()
+        # Empresa base: apenas a vinculada ao usuário logado
+        empresa_vinculada = None
+        if hasattr(self.request.user, 'profile'):
+            empresa_vinculada = self.request.user.profile.empresa_vinculada
+        context['parceiros'] = Empresa.objects.filter(id=empresa_vinculada.id) if empresa_vinculada else Empresa.objects.none()
+        # Vínculo: apenas 'cliente'
+        context['vinculos'] = TipoRelacionamento.objects.filter(tipo_relacionamento__iexact='cliente')
         return context
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
+        # Filtra o campo parceiro e vinculo no formulário
+        empresa_vinculada = None
+        if hasattr(self.request.user, 'profile'):
+            empresa_vinculada = self.request.user.profile.empresa_vinculada
+            if empresa_vinculada:
+                self.form_class.base_fields['parceiro'].queryset = Empresa.objects.filter(id=empresa_vinculada.id)
+        self.form_class.base_fields['vinculo'].queryset = TipoRelacionamento.objects.filter(tipo_relacionamento__iexact='cliente')
         return kwargs
 
     def form_valid(self, form):
@@ -192,11 +204,18 @@ class ListClienteParceiroView(LoginRequiredMixin, ListView):
     paginate_by = 20
     
     def get_queryset(self):
-        return ClientesParceiros.objects.select_related(
+        qs = ClientesParceiros.objects.select_related(
             'id_company_base', 
             'id_company_vinculada', 
             'id_tipo_relacionamento'
-        ).filter(ativo=True).order_by('-data_inicio_parceria')
+        ).filter(ativo=True)
+        # Filtra apenas os clientes do parceiro logado
+        empresa_vinculada = None
+        if hasattr(self.request.user, 'profile'):
+            empresa_vinculada = self.request.user.profile.empresa_vinculada
+        if empresa_vinculada:
+            qs = qs.filter(id_company_base=empresa_vinculada)
+        return qs.order_by('-data_inicio_parceria')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
