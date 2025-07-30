@@ -1,3 +1,5 @@
+# AJAX para empresas disponíveis conforme tipo de relacionamento
+from django.views.decorators.http import require_GET
 
 # === IMPORTS ===
 from django.shortcuts import render, redirect, get_object_or_404
@@ -19,6 +21,15 @@ from empresas.models import Empresa
 from contatos.models import Contatos
 
 # === FIM IMPORTS ===
+
+@require_GET
+def empresas_disponiveis_ajax(request, tipo_id):
+    # Busca empresas já vinculadas como id_company_vinculada para o tipo selecionado
+    empresas_vinculadas = ClientesParceiros.objects.filter(id_tipo_relacionamento=tipo_id).values_list('id_company_vinculada', flat=True)
+    empresas = Empresa.objects.exclude(pk__in=empresas_vinculadas)
+    data = [{'id': e.pk, 'nome': str(e)} for e in empresas]
+    return JsonResponse({'empresas': data})
+
 
 # View para editar cliente usando o mesmo formulário e template do cadastro
 class EditarClienteView(LoginRequiredMixin, UpdateView):

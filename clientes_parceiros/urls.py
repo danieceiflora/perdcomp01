@@ -3,7 +3,7 @@ from clientes_parceiros import views
 from .views import (
     NovoClienteView, NewClienteParceiroView, ListClienteParceiroView, 
     NewTipoRelacionamentoView, TipoRelacionamentoListView,
-    TipoRelacionamentoUpdateView, ClienteParceiroUpdateView, EmpresasAjaxView
+    TipoRelacionamentoUpdateView,  EmpresasAjaxView
 )
 
 urlpatterns = [
@@ -22,4 +22,5 @@ urlpatterns = [
     
     # AJAX
     path('ajax/empresas/', EmpresasAjaxView.as_view(), name='empresas_ajax'),
+    path('empresas-disponiveis-ajax/<int:tipo_id>/', views.empresas_disponiveis_ajax, name='empresas_disponiveis_ajax'),
 ]
