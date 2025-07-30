@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h2>Emitir Token JWT</h2>
+    <form method="post" action="/api/token/">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="username" class="form-label">Usuário</label>
+            <input type="text" class="form-control" id="username" name="username" required>
+        </div>
+        <div class="mb-3">
+            <label for="password" class="form-label">Senha</label>
+            <input type="password" class="form-control" id="password" name="password" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Emitir Token</button>
+    </form>
+
+    <hr>
+    <h2>Atualizar Token JWT</h2>
+    <form method="post" action="/api/token/refresh/">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="refresh" class="form-label">Refresh Token</label>
+            <input type="text" class="form-control" id="refresh" name="refresh" required>
+        </div>
+        <button type="submit" class="btn btn-success">Atualizar Token</button>
+    </form>
+</div>
+{% endblock %}

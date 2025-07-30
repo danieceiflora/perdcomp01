@@ -112,19 +112,7 @@
                         {% endif %}
                     </div>
                     
-                    <div class="form-group mb-4">
-                        <label for="{{ form.status.id_for_label }}" class="form-label">{{ form.status.label }}:</label>
-                        {{ form.status }}
-                        {% if form.status.errors %}
-                            <div class="text-danger">
-                                {{ form.status.errors }}
-                            </div>
-                        {% endif %}
-                        <small class="form-text text-muted">
-                            <strong>Atenção:</strong> Após mudar para "Confirmado", o lançamento não poderá mais ser editado ou excluído.
-                        </small>
-                    </div>
-                    
+                                       
                     <h4 class="border-bottom pb-2 mb-3">Anexos</h4>
                     
                     {{ anexos_formset.management_form }}
@@ -142,13 +130,7 @@
                                             {{ anexo_form.instance.nome_anexo }}
                                         {% endif %}
                                         
-                                        <!-- Campo de exclusão -->
-                                        <div class="form-check form-switch float-end">
-                                            {{ anexo_form.DELETE }}
-                                            <label class="form-check-label text-danger" for="{{ anexo_form.DELETE.id_for_label }}">
-                                                Excluir este anexo
-                                            </label>
-                                        </div>
+                                       
                                     </div>
                                     {% endif %}
                                 

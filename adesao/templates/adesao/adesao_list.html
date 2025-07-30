@@ -154,16 +154,7 @@
                                             </a>
                                         </div>
                                         
-                                        {% if user.is_staff or user.is_superuser %}
-                                        <div class="button-container">
-                                            <a href="{% url 'adesao:update' adesao.pk %}" class="btn btn-sm btn-warning">
-                                                <i class="bi bi-pencil"></i> Editar
-                                            </a>
-                                            <a href="{% url 'adesao:delete' adesao.pk %}" class="btn btn-sm btn-danger">
-                                                <i class="bi bi-trash"></i> Excluir
-                                            </a>
-                                        </div>
-                                        {% endif %}
+                                        
                                     </div>
                                 </div>
                             </div>

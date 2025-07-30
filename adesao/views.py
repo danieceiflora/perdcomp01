@@ -7,6 +7,17 @@ from .models import Adesao
 from .forms import AdesaoForm
 from .permissions import AdesaoPermissionMixin, AdesaoClienteViewOnlyMixin, AdminRequiredMixin
 
+# Adicionando imports do DRF
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status, permissions
+from .serializers import AdesaoSerializer
+
+# Permissão customizada para superadmin
+class IsSuperAdmin(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.is_superuser
+
 class AdesaoListView(AdesaoClienteViewOnlyMixin, ListView):
     model = Adesao
     template_name = 'adesao/adesao_list.html'
@@ -37,11 +48,22 @@ class AdesaoUpdateView(AdminRequiredMixin, UpdateView):
         messages.success(self.request, 'Adesão atualizada com sucesso!')
         return super().form_valid(form)
 
-class AdesaoDeleteView(AdminRequiredMixin, DeleteView):
-    model = Adesao
-    template_name = 'adesao/adesao_confirm_delete.html'
-    success_url = reverse_lazy('adesao:list')
-    
-    def delete(self, request, *args, **kwargs):
-        messages.success(self.request, 'Adesão excluída com sucesso!')
-        return super().delete(request, *args, **kwargs)
+
+class AdesaoListAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+
+    def get(self, request):
+        adesoes = Adesao.objects.all()
+        serializer = AdesaoSerializer(adesoes, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class AdesaoCreateApi(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+
+    def post(self, request):
+        serializer = AdesaoSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+

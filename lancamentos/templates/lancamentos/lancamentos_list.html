@@ -126,7 +126,7 @@
                                 <br>
                                 <div class="card card-lancamento">
                                     <div class="card-header d-flex justify-content-between align-items-center">
-                                        <h5 class="mb-0">Perdcomp -{{ lancamento.id_adesao.perdcomp }}</h5>
+                                        <h5 class="mb-0">Perdcomp: {{ lancamento.id_adesao.perdcomp }}</h5>
                                         <span class="badge bg-{% if lancamento.sinal == '+' %}success{% else %}danger{% endif %} status-badge">
                                             {% if lancamento.sinal == '+' %}
                                                 Crédito

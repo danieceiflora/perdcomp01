@@ -34,6 +34,12 @@ INSTALLED_APPS = [
     'dashboard',
     'rest_framework',
 ]
+# Adicionando configuração do JWT
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -131,6 +137,14 @@ JAZZMIN_SETTINGS = {
     "site_header": "PERDCOMP Administration",
     "site_brand": "PERDCOMP",
     "welcome_sign": "Bem-vindo ao painel de administração do PERDCOMP",
+    "usermenu_links": [
+        {
+            "name": "Token JWT",
+            "url": "token-jwt",
+            "new_window": True,
+            "icon": "fas fa-key",
+        },
+    ],
     "icons":
         {
             "clientes_parceiros.ClientesParceiros": "fas fa-users",
@@ -152,6 +166,7 @@ JAZZMIN_SETTINGS = {
         "auth.user": "single",  # <- Garante isso no admin do User também
         "auth.group": "single",  # (opcional)
     }
+    
 }
 
 JAZZMIN_UI_TWEAKS = {

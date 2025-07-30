@@ -1,6 +1,11 @@
 from django.contrib import admin
 from django.urls import path, include
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
 from empresas.views import home_view
+from perdcomp.views import token_jwt_view
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -16,4 +21,8 @@ urlpatterns = [
     path('adesoes/', include('adesao.urls')),
     path('lancamentos/', include('lancamentos.urls')),
     path('dashboard/', include('dashboard.urls')),
+    # JWT endpoints no app principal
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('token-jwt/', token_jwt_view, name='token-jwt'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
