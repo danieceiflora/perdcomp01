@@ -13,6 +13,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views import View
 import json
+from django.contrib.auth.mixins import UserPassesTestMixin
 
 from .models import ClientesParceiros, TipoRelacionamento
 from .forms import NovoClienteForm, ContatoFormSet
@@ -35,7 +36,7 @@ def empresas_disponiveis_ajax(request, tipo_id):
 class EditarClienteView(LoginRequiredMixin, UpdateView):
     model = ClientesParceiros
     form_class = NovoClienteForm
-    template_name = 'clientes_parceiros/cadastrar_cliente.html'
+    template_name = 'cadastrar_cliente.html'
     success_url = reverse_lazy('lista_clientes_parceiros')
 
     def get_object(self, queryset=None):
@@ -111,13 +112,17 @@ class EditarClienteView(LoginRequiredMixin, UpdateView):
                 messages.error(self.request, 'Há erros nos dados de contato. Verifique os campos.')
             return self.form_invalid(form)
 
-class NovoClienteView(LoginRequiredMixin, CreateView):
+class NovoClienteView(UserPassesTestMixin, LoginRequiredMixin, CreateView):
     """
     View para cadastrar novo cliente com parceiro, dados de contato e vínculo
     """
+
+    def test_func(self):
+        return self.request.user.is_superuser or self.request.user.is_staff
+        
     model = ClientesParceiros
     form_class = NovoClienteForm
-    template_name = 'clientes_parceiros/cadastrar_cliente.html'
+    template_name = 'cadastrar_cliente.html'
     success_url = reverse_lazy('lista_clientes_parceiros')
     
     def get_context_data(self, **kwargs):
@@ -210,7 +215,7 @@ class ListClienteParceiroView(LoginRequiredMixin, ListView):
     View para listar clientes e parceiros cadastrados
     """
     model = ClientesParceiros
-    template_name = 'clientes_parceiros/lista_clientes.html'
+    template_name = 'lista_clientes.html'
     context_object_name = 'clientes_parceiros'
     paginate_by = 20
     
@@ -243,7 +248,7 @@ class ClienteParceiroUpdateView(LoginRequiredMixin, UpdateView):
     """
     model = ClientesParceiros
     form_class = NovoClienteForm
-    template_name = 'clientes_parceiros/editar_cliente.html'
+    template_name = 'editar_cliente.html'
     success_url = reverse_lazy('lista_clientes_parceiros')
     
     def get_form_kwargs(self):
@@ -285,18 +290,18 @@ class EmpresasAjaxView(LoginRequiredMixin, View):
 class NewTipoRelacionamentoView(LoginRequiredMixin, CreateView):
     model = TipoRelacionamento
     fields = ['tipo_relacionamento']
-    template_name = 'clientes_parceiros/cadastrar_tipo_relacionamento.html'
+    template_name = 'cadastrar_tipo_relacionamento.html'
     success_url = reverse_lazy('lista_tipos_relacionamento')
 
 class TipoRelacionamentoListView(LoginRequiredMixin, ListView):
     model = TipoRelacionamento
-    template_name = 'clientes_parceiros/lista_tipos_relacionamento.html'
+    template_name = 'lista_tipos_relacionamento.html'
     context_object_name = 'tipos_relacionamento'
 
 class TipoRelacionamentoUpdateView(LoginRequiredMixin, UpdateView):
     model = TipoRelacionamento
     fields = ['tipo_relacionamento']
-    template_name = 'clientes_parceiros/editar_tipo_relacionamento.html'
+    template_name = 'editar_tipo_relacionamento.html'
     success_url = reverse_lazy('lista_tipos_relacionamento')
 
 # Mantendo compatibilidade com URLs existentes

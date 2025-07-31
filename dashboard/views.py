@@ -140,6 +140,23 @@ def dashboard_view(request):
         valores_json = json.dumps([])
         total_credito = 0
     
+    # Cálculo de Crédito Compensado/Utilizado e Saldo de Crédito para o cliente logado
+    credito_compensado = 0
+    saldo_credito = 0
+    if hasattr(request.user, 'profile') and request.user.profile.empresa_vinculada:
+        empresa_cliente = request.user.profile.empresa_vinculada
+        # Adesões relacionadas ao cliente
+        adesoes_cliente = Adesao.objects.filter(cliente__id_company_vinculada=empresa_cliente)
+        for adesao in adesoes_cliente:
+            # Saldo inicial da adesão
+            saldo_inicial = adesao.saldo_inicial if hasattr(adesao, 'saldo_inicial') else 0
+            # Total de lançamentos realizados para a adesão
+            total_lancamentos = Lancamentos.objects.filter(id_adesao=adesao).aggregate(total=Sum('valor'))['total'] or 0
+            # Crédito compensado: saldo inicial - total de lançamentos
+            credito_compensado += saldo_inicial - total_lancamentos
+            # Saldo de crédito: soma dos saldos atuais das adesões
+            saldo_credito += adesao.saldo_restante if hasattr(adesao, 'saldo_restante') and adesao.saldo_restante is not None else 0
+    
     # Contexto para o template
     context = {
         'total_parceiros': parceiros,
@@ -150,6 +167,8 @@ def dashboard_view(request):
         'labels_grafico': labels_json,
         'valores_grafico': valores_json,
         'total_credito': total_credito,
+        'credito_compensado': credito_compensado,
+        'saldo_credito': saldo_credito,
     }
     
     return render(request, 'dashboard/dashboard.html', context)

@@ -19,11 +19,15 @@ class tipoTese(models.Model):
     
 class TeseCredito(models.Model):
     id_correcao = models.ForeignKey(Correcao, on_delete=models.PROTECT, verbose_name='Índice de Correção', blank=True, null=True)
-    id_tipo_tese = models.ForeignKey(tipoTese, on_delete=models.PROTECT, verbose_name='Tipo de Tese')
+    id_tipo_tese = models.ForeignKey(tipoTese, on_delete=models.PROTECT, verbose_name='Tipo de documento')
     descricao = models.CharField(max_length=50)
     jurisprudencia = models.CharField(max_length=200)
     corrige = models.BooleanField(default=False, null=True, blank=True)
     cod_origem = models.CharField(max_length=20, blank=True, null=True)
+
+    class Meta:
+        verbose_name = 'Forma de Habilitação'
+        verbose_name_plural = 'Formas de Habilitações'
 
     def __str__(self):
         return self.descricao

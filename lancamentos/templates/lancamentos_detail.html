@@ -15,15 +15,7 @@
                             <i class="bi bi-arrow-left"></i> Voltar
                         </a>
                         
-                        <!-- Botões de ação -->
-                        {% if user.is_admin or user.is_superuser %}
-                            <a href="{% url 'lancamentos:editar_anexos' lancamento.pk %}" class="btn btn-warning">
-                                <i class="bi bi-paperclip"></i> Editar Anexos
-                            </a>
-                            <a href="{% url 'lancamentos:criar_estorno' lancamento.pk %}" class="btn btn-danger">
-                                <i class="bi bi-arrow-counterclockwise"></i> Estornar
-                            </a>
-                        {% endif %}
+
                     </div>
                 </div>
                 <div class="card-body">

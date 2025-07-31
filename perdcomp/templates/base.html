@@ -110,14 +110,18 @@
                       </li>
                     {% endif %}
                     
-                    {% if user.profile.eh_parceiro or user.is_superuser or user.is_staff %}
+                    
                       <!-- Menu Parceiro -->
                       <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                           <i class="bi bi-people me-1"></i>Clientes</a>
                         <ul class="dropdown-menu">
+                          {% if user.is_superuser or user.is_staff %}
                           <li><a class="dropdown-item" href="{% url 'cadastrar_cliente_parceiro' %}"><i class="bi bi-person-plus me-1"></i>Cadastrar Cliente</a></li>
+                          {% endif %}
+                          {% if user.profile.eh_parceiro or user.is_superuser or user.is_staff %}
                           <li><a class="dropdown-item" href="{% url 'lista_clientes_parceiros' %}"><i class="bi bi-list me-1"></i>Listar Clientes</a></li>
+                          {% endif %}
                         </ul>
                       </li>
                       
@@ -142,7 +146,7 @@
                           {% endif %}
                         </ul>
                       </li>
-                    {% endif %}
+                    
                     
                     {% if user.profile.eh_cliente %}
                       <!-- Menu Cliente: Acesso Limitado (Apenas Visualização) -->

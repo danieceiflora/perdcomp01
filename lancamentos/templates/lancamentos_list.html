@@ -192,7 +192,13 @@
                                         </div>
                                     </div>
                                     
-                                    
+                                    <div class="card-footer">
+                                        <div class="button-container">
+                                            <a href="{% url 'lancamentos:detail' lancamento.pk %}" class="btn btn-outline-primary btn-sm">
+                                                <i class="bi bi-eye"></i> Ver Detalhes
+                                            </a>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             {% endfor %}

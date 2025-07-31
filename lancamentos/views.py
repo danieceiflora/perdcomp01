@@ -15,7 +15,7 @@ from django.http import Http404
 
 class LancamentosListView(LancamentoClienteViewOnlyMixin, ListView):
     model = Lancamentos
-    template_name = 'lancamentos/lancamentos_list.html'
+    template_name = 'lancamentos_list.html'
     context_object_name = 'lancamentos'
     paginate_by = 10
     
@@ -69,7 +69,7 @@ class LancamentosListView(LancamentoClienteViewOnlyMixin, ListView):
 
 class LancamentoDetailView(LancamentoClienteViewOnlyMixin, DetailView):
     model = Lancamentos
-    template_name = 'lancamentos/lancamentos_detail.html'
+    template_name = 'lancamentos_detail.html'
     context_object_name = 'lancamento'
     
     def get_queryset(self):
@@ -140,7 +140,7 @@ class LancamentoDetailView(LancamentoClienteViewOnlyMixin, DetailView):
 class LancamentoCreateView(AdminRequiredMixin, CreateView):
     model = Lancamentos
     form_class = LancamentosForm
-    template_name = 'lancamentos/lancamentos_form.html'
+    template_name = 'lancamentos_form.html'
     success_url = reverse_lazy('lancamentos:list')
     
     def get_context_data(self, **kwargs):
@@ -205,7 +205,7 @@ class AnexosUpdateView(AdminRequiredMixin, UpdateView):
     após a criação do lançamento.
     """
     model = Lancamentos
-    template_name = 'lancamentos/anexos_form.html'
+    template_name = 'anexos_form.html'
     context_object_name = 'lancamento'
     
     def get_success_url(self):

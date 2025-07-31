@@ -3,6 +3,7 @@ from clientes_parceiros.models import ClientesParceiros
 from correcao.models import TeseCredito
 
 class Adesao(models.Model):
+   
     cliente = models.ForeignKey(
         ClientesParceiros,
         on_delete=models.CASCADE,

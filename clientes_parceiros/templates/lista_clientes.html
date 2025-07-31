@@ -16,9 +16,11 @@
                         <p class="text-muted">Gerenciar relacionamentos entre clientes e parceiros</p>
                     </div>
                     <div>
+                        {% if user.is_superuser or user.is_staff %}
                         <a href="{% url 'cadastrar_cliente_parceiro' %}" class="btn btn-primary">
                             <i class="fas fa-plus"></i> Novo Cliente
                         </a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -47,9 +49,9 @@
                                 <tr>
                                     <th>Id Cliente</th>
                                     <th>Vinculo</th>
+                                    <th>Empresa</th>
                                     <th>CNPJ</th>
                                     <th>Status</th>
-                                    <th>Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -75,6 +77,8 @@
                                         <small class="text-muted">{{ cliente_parceiro.id_company_vinculada.cnpj }}</small>
                                     </td>
                                     
+                                    
+                                    
                                     <td>
                                         {% if cliente_parceiro.ativo %}
                                             <span class="badge bg-success">Ativo</span>
@@ -82,12 +86,7 @@
                                             <span class="badge bg-danger">Inativo</span>
                                         {% endif %}
                                     </td>
-                                    <td>
-                                        <a href="{% url 'editar_cliente_parceiro' cliente_parceiro.pk %}" class="btn btn-sm btn-outline-primary me-1 mb-1">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        
-                                    </td>
+                                   
                                 </tr>
                                 {% endfor %}
                             </tbody>

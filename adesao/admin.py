@@ -27,6 +27,7 @@ class AdesaoAdminForm(forms.ModelForm):
 
 @admin.register(Adesao)
 class AdesaoAdmin(admin.ModelAdmin):
+
     form = AdesaoAdminForm  # Usa o formulário personalizado
     list_display = ('perdcomp', 'cliente_info', 'tese_credito', 'data_inicio', 'saldo_inicial', 'saldo_atual_display', 'fee_rate_display', 'ativo_display', 'lancamentos_count')
     list_filter = ('cliente__id_company_base', 'tese_credito_id__id_tipo_tese')
