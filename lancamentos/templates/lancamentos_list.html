@@ -104,6 +104,14 @@
                                 {% endif %}
                             </div>
                         </form>
+                        <form method="get" action="{% url 'lancamentos:exportar_xlsx' %}">
+                            {% if request.GET.perdcomp %}
+                                <input type="hidden" name="perdcomp" value="{{ request.GET.perdcomp }}">
+                            {% endif %}
+                            <button type="submit" class="btn btn-success w-100 w-md-auto">
+                                <i class="bi bi-file-earmark-excel"></i> Exportar XLSX
+                            </button>
+                        </form>
                         {% if user.is_staff or user.is_superuser %}
                             <a href="{% url 'lancamentos:create' %}" class="btn btn-primary w-100 w-md-auto">
                                 <i class="bi bi-plus"></i> Novo Lançamento

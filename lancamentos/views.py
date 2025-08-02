@@ -11,7 +11,81 @@ from django.core.exceptions import ValidationError
 from .models import Lancamentos, Anexos
 from .forms import LancamentosForm, AnexosFormSet
 from .permissions import LancamentoPermissionMixin, LancamentoClienteViewOnlyMixin, AdminRequiredMixin
-from django.http import Http404
+from django.http import Http404, HttpResponse
+import openpyxl
+from openpyxl.utils import get_column_letter
+from openpyxl.styles import Font
+from django.utils.timezone import now
+from empresas.models import Empresa
+# --- Exportação de lançamentos para XLSX ---
+from django.contrib.auth.decorators import login_required
+@login_required
+def exportar_lancamentos_xlsx(request):
+    # Filtros iguais à listagem
+    queryset = Lancamentos.objects.select_related('id_adesao', 'id_adesao__cliente', 'id_adesao__cliente__id_company_vinculada').all().order_by('-data_lancamento')
+    user = request.user
+    if user.is_superuser or user.is_staff:
+        pass
+    elif hasattr(user, 'profile'):
+        profile = user.profile
+        if profile.eh_cliente and profile.empresa_vinculada:
+            queryset = queryset.filter(id_adesao__cliente__id_company_vinculada=profile.empresa_vinculada)
+        elif not profile.eh_cliente:
+            empresas_acessiveis = profile.get_empresas_acessiveis()
+            if empresas_acessiveis:
+                queryset = queryset.filter(id_adesao__cliente__id_company_vinculada__in=empresas_acessiveis)
+            else:
+                queryset = queryset.none()
+        else:
+            queryset = queryset.none()
+    else:
+        queryset = queryset.none()
+    perdcomp = request.GET.get('perdcomp')
+    if perdcomp:
+        queryset = queryset.filter(id_adesao__perdcomp__icontains=perdcomp)
+
+    # Criação do arquivo XLSX
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Lançamentos"
+
+    # Cabeçalho extra
+    ws['A1'] = 'Relatório de Lançamentos'
+    ws['A1'].font = Font(bold=True, size=14)
+    ws['A2'] = f'Gerado em: {now().strftime("%d/%m/%Y %H:%M:%S")}'
+    ws['A3'] = f'Usuário: {user.get_username()}'
+    empresa_nome = getattr(getattr(user.profile, 'empresa_vinculada', None), 'razao_social', '-') if hasattr(user, 'profile') else '-'
+    ws['A4'] = f'Empresa: {empresa_nome}'
+
+    # Cabeçalho dos dados (linha 6)
+    headers = [
+        'Perdcomp', 'Cliente', 'Data', 'Valor do Lançamento', 'Sinal', 'Saldo Restante', 'Qtd. Anexos'
+    ]
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=6, column=col, value=header)
+        cell.font = Font(bold=True)
+
+    # Dados
+    for idx, lanc in enumerate(queryset, start=7):
+        ws.cell(row=idx, column=1, value=getattr(lanc.id_adesao, 'perdcomp', ''))
+        cliente = getattr(getattr(lanc.id_adesao, 'cliente', None), 'id_company_vinculada', None)
+        cliente_nome = getattr(cliente, 'razao_social', str(cliente)) if cliente else ''
+        ws.cell(row=idx, column=2, value=cliente_nome)
+        ws.cell(row=idx, column=3, value=lanc.data_lancamento.strftime('%d/%m/%Y'))
+        ws.cell(row=idx, column=4, value=lanc.valor)
+        ws.cell(row=idx, column=5, value=lanc.sinal)
+        ws.cell(row=idx, column=6, value=lanc.saldo_restante)
+        ws.cell(row=idx, column=7, value=lanc.anexos.count())
+
+    # Ajuste de largura
+    for col in range(1, len(headers)+1):
+        ws.column_dimensions[get_column_letter(col)].width = 22
+
+    # Resposta HTTP
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="relatorio_lancamentos_{now().strftime("%Y%m%d_%H%M%S")}.xlsx"'
+    wb.save(response)
+    return response
 
 class LancamentosListView(LancamentoClienteViewOnlyMixin, ListView):
     model = Lancamentos
