@@ -114,6 +114,7 @@
                     
                       {# Menu Parceiro removido para clientes comuns, só aparece para admin/staff no bloco acima #}
                       
+                      {% if not user.profile.eh_cliente %}
                       <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                           <i class="bi bi-file-earmark-plus me-1"></i>Adesões</a>
@@ -124,6 +125,7 @@
                           {% endif %}
                         </ul>
                       </li>
+                      {% endif %}
                       
                       <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
