@@ -59,7 +59,7 @@ def exportar_lancamentos_xlsx(request):
 
     # Cabeçalho dos dados (linha 6)
     headers = [
-        'Perdcomp', 'Cliente', 'Data', 'Valor do Lançamento', 'Sinal', 'Saldo Restante', 'Qtd. Anexos'
+        'Perdcomp', 'Cliente', 'Data', 'Valor do Lançamento', 'Sinal', 'Saldo Restante', 'Descrição', 'Qtd. Anexos'
     ]
     for col, header in enumerate(headers, 1):
         cell = ws.cell(row=6, column=col, value=header)
@@ -75,7 +75,8 @@ def exportar_lancamentos_xlsx(request):
         ws.cell(row=idx, column=4, value=lanc.valor)
         ws.cell(row=idx, column=5, value=lanc.sinal)
         ws.cell(row=idx, column=6, value=lanc.saldo_restante)
-        ws.cell(row=idx, column=7, value=lanc.anexos.count())
+        ws.cell(row=idx, column=7, value=lanc.descricao if hasattr(lanc, 'descricao') else '')
+        ws.cell(row=idx, column=8, value=lanc.anexos.count())
 
     # Ajuste de largura
     for col in range(1, len(headers)+1):

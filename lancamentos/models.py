@@ -49,7 +49,7 @@ class Lancamentos(models.Model):
         verbose_name='Data de Criação'
     )
     
-    observacao = models.TextField(
+    descricao = models.TextField(
         blank=True,
         null=True,
         verbose_name='Observação'
