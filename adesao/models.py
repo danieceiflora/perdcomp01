@@ -17,6 +17,20 @@ class Adesao(models.Model):
         verbose_name='Tese de Crédito'
     )
 
+    metodo_credito_options = [
+        ('Pedido de compensação', 'Pedido de compensação'),
+        ('Pedido de restituição', 'Pedido de restituição'),
+        ('Declaração de compensação', 'Declaração de compensação')
+    ]
+
+    metodo_credito = models.CharField(
+        max_length=50,
+        choices=metodo_credito_options,
+        verbose_name='Método de Crédito',
+        blank=True,
+        null=True
+    )
+
     data_inicio = models.DateField(
         verbose_name='Data de Início',
         help_text='Data em que a adesão foi iniciada'
@@ -24,15 +38,54 @@ class Adesao(models.Model):
     
     perdcomp = models.CharField(
         max_length=30,
-        verbose_name='PERDCOMP'
+        verbose_name='PERDCOMP',
+        blank=True,
+        null=True,
     )
 
     saldo = models.FloatField(
-        verbose_name='Saldo Inicial'
+        verbose_name='Valor do crédito',
     )
     
-    fee_rate = models.FloatField(
-        verbose_name='Fee Rate'
+    ano_trimestre = models.CharField(
+        max_length=7,
+        verbose_name='Ano/Trimestre',
+        blank=True,
+        null=True,
+    )
+
+    periodo_apuracao = models.CharField(
+        max_length=20,
+        verbose_name='Período de Apuração',
+        blank=True,
+        null=True,
+    )
+
+    periodo_apuracao_um = models.CharField(
+        max_length=20,
+        verbose_name='Período de Apuração 1',
+        blank=True,
+        null=True,
+    )
+
+    codigo_receita = models.CharField(
+        max_length=20,
+        verbose_name='Código da Receita',
+        blank=True,
+        null=True,
+    )
+
+    codigo_receita_denominacao = models.CharField(
+        max_length=20,
+        verbose_name='Código Receita / Denominação',
+        blank=True,
+        null=True,
+    )
+
+    credito_original_utilizado = models.FloatField(
+        verbose_name='Crédito Original Utilizado',
+        blank=True,
+        null=True,
     )
 
     ativo = models.BooleanField(

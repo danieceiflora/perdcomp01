@@ -5,12 +5,17 @@ from clientes_parceiros.models import ClientesParceiros, TipoRelacionamento
 class AdesaoForm(forms.ModelForm):
     class Meta:
         model = Adesao
-        fields = ['cliente', 'tese_credito_id', 'data_inicio', 'perdcomp', 'saldo', 'fee_rate', 'ativo', 'saldo_atual']
+        fields = ['cliente', 'tese_credito_id', 'metodo_credito', 'data_inicio', 'perdcomp', 'ano_trimestre', 'periodo_apuracao',
+                 'periodo_apuracao_um', 'codigo_receita', 'codigo_receita_denominacao', 'credito_original_utilizado',
+                 'saldo', 'ativo', 'saldo_atual']
         widgets = {
             'cliente': forms.Select(attrs={
                 'class': 'form-select',
             }),
             'tese_credito_id': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            'metodo_credito': forms.Select(attrs={
                 'class': 'form-select',
             }),
             'data_inicio': forms.DateInput(attrs={
@@ -21,14 +26,34 @@ class AdesaoForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Número do PERDCOMP'
             }),
+            'ano_trimestre': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ano/Trimestre (Ex: 2025/1)'
+            }),
+            'periodo_apuracao': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Período de Apuração'
+            }),
+            'periodo_apuracao_um': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Período de Apuração 1'
+            }),
+            'codigo_receita': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Código da Receita'
+            }),
+            'codigo_receita_denominacao': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Código Receita / Denominação'
+            }),
+            'credito_original_utilizado': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Crédito Original Utilizado',
+                'step': '0.01'
+            }),
             'saldo': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Saldo',
-                'step': '0.01'
-            }),
-            'fee_rate': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Fee Rate',
                 'step': '0.01'
             }),
             'ativo': forms.CheckboxInput(attrs={

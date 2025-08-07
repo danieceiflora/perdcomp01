@@ -95,7 +95,6 @@
                                         <th>Cliente</th>
                                         <th>Data de Início</th>
                                         <th>Saldo Inicial</th>
-                                        <th>Fee Rate</th>
                                         <th>Saldo Restante</th>
                                         <th>Status</th>
                                         <th>Ações</th>
@@ -108,7 +107,6 @@
                                         <td>{{ adesao.cliente.id_company_vinculada.nome_fantasia|default:adesao.cliente.id_company_vinculada.razao_social }}</td>
                                         <td>{{ adesao.data_inicio|date:"d/m/Y" }}</td>
                                         <td class="fw-bold {% if adesao.saldo > 0 %}text-secondary{% elif adesao.saldo < 0 %}text-danger{% endif %}">R$ {{ adesao.saldo|floatformat:2 }}</td>
-                                        <td>{{ adesao.fee_rate|floatformat:2 }}%</td>
                                         <td class="fw-bold {% if adesao.saldo > 0 %}text-success{% elif adesao.saldo < 0 %}text-danger{% endif %}">R$ {{ adesao.saldo_atual|floatformat:2 }}</td>
                                         <td>{% if adesao.ativo %}<span class="badge bg-success">Ativo</span>{% else %}<span class="badge bg-danger">Inativo</span>{% endif %}</td>
                                         <td>
