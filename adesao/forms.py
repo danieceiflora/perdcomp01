@@ -1,4 +1,5 @@
 from django import forms
+from django.utils.timezone import now
 from .models import Adesao
 from clientes_parceiros.models import ClientesParceiros, TipoRelacionamento
 
@@ -69,30 +70,72 @@ class AdesaoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Se for um novo objeto, inicializa o saldo_atual com o valor do saldo
+        # Atualiza choices conforme fluxo
+        if 'metodo_credito' in self.fields:
+            self.fields['metodo_credito'].choices = [
+                ('', 'Selecione...'),
+                ('Pedido de compensação', 'Pedido de ressarcimento'),
+                ('Pedido de restituição', 'Pedido de restituição'),
+                ('Declaração de compensação', 'Declaração de compensação'),
+                ('Declaração de compensação pagamento indevido', 'Declaração de compensação pagamento indevido'),
+            ]
+
+        # Campos condicionais não obrigatórios por padrão; validação no clean()
+        # Saldo sempre obrigatório
+        for fname in ['ano_trimestre', 'periodo_apuracao', 'codigo_receita', 'credito_original_utilizado', 'codigo_receita_denominacao', 'periodo_apuracao_um']:
+            if fname in self.fields:
+                self.fields[fname].required = False
+        
+        # Campo saldo sempre obrigatório
+        if 'saldo' in self.fields:
+            self.fields['saldo'].required = True
+        
+        # Inicializações padrão
         if not self.instance.pk:
             self.fields['saldo_atual'].initial = self.initial.get('saldo', 0)
-            
-        # Se estiver editando, torna o saldo_atual somente leitura
+            if 'data_inicio' in self.fields and not self.fields['data_inicio'].initial:
+                self.fields['data_inicio'].initial = now().date()
         else:
             self.fields['saldo_atual'].widget.attrs['readonly'] = True
             self.fields['saldo_atual'].help_text = 'Este campo é atualizado automaticamente pelos lançamentos'
         
-        # Filtra ESTRITAMENTE apenas clientes_parceiros com tipo_relacionamento=1 (Cliente) e ativos
-        # Sem tentar buscar por nome ou outras tentativas
+        # Queryset de clientes (tipo Cliente / ativos)
         try:
-            # Filtra diretamente por id_tipo_relacionamento__id=1, que representa Cliente
-            # Isso é mais direto e evita problemas se a referência não for encontrada
             self.fields['cliente'].queryset = ClientesParceiros.objects.filter(
-                id_tipo_relacionamento__id=1,  # Filtra diretamente pelo ID do tipo de relacionamento
+                id_tipo_relacionamento__id=1,
                 ativo=True
             ).select_related('id_company_vinculada')
-            
         except Exception as e:
-            # Log do erro para diagnóstico
             print(f"Erro ao filtrar clientes: {e}")
-            # Se ocorrer qualquer erro, não mostra nada
             self.fields['cliente'].queryset = ClientesParceiros.objects.none()
         
-        # Personaliza o label para mostrar o nome da empresa cliente
+        # Label amigável
         self.fields['cliente'].label_from_instance = lambda obj: f"{obj.id_company_vinculada.nome_fantasia or obj.id_company_vinculada.razao_social} ({obj.nome_referencia})"
+
+    def clean(self):
+        cleaned = super().clean()
+        metodo = cleaned.get('metodo_credito')
+        
+        if metodo == 'Pedido de compensação':  # Ressarcimento
+            if not cleaned.get('ano_trimestre'):
+                self.add_error('ano_trimestre', 'Informe o Ano/Trimestre.')
+        elif metodo == 'Pedido de restituição':
+            if not cleaned.get('periodo_apuracao'):
+                self.add_error('periodo_apuracao', 'Informe o Período de Apuração.')
+            if not cleaned.get('codigo_receita'):
+                self.add_error('codigo_receita', 'Informe o Código da Receita.')
+        elif metodo == 'Declaração de compensação':
+            if cleaned.get('credito_original_utilizado') in (None, ''):
+                self.add_error('credito_original_utilizado', 'Informe o Crédito Original Utilizado.')
+        elif metodo == 'Declaração de compensação pagamento indevido':
+            # Exigir: periodo_apuracao, codigo_receita, codigo_receita_denominacao, periodo_apuracao_um
+            if not cleaned.get('periodo_apuracao'):
+                self.add_error('periodo_apuracao', 'Informe o Período de Apuração.')
+            if not cleaned.get('codigo_receita'):
+                self.add_error('codigo_receita', 'Informe o Código da Receita.')
+            if not cleaned.get('codigo_receita_denominacao'):
+                self.add_error('codigo_receita_denominacao', 'Informe o Código Receita / Denominação.')
+            if not cleaned.get('periodo_apuracao_um'):
+                self.add_error('periodo_apuracao_um', 'Informe o Período de Apuração 1.')
+        
+        return cleaned

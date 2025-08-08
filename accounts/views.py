@@ -7,6 +7,37 @@ from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import UserProfile
 
+class AdminLoginView(LoginView):
+    """
+    View de login para usuários administrativos (staff/superuser)
+    """
+    template_name = 'accounts/admin_login.html'
+    
+    def get_success_url(self):
+        # Redireciona para o dashboard administrativo ou home
+        return reverse_lazy('dashboard:dashboard')  # ou 'home' se preferir
+    
+    def form_valid(self, form):
+        user = form.get_user()
+        
+        # Verificar se usuário é staff ou superuser
+        if not (user.is_staff or user.is_superuser):
+            messages.error(self.request, 'Acesso negado. Este login é restrito a administradores do sistema.')
+            return self.form_invalid(form)
+        
+        messages.success(self.request, f'Bem-vindo ao painel administrativo, {user.first_name or user.username}!')
+        return super().form_valid(form)
+    
+    def form_invalid(self, form):
+        messages.error(self.request, 'Usuário ou senha inválidos.')
+        return super().form_invalid(form)
+    
+    def dispatch(self, request, *args, **kwargs):
+        # Se já está logado e é admin, redireciona para dashboard
+        if request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser):
+            return redirect(self.get_success_url())
+        return super().dispatch(request, *args, **kwargs)
+
 class ClienteLoginView(LoginView):
     template_name = 'accounts/cliente/login.html'
     

@@ -8,118 +8,156 @@
 {% block content %}
 <div class="container-fluid">
     <div class="row">
-        <div class="col-12">
-            <div class="card">
-                
-                <form method="post" class="card-body">
-                    {% csrf_token %}
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="{{ form.cliente.id_for_label }}" class="form-label">{{ form.cliente.label }}:</label>
-                                {{ form.cliente }}
-                                {% if form.cliente.errors %}
-                                    <div class="text-danger">
-                                        {{ form.cliente.errors }}
-                                    </div>
-                                {% endif %}
-                                <small class="form-text text-muted">Selecione o cliente para esta adesão</small>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="{{ form.tese_credito_id.id_for_label }}" class="form-label">{{ form.tese_credito_id.label }}:</label>
-                                {{ form.tese_credito_id }}
-                                {% if form.tese_credito_id.errors %}
-                                    <div class="text-danger">
-                                        {{ form.tese_credito_id.errors }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="{{ form.perdcomp.id_for_label }}" class="form-label">{{ form.perdcomp.label }}:</label>
-                                {{ form.perdcomp }}
-                                {% if form.perdcomp.errors %}
-                                    <div class="text-danger">
-                                        {{ form.perdcomp.errors }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="{{ form.data_inicio.id_for_label }}" class="form-label">{{ form.data_inicio.label }}:</label>
-                                {{ form.data_inicio }}
-                                {% if form.data_inicio.errors %}
-                                    <div class="text-danger">
-                                        {{ form.data_inicio.errors }}
-                                    </div>
-                                {% endif %}
-                                <small class="form-text text-muted">{{ form.data_inicio.help_text }}</small>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="{{ form.saldo.id_for_label }}" class="form-label">{{ form.saldo.label }}:</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">R$</span>
+        <div class="col-12 col-lg-10 col-xl-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">{% if object %}Editar Adesão{% else %}Nova Adesão{% endif %}</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger" role="alert">{{ form.non_field_errors }}</div>
+                        {% endif %}
+
+                        {% if form.data_inicio %}{{ form.data_inicio.as_hidden }}{% endif %}
+
+                        <!-- Seção 1: Dados básicos -->
+                        <fieldset class="mb-3">
+                            <legend class="h6">Dados básicos</legend>
+                            <div class="row g-3">
+                                <div class="col-12 col-md-6">
+                                    <label for="{{ form.perdcomp.id_for_label }}" class="form-label">{{ form.perdcomp.label }}</label>
+                                    {{ form.perdcomp }}
+                                    {% if form.perdcomp.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.perdcomp.errors|striptags }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label for="{{ form.cliente.id_for_label }}" class="form-label">{{ form.cliente.label }}</label>
+                                    {{ form.cliente }}
+                                    {% if form.cliente.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.cliente.errors|striptags }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label for="{{ form.tese_credito_id.id_for_label }}" class="form-label">{{ form.tese_credito_id.label }}</label>
+                                    {{ form.tese_credito_id }}
+                                    {% if form.tese_credito_id.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.tese_credito_id.errors|striptags }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label for="{{ form.metodo_credito.id_for_label }}" class="form-label">{{ form.metodo_credito.label }}</label>
+                                    {{ form.metodo_credito }}
+                                    {% if form.metodo_credito.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.metodo_credito.errors|striptags }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label for="{{ form.saldo.id_for_label }}" class="form-label">{{ form.saldo.label }}</label>
                                     {{ form.saldo }}
+                                    {% if form.saldo.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.saldo.errors|striptags }}</div>
+                                    {% endif %}
                                 </div>
-                                {% if form.saldo.errors %}
-                                    <div class="text-danger">
-                                        {{ form.saldo.errors }}
-                                    </div>
-                                {% endif %}
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="{{ form.free_rate.id_for_label }}" class="form-label">{{ form.free_rate.label }}:</label>
-                                <div class="input-group">
-                                    {{ form.free_rate }}
-                                    <span class="input-group-text">%</span>
+                        </fieldset>
+
+                        <!-- Seção 2: Campos condicionais -->
+                        <div id="sec-condicional" class="mt-3" aria-live="polite">
+                            <!-- Ressarcimento (tratado como 'Pedido de compensação' no banco) -->
+                            <fieldset id="sec-ressarcimento" class="d-none">
+                                <legend class="h6">Pedido de ressarcimento</legend>
+                                <div class="row g-3">
+                                    <div class="col-12 col-md-6">
+                                        <label for="{{ form.ano_trimestre.id_for_label }}" class="form-label">{{ form.ano_trimestre.label }}</label>
+                                        {{ form.ano_trimestre }}
+                                        {% if form.ano_trimestre.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.ano_trimestre.errors|striptags }}</div>
+                                        {% endif %}
+                                    </div>
                                 </div>
-                                {% if form.free_rate.errors %}
-                                    <div class="text-danger">
-                                        {{ form.free_rate.errors }}
+                            </fieldset>
+
+                            <!-- Restituição -->
+                            <fieldset id="sec-restituicao" class="d-none">
+                                <legend class="h6">Pedido de restituição</legend>
+                                <div class="row g-3">
+                                    <div class="col-12 col-md-6">
+                                        <label for="{{ form.periodo_apuracao.id_for_label }}" class="form-label">{{ form.periodo_apuracao.label }}</label>
+                                        {{ form.periodo_apuracao }}
+                                        {% if form.periodo_apuracao.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.periodo_apuracao.errors|striptags }}</div>
+                                        {% endif %}
                                     </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <div class="form-check">
-                                {{ form.ativo }}
-                                <label for="{{ form.ativo.id_for_label }}" class="form-check-label">{{ form.ativo.label }}</label>
-                                {% if form.ativo.errors %}
-                                    <div class="text-danger">
-                                        {{ form.ativo.errors }}
+                                    <div class="col-12 col-md-6">
+                                        <label for="{{ form.codigo_receita.id_for_label }}" class="form-label">{{ form.codigo_receita.label }}</label>
+                                        {{ form.codigo_receita }}
+                                        {% if form.codigo_receita.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.codigo_receita.errors|striptags }}</div>
+                                        {% endif %}
                                     </div>
-                                {% endif %}
-                            </div>
+                                </div>
+                            </fieldset>
+
+                            <!-- Declaração de compensação -->
+                            <fieldset id="sec-declaracao" class="d-none">
+                                <legend class="h6">Declaração de compensação</legend>
+                                <div class="row g-3">
+                                    <div class="col-12 col-md-6">
+                                        <label for="{{ form.credito_original_utilizado.id_for_label }}" class="form-label">{{ form.credito_original_utilizado.label }}</label>
+                                        {{ form.credito_original_utilizado }}
+                                        {% if form.credito_original_utilizado.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.credito_original_utilizado.errors|striptags }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </fieldset>
+
+                            <!-- Declaração de compensação (pagamento indevido) -->
+                            <fieldset id="sec-declaracao-indevido" class="d-none">
+                                <legend class="h6">Declaração de compensação (pagamento indevido)</legend>
+                                <div class="row g-3">
+                                    <div class="col-12 col-md-6">
+                                        <label for="{{ form.periodo_apuracao.id_for_label }}" class="form-label">{{ form.periodo_apuracao.label }}</label>
+                                        {{ form.periodo_apuracao }}
+                                        {% if form.periodo_apuracao.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.periodo_apuracao.errors|striptags }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <label for="{{ form.periodo_apuracao_um.id_for_label }}" class="form-label">{{ form.periodo_apuracao_um.label }}</label>
+                                        {{ form.periodo_apuracao_um }}
+                                        {% if form.periodo_apuracao_um.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.periodo_apuracao_um.errors|striptags }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <label for="{{ form.codigo_receita.id_for_label }}" class="form-label">{{ form.codigo_receita.label }}</label>
+                                        {{ form.codigo_receita }}
+                                        {% if form.codigo_receita.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.codigo_receita.errors|striptags }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <label for="{{ form.codigo_receita_denominacao.id_for_label }}" class="form-label">{{ form.codigo_receita_denominacao.label }}</label>
+                                        {{ form.codigo_receita_denominacao }}
+                                        {% if form.codigo_receita_denominacao.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.codigo_receita_denominacao.errors|striptags }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </fieldset>
                         </div>
-                    </div>
-                    
-                    <div class="card-footer">
-                        <button type="submit" class="btn btn-success">
-                            <i class="bi bi-check-lg"></i> Salvar
-                        </button>
-                        <a href="{% url 'adesao:list' %}" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Voltar
-                        </a>
-                    </div>
-                </form>
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a href="{% url 'adesao:list' %}" class="btn btn-outline-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">Salvar</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -129,7 +167,72 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Adicionar classes de validação ao formulário quando for submetido
+        const metodoField = document.getElementById('{{ form.metodo_credito.id_for_label }}') || document.querySelector('[name="{{ form.metodo_credito.html_name }}"]');
+        const secRessarc = document.getElementById('sec-ressarcimento');
+        const secRestit = document.getElementById('sec-restituicao');
+        const secDeclar  = document.getElementById('sec-declaracao');
+        const secDeclarInd = document.getElementById('sec-declaracao-indevido');
+
+        const fldAnoTrim = document.getElementById('{{ form.ano_trimestre.id_for_label }}');
+        const fldPeriodo = document.getElementById('{{ form.periodo_apuracao.id_for_label }}');
+        const fldPeriodoUm = document.getElementById('{{ form.periodo_apuracao_um.id_for_label }}');
+        const fldCodRec  = document.getElementById('{{ form.codigo_receita.id_for_label }}');
+        const fldCodRecDen  = document.getElementById('{{ form.codigo_receita_denominacao.id_for_label }}');
+        const fldCredOri = document.getElementById('{{ form.credito_original_utilizado.id_for_label }}');
+
+        function setRequired(el, required) {
+            if (!el) return;
+            if (required) {
+                el.setAttribute('required', 'required');
+                el.closest('.col-12, .col-md-6')?.querySelector('label')?.classList.add('required');
+            } else {
+                el.removeAttribute('required');
+                el.closest('.col-12, .col-md-6')?.querySelector('label')?.classList.remove('required');
+            }
+        }
+
+        function toggleSections() {
+            const val = metodoField ? metodoField.value : '';
+            // Oculta todas
+            secRessarc.classList.add('d-none');
+            secRestit.classList.add('d-none');
+            secDeclar.classList.add('d-none');
+            secDeclarInd.classList.add('d-none');
+
+            // Limpa required
+            setRequired(fldAnoTrim, false);
+            setRequired(fldPeriodo, false);
+            setRequired(fldPeriodoUm, false);
+            setRequired(fldCodRec, false);
+            setRequired(fldCodRecDen, false);
+            setRequired(fldCredOri, false);
+
+            if (val === 'Pedido de compensação') {
+                // Ressarcimento
+                secRessarc.classList.remove('d-none');
+                setRequired(fldAnoTrim, true);
+            } else if (val === 'Pedido de restituição') {
+                // Restituição
+                secRestit.classList.remove('d-none');
+                setRequired(fldPeriodo, true);
+                setRequired(fldCodRec, true);
+            } else if (val === 'Declaração de compensação') {
+                // Declaração de compensação
+                secDeclar.classList.remove('d-none');
+                setRequired(fldCredOri, true);
+            } else if (val === 'Declaração de compensação pagamento indevido') {
+                // Declaração de compensação (pagamento indevido)
+                secDeclarInd.classList.remove('d-none');
+                setRequired(fldPeriodo, true);
+                setRequired(fldPeriodoUm, true);
+                setRequired(fldCodRec, true);
+                setRequired(fldCodRecDen, true);
+            }
+        }
+
+        toggleSections();
+        metodoField && metodoField.addEventListener('change', toggleSections);
+
         const form = document.querySelector('form');
         form.addEventListener('submit', function() {
             form.classList.add('was-validated');

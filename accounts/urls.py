@@ -7,6 +7,9 @@ urlpatterns = [
     # Seletor de login
     path('', views.LoginSelectorView.as_view(), name='login_selector'),
     
+    # Login administrativo
+    path('admin-login/', views.AdminLoginView.as_view(), name='admin_login'),
+    
     # Login específico por tipo
     path('cliente/login/', views.ClienteLoginView.as_view(), name='cliente_login'),
     path('parceiro/login/', views.ParceiroLoginView.as_view(), name='parceiro_login'),
