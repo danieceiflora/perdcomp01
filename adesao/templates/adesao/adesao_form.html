@@ -10,108 +10,108 @@
     <div class="row">
         <div class="col-12">
             <div class="card">
-                
+                <div class="card-header">
+                    <strong>Dados da adesão</strong>
+                </div>
                 <form method="post" class="card-body">
                     {% csrf_token %}
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="{{ form.cliente.id_for_label }}" class="form-label">{{ form.cliente.label }}:</label>
-                                {{ form.cliente }}
-                                {% if form.cliente.errors %}
-                                    <div class="text-danger">
-                                        {{ form.cliente.errors }}
-                                    </div>
-                                {% endif %}
-                                <small class="form-text text-muted">Selecione o cliente para esta adesão</small>
-                            </div>
+
+                    <!-- Seção fixa -->
+                    <div class="row g-3 mb-2">
+                        <div class="col-md-4">
+                            <label for="{{ form.perdcomp.id_for_label }}" class="form-label">{{ form.perdcomp.label }}:</label>
+                            {{ form.perdcomp }}
+                            {% if form.perdcomp.errors %}<div class="text-danger">{{ form.perdcomp.errors }}</div>{% endif %}
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="{{ form.tese_credito_id.id_for_label }}" class="form-label">{{ form.tese_credito_id.label }}:</label>
-                                {{ form.tese_credito_id }}
-                                {% if form.tese_credito_id.errors %}
-                                    <div class="text-danger">
-                                        {{ form.tese_credito_id.errors }}
-                                    </div>
-                                {% endif %}
+                        <div class="col-md-4">
+                            <label for="{{ form.cliente.id_for_label }}" class="form-label">{{ form.cliente.label }}:</label>
+                            {{ form.cliente }}
+                            {% if form.cliente.errors %}<div class="text-danger">{{ form.cliente.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.saldo.id_for_label }}" class="form-label">{{ form.saldo.label }}:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                {{ form.saldo }}
                             </div>
+                            {% if form.saldo.errors %}<div class="text-danger">{{ form.saldo.errors }}</div>{% endif %}
                         </div>
                     </div>
-                    
-                    <div class="row mb-3">
+
+                    <div class="row g-3 mb-4">
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="{{ form.perdcomp.id_for_label }}" class="form-label">{{ form.perdcomp.label }}:</label>
-                                {{ form.perdcomp }}
-                                {% if form.perdcomp.errors %}
-                                    <div class="text-danger">
-                                        {{ form.perdcomp.errors }}
-                                    </div>
-                                {% endif %}
-                            </div>
+                            <label for="{{ form.tese_credito_id.id_for_label }}" class="form-label">{{ form.tese_credito_id.label }}:</label>
+                            {{ form.tese_credito_id }}
+                            {% if form.tese_credito_id.errors %}<div class="text-danger">{{ form.tese_credito_id.errors }}</div>{% endif %}
                         </div>
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="{{ form.data_inicio.id_for_label }}" class="form-label">{{ form.data_inicio.label }}:</label>
-                                {{ form.data_inicio }}
-                                {% if form.data_inicio.errors %}
-                                    <div class="text-danger">
-                                        {{ form.data_inicio.errors }}
-                                    </div>
-                                {% endif %}
-                                <small class="form-text text-muted">{{ form.data_inicio.help_text }}</small>
-                            </div>
+                            <label for="{{ form.metodo_credito.id_for_label }}" class="form-label">{{ form.metodo_credito.label }}:</label>
+                            {{ form.metodo_credito }}
+                            {% if form.metodo_credito.errors %}<div class="text-danger">{{ form.metodo_credito.errors }}</div>{% endif %}
                         </div>
                     </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="{{ form.saldo.id_for_label }}" class="form-label">{{ form.saldo.label }}:</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">R$</span>
-                                    {{ form.saldo }}
-                                </div>
-                                {% if form.saldo.errors %}
-                                    <div class="text-danger">
-                                        {{ form.saldo.errors }}
-                                    </div>
-                                {% endif %}
-                            </div>
+
+                    <!-- Campo não solicitado, mas necessário: Data de início -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label for="{{ form.data_inicio.id_for_label }}" class="form-label">{{ form.data_inicio.label }}:</label>
+                            {{ form.data_inicio }}
+                            {% if form.data_inicio.errors %}<div class="text-danger">{{ form.data_inicio.errors }}</div>{% endif %}
+                            <small class="form-text text-muted">{{ form.data_inicio.help_text }}</small>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="{{ form.free_rate.id_for_label }}" class="form-label">{{ form.free_rate.label }}:</label>
-                                <div class="input-group">
-                                    {{ form.free_rate }}
-                                    <span class="input-group-text">%</span>
-                                </div>
-                                {% if form.free_rate.errors %}
-                                    <div class="text-danger">
-                                        {{ form.free_rate.errors }}
-                                    </div>
-                                {% endif %}
-                            </div>
+                        <div class="col-md-4 d-none">
+                            {# Campo saldo_atual é controlado pelo sistema; manter no form para edições #}
+                            {{ form.saldo_atual }}
                         </div>
-                    </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-12">
+                        <div class="col-md-4 d-flex align-items-end">
                             <div class="form-check">
                                 {{ form.ativo }}
                                 <label for="{{ form.ativo.id_for_label }}" class="form-check-label">{{ form.ativo.label }}</label>
-                                {% if form.ativo.errors %}
-                                    <div class="text-danger">
-                                        {{ form.ativo.errors }}
-                                    </div>
-                                {% endif %}
+                                {% if form.ativo.errors %}<div class="text-danger">{{ form.ativo.errors }}</div>{% endif %}
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="card-footer">
+
+                    <!-- Seção dinâmica por método -->
+                    <div class="card mt-3">
+                        <div class="card-header"><strong>Detalhes do método</strong></div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div id="group-ano_trimestre" class="col-md-4" style="display:none;">
+                                    <label for="{{ form.ano_trimestre.id_for_label }}" class="form-label">{{ form.ano_trimestre.label }}:</label>
+                                    {{ form.ano_trimestre }}
+                                    {% if form.ano_trimestre.errors %}<div class="text-danger">{{ form.ano_trimestre.errors }}</div>{% endif %}
+                                </div>
+                                <div id="group-periodo_apuracao" class="col-md-3" style="display:none;">
+                                    <label for="{{ form.periodo_apuracao.id_for_label }}" class="form-label">{{ form.periodo_apuracao.label }}:</label>
+                                    {{ form.periodo_apuracao }}
+                                    {% if form.periodo_apuracao.errors %}<div class="text-danger">{{ form.periodo_apuracao.errors }}</div>{% endif %}
+                                </div>
+                                <div id="group-codigo_receita" class="col-md-3" style="display:none;">
+                                    <label for="{{ form.codigo_receita.id_for_label }}" class="form-label">{{ form.codigo_receita.label }}:</label>
+                                    {{ form.codigo_receita }}
+                                    {% if form.codigo_receita.errors %}<div class="text-danger">{{ form.codigo_receita.errors }}</div>{% endif %}
+                                </div>
+                                <div id="group-credito_original_utilizado" class="col-md-4" style="display:none;">
+                                    <label for="{{ form.credito_original_utilizado.id_for_label }}" class="form-label">{{ form.credito_original_utilizado.label }}:</label>
+                                    {{ form.credito_original_utilizado }}
+                                    {% if form.credito_original_utilizado.errors %}<div class="text-danger">{{ form.credito_original_utilizado.errors }}</div>{% endif %}
+                                </div>
+                                <div id="group-codigo_receita_denominacao" class="col-md-3" style="display:none;">
+                                    <label for="{{ form.codigo_receita_denominacao.id_for_label }}" class="form-label">{{ form.codigo_receita_denominacao.label }}:</label>
+                                    {{ form.codigo_receita_denominacao }}
+                                    {% if form.codigo_receita_denominacao.errors %}<div class="text-danger">{{ form.codigo_receita_denominacao.errors }}</div>{% endif %}
+                                </div>
+                                <div id="group-periodo_apuracao_um" class="col-md-3" style="display:none;">
+                                    <label for="{{ form.periodo_apuracao_um.id_for_label }}" class="form-label">{{ form.periodo_apuracao_um.label }}:</label>
+                                    {{ form.periodo_apuracao_um }}
+                                    {% if form.periodo_apuracao_um.errors %}<div class="text-danger">{{ form.periodo_apuracao_um.errors }}</div>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-footer mt-3">
                         <button type="submit" class="btn btn-success">
                             <i class="bi bi-check-lg"></i> Salvar
                         </button>
@@ -123,15 +123,85 @@
             </div>
         </div>
     </div>
-</div>
+    </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Adicionar classes de validação ao formulário quando for submetido
+    document.addEventListener('DOMContentLoaded', function () {
+        const metodo = document.getElementById('{{ form.metodo_credito.id_for_label }}');
+    const gAnoTrim = document.getElementById('group-ano_trimestre');
+    const gPerAp = document.getElementById('group-periodo_apuracao');
+    const gRec = document.getElementById('group-codigo_receita');
+    const gCredOrig = document.getElementById('group-credito_original_utilizado');
+    const gRecDenom = document.getElementById('group-codigo_receita_denominacao');
+    const gPerAp1 = document.getElementById('group-periodo_apuracao_um');
+
+        function setRequired(selectorList, required) {
+            selectorList.forEach(sel => {
+                const el = document.getElementById(sel);
+                if (el) {
+                    if (required) {
+                        el.setAttribute('required', 'required');
+                    } else {
+                        el.removeAttribute('required');
+                    }
+                }
+            });
+        }
+
+        function updateVisibility() {
+            const val = metodo.value;
+            // Hide all groups
+            gAnoTrim.style.display = 'none';
+            gPerAp.style.display = 'none';
+            gRec.style.display = 'none';
+            gCredOrig.style.display = 'none';
+            gRecDenom.style.display = 'none';
+            gPerAp1.style.display = 'none';
+            // Unrequire all
+            setRequired([
+                '{{ form.ano_trimestre.id_for_label }}',
+                '{{ form.periodo_apuracao.id_for_label }}',
+                '{{ form.codigo_receita.id_for_label }}',
+                '{{ form.codigo_receita_denominacao.id_for_label }}',
+                '{{ form.periodo_apuracao_um.id_for_label }}',
+                '{{ form.credito_original_utilizado.id_for_label }}'
+            ], false);
+
+            if (val === 'Pedido de compensação') {
+                // Pedido de ressarcimento
+                gAnoTrim.style.display = '';
+                setRequired(['{{ form.ano_trimestre.id_for_label }}'], true);
+            } else if (val === 'Pedido de restituição') {
+                gPerAp.style.display = '';
+                gRec.style.display = '';
+                setRequired(['{{ form.periodo_apuracao.id_for_label }}', '{{ form.codigo_receita.id_for_label }}'], true);
+            } else if (val === 'Declaração de compensação') {
+                gCredOrig.style.display = '';
+                setRequired(['{{ form.credito_original_utilizado.id_for_label }}'], true);
+            } else if (val === 'Declaração de compensação pagamento indevido') {
+                gPerAp.style.display = '';
+                gRec.style.display = '';
+                gRecDenom.style.display = '';
+                gPerAp1.style.display = '';
+                setRequired([
+                    '{{ form.periodo_apuracao.id_for_label }}',
+                    '{{ form.codigo_receita.id_for_label }}',
+                    '{{ form.codigo_receita_denominacao.id_for_label }}',
+                    '{{ form.periodo_apuracao_um.id_for_label }}'
+                ], true);
+            }
+        }
+
+        if (metodo) {
+            metodo.addEventListener('change', updateVisibility);
+            updateVisibility(); // Initial state on load
+        }
+
+        // Validação visual simples ao submeter
         const form = document.querySelector('form');
-        form.addEventListener('submit', function() {
+        form.addEventListener('submit', function () {
             form.classList.add('was-validated');
         });
     });
