@@ -6,9 +6,13 @@ from clientes_parceiros.models import ClientesParceiros, TipoRelacionamento
 class AdesaoForm(forms.ModelForm):
     class Meta:
         model = Adesao
-        fields = ['cliente', 'tese_credito_id', 'metodo_credito', 'data_inicio', 'perdcomp', 'ano_trimestre', 'periodo_apuracao',
-                 'periodo_apuracao_um', 'codigo_receita', 'codigo_receita_denominacao', 'credito_original_utilizado',
-                 'saldo', 'ativo', 'saldo_atual']
+        fields = [
+            'cliente', 'tese_credito_id', 'metodo_credito', 'data_inicio', 'perdcomp',
+            'ano_trimestre', 'periodo_apuracao_credito', 'periodo_apuracao_debito', 'tipo_credito',
+            'codigo_receita', 'codigo_receita_denominacao', 'valor_do_principal',
+            'credito_original_utilizado', 'total',
+            'saldo', 'ativo', 'saldo_atual'
+        ]
         widgets = {
             'cliente': forms.Select(attrs={
                 'class': 'form-select',
@@ -31,13 +35,17 @@ class AdesaoForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Ano/Trimestre (Ex: 2025/1)'
             }),
-            'periodo_apuracao': forms.TextInput(attrs={
+            'periodo_apuracao_credito': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Período de Apuração'
+                'placeholder': 'Período de Apuração Crédito'
             }),
-            'periodo_apuracao_um': forms.TextInput(attrs={
+            'periodo_apuracao_debito': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Período de Apuração 1'
+                'placeholder': 'Período de Apuração Débito'
+            }),
+            'tipo_credito': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Tipo de Crédito'
             }),
             'codigo_receita': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -47,9 +55,19 @@ class AdesaoForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Código Receita / Denominação'
             }),
+            'valor_do_principal': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Valor do Principal',
+                'step': '0.01'
+            }),
             'credito_original_utilizado': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Crédito Original Utilizado',
+                'step': '0.01'
+            }),
+            'total': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Total',
                 'step': '0.01'
             }),
             'saldo': forms.NumberInput(attrs={
@@ -82,7 +100,11 @@ class AdesaoForm(forms.ModelForm):
 
         # Campos condicionais não obrigatórios por padrão; validação no clean()
         # Saldo sempre obrigatório
-        for fname in ['ano_trimestre', 'periodo_apuracao', 'codigo_receita', 'credito_original_utilizado', 'codigo_receita_denominacao', 'periodo_apuracao_um']:
+        for fname in [
+            'ano_trimestre', 'periodo_apuracao_credito', 'periodo_apuracao_debito',
+            'tipo_credito', 'codigo_receita', 'codigo_receita_denominacao',
+            'valor_do_principal', 'credito_original_utilizado', 'total'
+        ]:
             if fname in self.fields:
                 self.fields[fname].required = False
         
@@ -115,27 +137,29 @@ class AdesaoForm(forms.ModelForm):
     def clean(self):
         cleaned = super().clean()
         metodo = cleaned.get('metodo_credito')
-        
+
         if metodo == 'Pedido de compensação':  # Ressarcimento
             if not cleaned.get('ano_trimestre'):
                 self.add_error('ano_trimestre', 'Informe o Ano/Trimestre.')
+            if not cleaned.get('tipo_credito'):
+                self.add_error('tipo_credito', 'Informe o Tipo de Crédito.')
         elif metodo == 'Pedido de restituição':
-            if not cleaned.get('periodo_apuracao'):
-                self.add_error('periodo_apuracao', 'Informe o Período de Apuração.')
+            if not cleaned.get('periodo_apuracao_credito'):
+                self.add_error('periodo_apuracao_credito', 'Informe o Período de Apuração (Crédito).')
             if not cleaned.get('codigo_receita'):
                 self.add_error('codigo_receita', 'Informe o Código da Receita.')
         elif metodo == 'Declaração de compensação':
             if cleaned.get('credito_original_utilizado') in (None, ''):
                 self.add_error('credito_original_utilizado', 'Informe o Crédito Original Utilizado.')
         elif metodo == 'Declaração de compensação pagamento indevido':
-            # Exigir: periodo_apuracao, codigo_receita, codigo_receita_denominacao, periodo_apuracao_um
-            if not cleaned.get('periodo_apuracao'):
-                self.add_error('periodo_apuracao', 'Informe o Período de Apuração.')
+            # Exigir: periodo_apuracao_credito, codigo_receita, codigo_receita_denominacao, periodo_apuracao_debito
+            if not cleaned.get('periodo_apuracao_credito'):
+                self.add_error('periodo_apuracao_credito', 'Informe o Período de Apuração (Crédito).')
             if not cleaned.get('codigo_receita'):
                 self.add_error('codigo_receita', 'Informe o Código da Receita.')
             if not cleaned.get('codigo_receita_denominacao'):
                 self.add_error('codigo_receita_denominacao', 'Informe o Código Receita / Denominação.')
-            if not cleaned.get('periodo_apuracao_um'):
-                self.add_error('periodo_apuracao_um', 'Informe o Período de Apuração 1.')
-        
+            if not cleaned.get('periodo_apuracao_debito'):
+                self.add_error('periodo_apuracao_debito', 'Informe o Período de Apuração (Débito).')
+
         return cleaned

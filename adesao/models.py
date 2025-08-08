@@ -55,16 +55,23 @@ class Adesao(models.Model):
         null=True,
     )
 
-    periodo_apuracao = models.CharField(
+    periodo_apuracao_credito = models.CharField(
         max_length=20,
-        verbose_name='Período de Apuração',
+        verbose_name='Período de Apuração Crédito',
         blank=True,
         null=True,
     )
 
-    periodo_apuracao_um = models.CharField(
+    periodo_apuracao_debito = models.CharField(
         max_length=20,
-        verbose_name='Período de Apuração 1',
+        verbose_name='Periodo apuração débito',
+        blank=True,
+        null=True,
+    )
+
+    tipo_credito = models.CharField(
+        max_length=200,
+        verbose_name='Tipo de Crédito',
         blank=True,
         null=True,
     )
@@ -83,6 +90,12 @@ class Adesao(models.Model):
         null=True,
     )
 
+    total = models.FloatField(
+        verbose_name='Total',
+        blank=True,
+        null=True,
+    )
+
     credito_original_utilizado = models.FloatField(
         verbose_name='Crédito Original Utilizado',
         blank=True,
@@ -93,6 +106,14 @@ class Adesao(models.Model):
         default=True,
         verbose_name='Ativo'
     )
+
+    valor_do_principal = models.FloatField(
+        verbose_name='Valor do Principal',
+        blank=True,
+        null=True
+    )
+
+
     saldo_atual = models.FloatField(
         verbose_name='Saldo Atual',
         help_text='Saldo atual da adesão, atualizado automaticamente pelos lançamentos',
