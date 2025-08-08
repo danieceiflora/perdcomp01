@@ -77,32 +77,32 @@
                         <div class="card-header"><strong>Detalhes do método</strong></div>
                         <div class="card-body">
                             <div class="row g-3">
-                                <div id="group-ano_trimestre" class="col-md-4" style="display:none;">
+                                <div id="group-ano_trimestre" class="col-md-4 d-none">
                                     <label for="{{ form.ano_trimestre.id_for_label }}" class="form-label">{{ form.ano_trimestre.label }}:</label>
                                     {{ form.ano_trimestre }}
                                     {% if form.ano_trimestre.errors %}<div class="text-danger">{{ form.ano_trimestre.errors }}</div>{% endif %}
                                 </div>
-                                <div id="group-periodo_apuracao" class="col-md-3" style="display:none;">
+                                <div id="group-periodo_apuracao" class="col-md-3 d-none">
                                     <label for="{{ form.periodo_apuracao.id_for_label }}" class="form-label">{{ form.periodo_apuracao.label }}:</label>
                                     {{ form.periodo_apuracao }}
                                     {% if form.periodo_apuracao.errors %}<div class="text-danger">{{ form.periodo_apuracao.errors }}</div>{% endif %}
                                 </div>
-                                <div id="group-codigo_receita" class="col-md-3" style="display:none;">
+                                <div id="group-codigo_receita" class="col-md-3 d-none">
                                     <label for="{{ form.codigo_receita.id_for_label }}" class="form-label">{{ form.codigo_receita.label }}:</label>
                                     {{ form.codigo_receita }}
                                     {% if form.codigo_receita.errors %}<div class="text-danger">{{ form.codigo_receita.errors }}</div>{% endif %}
                                 </div>
-                                <div id="group-credito_original_utilizado" class="col-md-4" style="display:none;">
+                                <div id="group-credito_original_utilizado" class="col-md-4 d-none">
                                     <label for="{{ form.credito_original_utilizado.id_for_label }}" class="form-label">{{ form.credito_original_utilizado.label }}:</label>
                                     {{ form.credito_original_utilizado }}
                                     {% if form.credito_original_utilizado.errors %}<div class="text-danger">{{ form.credito_original_utilizado.errors }}</div>{% endif %}
                                 </div>
-                                <div id="group-codigo_receita_denominacao" class="col-md-3" style="display:none;">
+                                <div id="group-codigo_receita_denominacao" class="col-md-3 d-none">
                                     <label for="{{ form.codigo_receita_denominacao.id_for_label }}" class="form-label">{{ form.codigo_receita_denominacao.label }}:</label>
                                     {{ form.codigo_receita_denominacao }}
                                     {% if form.codigo_receita_denominacao.errors %}<div class="text-danger">{{ form.codigo_receita_denominacao.errors }}</div>{% endif %}
                                 </div>
-                                <div id="group-periodo_apuracao_um" class="col-md-3" style="display:none;">
+                                <div id="group-periodo_apuracao_um" class="col-md-3 d-none">
                                     <label for="{{ form.periodo_apuracao_um.id_for_label }}" class="form-label">{{ form.periodo_apuracao_um.label }}:</label>
                                     {{ form.periodo_apuracao_um }}
                                     {% if form.periodo_apuracao_um.errors %}<div class="text-danger">{{ form.periodo_apuracao_um.errors }}</div>{% endif %}
@@ -129,7 +129,7 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const metodo = document.getElementById('{{ form.metodo_credito.id_for_label }}');
+    const metodo = document.getElementById('{{ form.metodo_credito.id_for_label }}') || document.querySelector('select[name="metodo_credito"]');
     const gAnoTrim = document.getElementById('group-ano_trimestre');
     const gPerAp = document.getElementById('group-periodo_apuracao');
     const gRec = document.getElementById('group-codigo_receita');
@@ -143,22 +143,49 @@
                 if (el) {
                     if (required) {
                         el.setAttribute('required', 'required');
+                        el.removeAttribute('disabled');
                     } else {
                         el.removeAttribute('required');
+                        el.setAttribute('disabled', 'disabled');
                     }
                 }
             });
         }
 
+        function showGroup(groupEl, fieldIds = []) {
+            if (!groupEl) return;
+            groupEl.classList.remove('d-none');
+            fieldIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.removeAttribute('disabled');
+            });
+        }
+
+        function hideAllGroups() {
+            [gAnoTrim, gPerAp, gRec, gCredOrig, gRecDenom, gPerAp1].forEach(el => {
+                if (!el) return;
+                el.classList.add('d-none');
+            });
+        }
+
+        function normalizePT(val) {
+            if (!val) return '';
+            const map = {
+                'á':'a','à':'a','â':'a','ã':'a','ä':'a','Á':'a','À':'a','Â':'a','Ã':'a','Ä':'a',
+                'é':'e','è':'e','ê':'e','ë':'e','É':'e','È':'e','Ê':'e','Ë':'e',
+                'í':'i','ì':'i','î':'i','ï':'i','Í':'i','Ì':'i','Î':'i','Ï':'i',
+                'ó':'o','ò':'o','ô':'o','õ':'o','ö':'o','Ó':'o','Ò':'o','Ô':'o','Õ':'o','Ö':'o',
+                'ú':'u','ù':'u','û':'u','ü':'u','Ú':'u','Ù':'u','Û':'u','Ü':'u',
+                'ç':'c','Ç':'c'
+            };
+            return val.split('').map(ch => map[ch] || ch).join('').toLowerCase().trim();
+        }
+
         function updateVisibility() {
-            const val = metodo.value;
+            const val = metodo ? metodo.value : '';
+            const nval = normalizePT(val);
             // Hide all groups
-            gAnoTrim.style.display = 'none';
-            gPerAp.style.display = 'none';
-            gRec.style.display = 'none';
-            gCredOrig.style.display = 'none';
-            gRecDenom.style.display = 'none';
-            gPerAp1.style.display = 'none';
+            hideAllGroups();
             // Unrequire all
             setRequired([
                 '{{ form.ano_trimestre.id_for_label }}',
@@ -169,22 +196,22 @@
                 '{{ form.credito_original_utilizado.id_for_label }}'
             ], false);
 
-            if (val === 'Pedido de compensação') {
+            if (nval === 'pedido de compensacao' || nval === 'pedido de ressarcimento') {
                 // Pedido de ressarcimento
-                gAnoTrim.style.display = '';
+                showGroup(gAnoTrim, ['{{ form.ano_trimestre.id_for_label }}']);
                 setRequired(['{{ form.ano_trimestre.id_for_label }}'], true);
-            } else if (val === 'Pedido de restituição') {
-                gPerAp.style.display = '';
-                gRec.style.display = '';
+            } else if (nval === 'pedido de restituição' || nval === 'pedido de restituiçao' || nval === 'pedido de restituicao') {
+                showGroup(gPerAp, ['{{ form.periodo_apuracao.id_for_label }}']);
+                showGroup(gRec, ['{{ form.codigo_receita.id_for_label }}']);
                 setRequired(['{{ form.periodo_apuracao.id_for_label }}', '{{ form.codigo_receita.id_for_label }}'], true);
-            } else if (val === 'Declaração de compensação') {
-                gCredOrig.style.display = '';
+            } else if (nval === 'declaracao de compensacao') {
+                showGroup(gCredOrig, ['{{ form.credito_original_utilizado.id_for_label }}']);
                 setRequired(['{{ form.credito_original_utilizado.id_for_label }}'], true);
-            } else if (val === 'Declaração de compensação pagamento indevido') {
-                gPerAp.style.display = '';
-                gRec.style.display = '';
-                gRecDenom.style.display = '';
-                gPerAp1.style.display = '';
+            } else if (nval === 'declaracao de compensacao pagamento indevido') {
+                showGroup(gPerAp, ['{{ form.periodo_apuracao.id_for_label }}']);
+                showGroup(gRec, ['{{ form.codigo_receita.id_for_label }}']);
+                showGroup(gRecDenom, ['{{ form.codigo_receita_denominacao.id_for_label }}']);
+                showGroup(gPerAp1, ['{{ form.periodo_apuracao_um.id_for_label }}']);
                 setRequired([
                     '{{ form.periodo_apuracao.id_for_label }}',
                     '{{ form.codigo_receita.id_for_label }}',
