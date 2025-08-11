@@ -10,7 +10,6 @@ class LancamentosForm(forms.ModelForm):
             ('', 'Selecione o método...'),
             ('Pedido de compensação', 'Pedido de ressarcimento'),
             ('Pedido de restituição', 'Pedido de restituição'),
-            ('Declaração de compensação pagamento indevido', 'Declaração de compensação pagamento indevido'),
         ],
         widget=forms.Select(attrs={'class': 'form-select'})
     )
@@ -31,11 +30,8 @@ class LancamentosForm(forms.ModelForm):
                 'class': 'form-control',
                 'type': 'date'
             }),
-            'valor': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Valor do Lançamento',
-                'step': '0.01'
-            }),
+            # Campo oculto no front-end
+            'valor': forms.HiddenInput(),
             'sinal': forms.Select(attrs={
                 'class': 'form-select',
             }),

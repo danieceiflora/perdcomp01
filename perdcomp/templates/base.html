@@ -129,7 +129,7 @@
                       
                       <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                          <i class="bi bi-cash-stack me-1"></i>Declaração de compensação</a>
+                          <i class="bi bi-cash-stack me-1"></i>Compensações</a>
                         <ul class="dropdown-menu">
                           <li><a class="dropdown-item" href="{% url 'lancamentos:list' %}"><i class="bi bi-list me-1"></i>Listar Declarações</a></li>
                           {% if user.is_superuser or user.is_staff %}
