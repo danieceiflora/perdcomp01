@@ -4,6 +4,16 @@ from .models import Lancamentos, Anexos
 from adesao.models import Adesao
 
 class LancamentosForm(forms.ModelForm):
+    metodo_escolhido = forms.ChoiceField(
+        required=False,
+        choices=[
+            ('', 'Selecione o método...'),
+            ('Pedido de compensação', 'Pedido de ressarcimento'),
+            ('Pedido de restituição', 'Pedido de restituição'),
+            ('Declaração de compensação pagamento indevido', 'Declaração de compensação pagamento indevido'),
+        ],
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Formatando a data para o formato esperado pelo input type="date" (yyyy-mm-dd)
@@ -12,7 +22,7 @@ class LancamentosForm(forms.ModelForm):
     
     class Meta:
         model = Lancamentos
-        fields = ['id_adesao', 'data_lancamento', 'valor', 'sinal', 'tipo', 'descricao']
+        fields = ['id_adesao', 'metodo_escolhido', 'data_lancamento', 'valor', 'sinal', 'tipo', 'descricao']
         widgets = {
             'id_adesao': forms.Select(attrs={
                 'class': 'form-select',

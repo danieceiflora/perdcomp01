@@ -50,6 +50,12 @@
                             </div>
 
                             <div class="form-group mb-3">
+                                <label for="{{ form.metodo_escolhido.id_for_label }}" class="form-label">Método:</label>
+                                {{ form.metodo_escolhido }}
+                                <small class="form-text text-muted">Selecione o método para exibir os campos específicos.</small>
+                            </div>
+
+                            <div class="form-group mb-3">
                                 <label for="{{ form.data_lancamento.id_for_label }}" class="form-label">{{ form.data_lancamento.label }}:</label>
                                 {{ form.data_lancamento }}
                                 {% if form.data_lancamento.errors %}
@@ -102,6 +108,51 @@
                         </div>
                     </div>
                     
+                    <!-- Seção dinâmica: Detalhes do método -->
+                    <div class="card mb-4">
+                        <div class="card-header"><strong>Detalhes do método</strong></div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div id="lanc-group-ano_trimestre" class="col-md-4 d-none">
+                                    <label class="form-label">Ano/Trimestre</label>
+                                    <input type="text" class="form-control" name="lanc_ano_trimestre" placeholder="2025/1">
+                                </div>
+                                <div id="lanc-group-tipo_credito" class="col-md-8 d-none">
+                                    <label class="form-label">Tipo de Crédito</label>
+                                    <input type="text" class="form-control" name="lanc_tipo_credito" placeholder="Descrição do tipo de crédito">
+                                </div>
+                                <div id="lanc-group-periodo_apuracao_credito" class="col-md-4 d-none">
+                                    <label class="form-label">Período Apuração (Crédito)</label>
+                                    <input type="text" class="form-control" name="lanc_periodo_apuracao_credito" placeholder="AAAA-MM">
+                                </div>
+                                <div id="lanc-group-codigo_receita" class="col-md-4 d-none">
+                                    <label class="form-label">Código Receita</label>
+                                    <input type="text" class="form-control" name="lanc_codigo_receita">
+                                </div>
+                                <div id="lanc-group-codigo_receita_denominacao" class="col-md-4 d-none">
+                                    <label class="form-label">Código Receita / Denominação</label>
+                                    <input type="text" class="form-control" name="lanc_codigo_receita_denominacao">
+                                </div>
+                                <div id="lanc-group-periodo_apuracao_debito" class="col-md-4 d-none">
+                                    <label class="form-label">Período Apuração (Débito)</label>
+                                    <input type="text" class="form-control" name="lanc_periodo_apuracao_debito" placeholder="AAAA-MM">
+                                </div>
+                                <div id="lanc-group-valor_do_principal" class="col-md-4 d-none">
+                                    <label class="form-label">Valor do Principal</label>
+                                    <input type="number" step="0.01" class="form-control" name="lanc_valor_do_principal">
+                                </div>
+                                <div id="lanc-group-total" class="col-md-4 d-none">
+                                    <label class="form-label">Total</label>
+                                    <input type="number" step="0.01" class="form-control" name="lanc_total">
+                                </div>
+                                <div id="lanc-group-credito_original_utilizado" class="col-md-4 d-none">
+                                    <label class="form-label">Crédito Original Utilizado</label>
+                                    <input type="number" step="0.01" class="form-control" name="lanc_credito_original_utilizado">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="form-group mb-4">
                         <label for="{{ form.observacao.id_for_label }}" class="form-label">{{ form.observacao.label }}:</label>
                         {{ form.observacao }}
@@ -199,6 +250,19 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const metodoField = document.getElementById('{{ form.metodo_escolhido.id_for_label }}') || document.querySelector('select[name="metodo_escolhido"]');
+        const mapGroups = {
+            'pedido de compensacao': ['lanc-group-ano_trimestre','lanc-group-tipo_credito'],
+            'pedido de ressarcimento': ['lanc-group-ano_trimestre','lanc-group-tipo_credito'],
+            'pedido de restituição': ['lanc-group-periodo_apuracao_credito','lanc-group-codigo_receita'],
+            'pedido de restituiçao': ['lanc-group-periodo_apuracao_credito','lanc-group-codigo_receita'],
+            'pedido de restituicao': ['lanc-group-periodo_apuracao_credito','lanc-group-codigo_receita'],
+            'declaracao de compensacao pagamento indevido': ['lanc-group-periodo_apuracao_credito','lanc-group-codigo_receita','lanc-group-codigo_receita_denominacao','lanc-group-periodo_apuracao_debito','lanc-group-valor_do_principal','lanc-group-total']
+        };
+        function norm(v){return (v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();}
+        function hideAll(){document.querySelectorAll('[id^="lanc-group-"]').forEach(el=>{el.classList.add('d-none');});}
+        function update(){hideAll(); const sel = norm(metodoField.value); const groups = mapGroups[sel]||[]; groups.forEach(id=>{const el=document.getElementById(id); if(el) el.classList.remove('d-none');});}
+        if(metodoField){metodoField.addEventListener('change',update); update();}
         // Garantir que o campo de data esteja preenchido corretamente
         const dataField = document.querySelector('input[name="data_lancamento"]');
         if (dataField && !dataField.value) {

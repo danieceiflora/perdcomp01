@@ -90,13 +90,17 @@ class AdesaoForm(forms.ModelForm):
         
         # Atualiza choices conforme fluxo
         if 'metodo_credito' in self.fields:
-            self.fields['metodo_credito'].choices = [
+            base_choices = [
                 ('', 'Selecione...'),
                 ('Pedido de compensação', 'Pedido de ressarcimento'),
                 ('Pedido de restituição', 'Pedido de restituição'),
-                ('Declaração de compensação', 'Declaração de compensação'),
                 ('Declaração de compensação pagamento indevido', 'Declaração de compensação pagamento indevido'),
             ]
+            # Se edição (instance.pk), permitir eventualmente futura lógica diferente; por ora igual
+            if self.instance.pk:
+                self.fields['metodo_credito'].choices = base_choices
+            else:
+                self.fields['metodo_credito'].choices = base_choices
 
         # Campos condicionais não obrigatórios por padrão; validação no clean()
         # Saldo sempre obrigatório
