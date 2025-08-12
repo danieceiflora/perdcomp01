@@ -25,17 +25,6 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <div class="form-group">
-                                {{ form.id_correcao.label_tag }}
-                                {{ form.id_correcao }}
-                                {% if form.id_correcao.errors %}
-                                    <div class="text-danger">
-                                        {{ form.id_correcao.errors }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <div class="form-group">
                                 {{ form.id_tipo_tese.label_tag }}
                                 {{ form.id_tipo_tese }}
                                 {% if form.id_tipo_tese.errors %}
@@ -98,13 +87,17 @@
                                 {% endif %}
                             </div>
                         </div>
-                        <div class="col-md-6 mb-3">
+                    </div>
+
+            <!-- Dropdown de Correção (Índice) no final do formulário; aparece apenas se "Aplicar correção" estiver marcado -->
+                    <div class="row">
+                        <div id="correcao-group" class="col-12 mb-3 d-none">
                             <div class="form-group">
-                                {{ form.correcao.label_tag }}
-                                {{ form.correcao }}
-                                {% if form.correcao.errors %}
+                {{ form.id_correcao.label_tag }}
+                {{ form.id_correcao }}
+                {% if form.id_correcao.errors %}
                                     <div class="text-danger">
-                                        {{ form.correcao.errors }}
+                    {{ form.id_correcao.errors }}
                                     </div>
                                 {% endif %}
                             </div>
@@ -124,4 +117,42 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const corrige = document.getElementById('{{ form.corrige.id_for_label }}') || document.querySelector('input[name="corrige"]');
+    const correcaoGroup = document.getElementById('correcao-group');
+    const correcaoSelect = document.getElementById('{{ form.id_correcao.id_for_label }}') || document.querySelector('[name="id_correcao"]');
+
+    function toggleCorrecao() {
+        const checked = corrige && corrige.checked;
+        if (!correcaoGroup) return;
+        if (checked) {
+            correcaoGroup.classList.remove('d-none');
+            if (correcaoSelect) {
+                correcaoSelect.disabled = false;
+                correcaoSelect.required = true;
+            }
+        } else {
+            correcaoGroup.classList.add('d-none');
+            if (correcaoSelect) {
+                correcaoSelect.required = false;
+                correcaoSelect.disabled = true;
+                if (correcaoSelect.tagName === 'SELECT') {
+                    correcaoSelect.selectedIndex = 0;
+                } else {
+                    correcaoSelect.value = '';
+                }
+            }
+        }
+    }
+
+    if (corrige) {
+        corrige.addEventListener('change', toggleCorrecao);
+        toggleCorrecao(); // estado inicial
+    }
+});
+</script>
 {% endblock %}
