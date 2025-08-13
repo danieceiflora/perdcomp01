@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'lancamentos',
     'dashboard',
     'rest_framework',
+    'utils',  # App utilitário (filtros de template, etc.)
 ]
 # Adicionando configuração do JWT
 REST_FRAMEWORK = {

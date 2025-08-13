@@ -1,89 +1,100 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load utils_filters %}
 {% block title %}Detalhes da Adesão{% endblock %}
 {% block content %}
-<div class="container-fluid">
-  <div class="row">
-    <div class="col-12">
-      <div class="card mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h3 class="card-title mb-0"><i class="bi bi-info-circle"></i> Detalhes da Adesão</h3>
-          <div>
-            <a href="{% url 'adesao:update' adesao.pk %}" class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i> Editar</a>
-            <a href="{% url 'adesao:list' %}" class="btn btn-sm btn-secondary"><i class="bi bi-arrow-left"></i> Voltar</a>
-          </div>
+<div class="container-fluid py-2 pb-5">
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-3 small">
+    <ol class="breadcrumb mb-0">
+      <li class="breadcrumb-item"><a href="{% url 'adesao:list' %}">Adesões</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Detalhe</li>
+    </ol>
+  </nav>
+
+  <!-- Header -->
+  <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+    <h2 class="h4 mb-0"><i class="bi bi-info-circle"></i> Adesão #{{ adesao.pk }}</h2>
+    <span class="badge text-bg-primary">{{ adesao.metodo_credito|default:'SEM MÉTODO' }}</span>
+    {% if adesao.perdcomp %}<span class="badge text-bg-secondary">PERDCOMP: {{ adesao.perdcomp }}</span>{% endif %}
+    {% if adesao.ano %}<span class="badge text-bg-light border">{{ adesao.ano }}{% if adesao.get_trimestre_display %} / {{ adesao.get_trimestre_display }}{% endif %}</span>{% endif %}
+    <div class="ms-auto d-flex gap-2">
+      <a href="{% url 'adesao:update' adesao.pk %}" class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i> Editar</a>
+      <a href="{% url 'adesao:list' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> Voltar</a>
+    </div>
+  </div>
+
+  <!-- Métricas Principais -->
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-md-3">
+      <div class="shadow-sm rounded-3 p-3 h-100 bg-body border">
+        <div class="text-uppercase small text-muted">Saldo Inicial</div>
+  <div class="fs-5 fw-semibold text-primary">{{ adesao.saldo|br_currency }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="shadow-sm rounded-3 p-3 h-100 bg-body border">
+        <div class="text-uppercase small text-muted">Saldo Atual</div>
+  <div class="fs-5 fw-semibold text-success">{{ adesao.saldo_atual|default:adesao.saldo|br_currency }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="shadow-sm rounded-3 p-3 h-100 bg-body border">
+        <div class="text-uppercase small text-muted">Valor Principal</div>
+  <div class="fs-6 fw-semibold">{{ adesao.valor_do_principal|br_currency }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="shadow-sm rounded-3 p-3 h-100 bg-body border">
+        <div class="text-uppercase small text-muted">Total</div>
+  <div class="fs-6 fw-semibold">{{ adesao.total|br_currency }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-2">
+    <!-- Coluna Esquerda -->
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header py-2"><strong>Informações Gerais</strong></div>
+        <div class="card-body small">
+          <dl class="row mb-0">
+            <dt class="col-sm-5">Cliente</dt><dd class="col-sm-7">{{ adesao.cliente|default:'--' }}</dd>
+            <dt class="col-sm-5">Tese de Crédito</dt><dd class="col-sm-7">{{ adesao.tese_credito_id|default:'--' }}</dd>
+            <dt class="col-sm-5">Método de Crédito</dt><dd class="col-sm-7">{{ adesao.metodo_credito|default:'--' }}</dd>
+            <dt class="col-sm-5">Data Início</dt><dd class="col-sm-7">{{ adesao.data_inicio|date:'d/m/Y' }}</dd>
+            <dt class="col-sm-5">Tipo de Crédito</dt><dd class="col-sm-7">{{ adesao.tipo_credito|default:'--' }}</dd>
+            <dt class="col-sm-5">Código Receita</dt><dd class="col-sm-7">{{ adesao.codigo_receita|default:'--' }}</dd>
+            <dt class="col-sm-5">Código / Denominação</dt><dd class="col-sm-7">{{ adesao.codigo_receita_denominacao|default:'--' }}</dd>
+            <dt class="col-sm-5">Crédito Original Utilizado</dt><dd class="col-sm-7">{{ adesao.credito_original_utilizado|br_currency }}</dd>
+          </dl>
         </div>
-        <div class="card-body">
-          <div class="row g-3">
-            <div class="col-md-4">
-              <label class="form-label fw-bold">Cliente</label>
-              <div>{{ adesao.cliente }}</div>
-            </div>
-            <div class="col-md-4">
-              <label class="form-label fw-bold">Tese de Crédito</label>
-              <div>{{ adesao.tese_credito_id }}</div>
-            </div>
-            <div class="col-md-4">
-              <label class="form-label fw-bold">Método de Crédito</label>
-              <div>{{ adesao.metodo_credito|default:'--' }}</div>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label fw-bold">Data Início</label>
-              <div>{{ adesao.data_inicio|date:'d/m/Y' }}</div>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label fw-bold">PERDCOMP</label>
-              <div>{{ adesao.perdcomp|default:'--' }}</div>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label fw-bold">Ano</label>
-              <div>{{ adesao.ano|default:'--' }}</div>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label fw-bold">Trimestre</label>
-              <div>{{ adesao.get_trimestre_display|default:'--' }}</div>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label fw-bold">Período Apuração Crédito</label>
-              <div>{{ adesao.periodo_apuracao_credito|default:'--' }}</div>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label fw-bold">Período Apuração Débito</label>
-              <div>{{ adesao.periodo_apuracao_debito|default:'--' }}</div>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label fw-bold">Tipo de Crédito</label>
-              <div>{{ adesao.tipo_credito|default:'--' }}</div>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label fw-bold">Código Receita</label>
-              <div>{{ adesao.codigo_receita|default:'--' }}</div>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label fw-bold">Código Receita / Denominação</label>
-              <div>{{ adesao.codigo_receita_denominacao|default:'--' }}</div>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label fw-bold">Valor do Principal</label>
-              <div>{{ adesao.valor_do_principal|default:'--' }}</div>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label fw-bold">Crédito Original Utilizado</label>
-              <div>{{ adesao.credito_original_utilizado|default:'--' }}</div>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label fw-bold">Total</label>
-              <div>{{ adesao.total|default:'--' }}</div>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label fw-bold">Saldo Inicial</label>
-              <div>{{ adesao.saldo }}</div>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label fw-bold">Saldo Atual</label>
-              <div>{{ adesao.saldo_atual }}</div>
-            </div>
-          </div>
+      </div>
+    </div>
+
+    <!-- Coluna Direita -->
+    <div class="col-lg-6">
+      <div class="card mb-4">
+        <div class="card-header py-2"><strong>Períodos</strong></div>
+        <div class="card-body small">
+          <dl class="row mb-0">
+            <dt class="col-sm-5">PERDCOMP</dt><dd class="col-sm-7">{{ adesao.perdcomp|default:'--' }}</dd>
+            <dt class="col-sm-5">Ano</dt><dd class="col-sm-7">{{ adesao.ano|default:'--' }}</dd>
+            <dt class="col-sm-5">Trimestre</dt><dd class="col-sm-7">{{ adesao.get_trimestre_display|default:'--' }}</dd>
+            <dt class="col-sm-5">Apuração Crédito</dt><dd class="col-sm-7">{{ adesao.periodo_apuracao_credito|default:'--' }}</dd>
+            <dt class="col-sm-5">Apuração Débito</dt><dd class="col-sm-7">{{ adesao.periodo_apuracao_debito|default:'--' }}</dd>
+          </dl>
+        </div>
+      </div>
+  <div class="card">
+        <div class="card-header py-2"><strong>Valores</strong></div>
+        <div class="card-body small">
+          <dl class="row mb-0">
+            <dt class="col-sm-5">Valor Principal</dt><dd class="col-sm-7">{{ adesao.valor_do_principal|br_currency }}</dd>
+            <dt class="col-sm-5">Total</dt><dd class="col-sm-7">{{ adesao.total|br_currency }}</dd>
+            <dt class="col-sm-5">Saldo Inicial</dt><dd class="col-sm-7">{{ adesao.saldo|br_currency }}</dd>
+            <dt class="col-sm-5">Saldo Atual</dt><dd class="col-sm-7">{{ adesao.saldo_atual|br_currency }}</dd>
+          </dl>
         </div>
       </div>
     </div>
