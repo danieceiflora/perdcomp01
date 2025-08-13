@@ -63,13 +63,7 @@
                             {# Campo saldo_atual é controlado pelo sistema; manter no form para edições #}
                             {{ form.saldo_atual }}
                         </div>
-                        <div class="col-md-4 d-flex align-items-end">
-                            <div class="form-check">
-                                {{ form.ativo }}
-                                <label for="{{ form.ativo.id_for_label }}" class="form-check-label">{{ form.ativo.label }}</label>
-                                {% if form.ativo.errors %}<div class="text-danger">{{ form.ativo.errors }}</div>{% endif %}
-                            </div>
-                        </div>
+                        
                     </div>
 
                     <!-- Seção dinâmica por método -->
@@ -77,10 +71,15 @@
                         <div class="card-header"><strong>Detalhes do método</strong></div>
                         <div class="card-body">
                             <div class="row g-3">
-                                <div id="group-ano_trimestre" class="col-md-4 d-none">
-                                    <label for="{{ form.ano_trimestre.id_for_label }}" class="form-label">{{ form.ano_trimestre.label }}:</label>
-                                    {{ form.ano_trimestre }}
-                                    {% if form.ano_trimestre.errors %}<div class="text-danger">{{ form.ano_trimestre.errors }}</div>{% endif %}
+                                <div id="group-ano" class="col-md-4 d-none">
+                                    <label for="{{ form.ano.id_for_label }}" class="form-label">{{ form.ano.label }}:</label>
+                                    {{ form.ano }}
+                                    {% if form.ano.errors %}<div class="text-danger">{{ form.ano.errors }}</div>{% endif %}
+                                </div>
+                                <div id="grupo-trimestre" class="col-md-4 d-none">
+                                    <label for="{{ form.trimestre.id_for_label }}" class="form-label">{{ form.trimestre.label }}:</label>
+                                    {{ form.trimestre }}
+                                    {% if form.trimestre.errors %}<div class="text-danger">{{ form.trimestre.errors }}</div>{% endif %}
                                 </div>
                                 <div id="group-periodo_apuracao_credito" class="col-md-3 d-none">
                                     <label for="{{ form.periodo_apuracao_credito.id_for_label }}" class="form-label">{{ form.periodo_apuracao_credito.label }}:</label>
@@ -158,7 +157,8 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
     const metodo = document.getElementById('{{ form.metodo_credito.id_for_label }}') || document.querySelector('select[name="metodo_credito"]');
-    const gAnoTrim = document.getElementById('group-ano_trimestre');
+    const gAno = document.getElementById('group-ano');
+    const gTrimestre = document.getElementById('grupo-trimestre');
     const gPerApCred = document.getElementById('group-periodo_apuracao_credito');
     const gRec = document.getElementById('group-codigo_receita');
     const gCredOrig = document.getElementById('group-credito_original_utilizado');
@@ -168,6 +168,7 @@
     const gTotal = document.getElementById('group-total');
     const secDebito = document.getElementById('sec-debito-card');
     const gTipoCredito = document.getElementById('group-tipo_credito');
+    
 
         function setRequired(selectorList, required) {
             selectorList.forEach(sel => {
@@ -194,7 +195,7 @@
         }
 
         function hideAllGroups() {
-            [gAnoTrim, gTipoCredito, gPerApCred, gRec, gCredOrig, gRecDenom, gPerApDeb, gValPrin, gTotal].forEach(el => {
+            [gAno, gTrimestre, gTipoCredito, gPerApCred, gRec, gCredOrig, gRecDenom, gPerApDeb, gValPrin, gTotal].forEach(el => {
                 if (!el) return;
                 el.classList.add('d-none');
             });
@@ -221,7 +222,8 @@
             if (secDebito) secDebito.classList.add('d-none');
             // Unrequire all
             setRequired([
-                '{{ form.ano_trimestre.id_for_label }}',
+                '{{ form.ano.id_for_label }}',
+                '{{ form.trimestre.id_for_label }}',
                 '{{ form.periodo_apuracao_credito.id_for_label }}',
                 '{{ form.periodo_apuracao_debito.id_for_label }}',
                 '{{ form.codigo_receita.id_for_label }}',
@@ -230,13 +232,15 @@
                 '{{ form.valor_do_principal.id_for_label }}',
                 '{{ form.total.id_for_label }}',
                 '{{ form.tipo_credito.id_for_label }}'
+
             ], false);
 
             if (nval === 'pedido de compensacao' || nval === 'pedido de ressarcimento') {
                 // Pedido de ressarcimento
-                showGroup(gAnoTrim, ['{{ form.ano_trimestre.id_for_label }}']);
+                showGroup(gAno, ['{{ form.ano.id_for_label }}']);
+                showGroup(gTrimestre, ['{{ form.trimestre.id_for_label }}']);
                 showGroup(gTipoCredito, ['{{ form.tipo_credito.id_for_label }}']);
-                setRequired(['{{ form.ano_trimestre.id_for_label }}', '{{ form.tipo_credito.id_for_label }}'], true);
+                setRequired(['{{ form.ano.id_for_label }}', '{{ form.tipo_credito.id_for_label }}'], true);
             } else if (nval === 'pedido de restituição' || nval === 'pedido de restituiçao' || nval === 'pedido de restituicao') {
                 showGroup(gPerApCred, ['{{ form.periodo_apuracao_credito.id_for_label }}']);
                 showGroup(gRec, ['{{ form.codigo_receita.id_for_label }}']);

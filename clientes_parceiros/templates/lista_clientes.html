@@ -66,7 +66,7 @@
                                             {{ cliente_parceiro.id_tipo_relacionamento.tipo_relacionamento }}
                                         </td>
                                         <td>
-                                            {% if cliente_parceiro.id_company_vinculada.logomarca.url %}
+                                            {% if cliente_parceiro.id_company_vinculada.logomarca %}
                                                 <img src="{{ cliente_parceiro.id_company_vinculada.logomarca.url }}" alt="Logomarca da {{ cliente_parceiro.id_company_vinculada.nome_fantasia|default:cliente_parceiro.id_company_vinculada.razao_social }}" style="height:32px; width:auto; margin-right:8px; vertical-align:middle; border-radius:4px; background:#f8f9fa; border:1px solid #dee2e6;">
                                             {% else %}
                                                 <i class="fas fa-building text-secondary" title="Sem logomarca"></i>
@@ -112,7 +112,7 @@
                                 <div class="card mb-3 shadow-sm">
                                     <div class="card-body">
                                         <div class="d-flex align-items-center mb-2">
-                                            {% if cliente_parceiro.id_company_vinculada.logomarca.url %}
+                                            {% if cliente_parceiro.id_company_vinculada.logomarca %}
                                                 <img src="{{ cliente_parceiro.id_company_vinculada.logomarca.url }}" alt="Logomarca da {{ cliente_parceiro.id_company_vinculada.nome_fantasia|default:cliente_parceiro.id_company_vinculada.razao_social }}" style="height:32px; width:auto; margin-right:12px; border-radius:4px; background:#f8f9fa; border:1px solid #dee2e6;">
                                             {% else %}
                                                 <i class="fas fa-building text-secondary fa-2x me-3" title="Sem logomarca"></i>

@@ -39,20 +39,34 @@ class Adesao(models.Model):
     
     perdcomp = models.CharField(
         max_length=30,
-        verbose_name='PERDCOMP',
-        blank=True,
-        null=True,
+        verbose_name='PERDCOMP'
     )
 
     saldo = models.FloatField(
         verbose_name='Valor do crédito',
     )
-    
-    ano_trimestre = models.CharField(
-        max_length=7,
-        verbose_name='Ano/Trimestre',
+
+    # Armazena o primeiro dia do mês referente (entrada do usuário mm/aaaa)
+    ano = models.CharField(
+        verbose_name='Ano',
+        max_length=4,
         blank=True,
         null=True,
+    )
+
+    trimestre_options = [
+        ('1', '1º Trimestre'),
+        ('2', '2º Trimestre'),
+        ('3', '3º Trimestre'),
+        ('4', '4º Trimestre'),
+    ]
+
+    trimestre = models.CharField(
+        max_length=1,
+        choices=trimestre_options,
+        verbose_name='Trimestre',
+        blank=True,
+        null=True
     )
 
     periodo_apuracao_credito = models.CharField(
@@ -102,10 +116,7 @@ class Adesao(models.Model):
         null=True,
     )
 
-    ativo = models.BooleanField(
-        default=True,
-        verbose_name='Ativo'
-    )
+   
 
     valor_do_principal = models.FloatField(
         verbose_name='Valor do Principal',
@@ -139,6 +150,7 @@ class Adesao(models.Model):
             nome_empresa = empresa.nome_fantasia or empresa.razao_social
             return f"{self.perdcomp} - {nome_empresa}"
         return f"{self.perdcomp} - N/A"
+    
     
     class Meta:
         verbose_name = 'Adesão'

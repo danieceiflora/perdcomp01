@@ -22,6 +22,7 @@
                                     <tr>
                                         <th>ID</th>
                                         <th>Descrição</th>
+                                        <th>Periodicidade</th>
                                         <th>Ações</th>
                                     </tr>
                                 </thead>
@@ -30,6 +31,7 @@
                                     <tr>
                                         <td>{{ tipo.id }}</td>
                                         <td>{{ tipo.descricao }}</td>
+                                        <td>{{ tipo.periodicidade }}</td>
                                         <td>
                                             <a href="{% url 'correcao:tipo_tese_update' tipo.pk %}" class="btn btn-sm btn-warning">
                                                 <i class="bi bi-pencil"></i> Editar

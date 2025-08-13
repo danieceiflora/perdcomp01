@@ -3,15 +3,20 @@ from django.utils.timezone import now
 from .models import Adesao
 from clientes_parceiros.models import ClientesParceiros, TipoRelacionamento
 
+import re
+
+MMYYYY_REGEX = re.compile(r'^(0[1-9]|1[0-2])/\d{4}$')
+
 class AdesaoForm(forms.ModelForm):
+    
     class Meta:
         model = Adesao
         fields = [
-            'cliente', 'tese_credito_id', 'metodo_credito', 'data_inicio', 'perdcomp',
-            'ano_trimestre', 'periodo_apuracao_credito', 'periodo_apuracao_debito', 'tipo_credito',
+            'cliente', 'tese_credito_id', 'metodo_credito', 'data_inicio', 'perdcomp','ano','trimestre',
+            'periodo_apuracao_credito', 'periodo_apuracao_debito', 'tipo_credito',
             'codigo_receita', 'codigo_receita_denominacao', 'valor_do_principal',
             'credito_original_utilizado', 'total',
-            'saldo', 'ativo', 'saldo_atual'
+            'saldo', 'saldo_atual'
         ]
         widgets = {
             'cliente': forms.Select(attrs={
@@ -31,17 +36,21 @@ class AdesaoForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Número do PERDCOMP'
             }),
-            'ano_trimestre': forms.TextInput(attrs={
+            'ano': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ano/Trimestre (Ex: 2025/1)'
+                'placeholder': 'Ano'
+            }),
+            'trimestre': forms.Select(attrs={
+                'class': 'form-select',
+                'placeholder': 'Trimestre'
             }),
             'periodo_apuracao_credito': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Período de Apuração Crédito'
+                'placeholder': 'mm/aaaa'
             }),
             'periodo_apuracao_debito': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Período de Apuração Débito'
+                'placeholder': 'mm/aaaa'
             }),
             'tipo_credito': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -75,9 +84,7 @@ class AdesaoForm(forms.ModelForm):
                 'placeholder': 'Saldo',
                 'step': '0.01'
             }),
-            'ativo': forms.CheckboxInput(attrs={
-                'class': 'form-check-input',
-            }),
+          
             'saldo_atual': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Saldo Atual',
@@ -88,7 +95,7 @@ class AdesaoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Atualiza choices conforme fluxo
+    # Atualiza choices conforme fluxo
         if 'metodo_credito' in self.fields:
             base_choices = [
                 ('', 'Selecione...'),
@@ -105,9 +112,9 @@ class AdesaoForm(forms.ModelForm):
         # Campos condicionais não obrigatórios por padrão; validação no clean()
         # Saldo sempre obrigatório
         for fname in [
-            'ano_trimestre', 'periodo_apuracao_credito', 'periodo_apuracao_debito',
+            'periodo_apuracao_credito', 'periodo_apuracao_debito',
             'tipo_credito', 'codigo_receita', 'codigo_receita_denominacao',
-            'valor_do_principal', 'credito_original_utilizado', 'total'
+            'valor_do_principal', 'credito_original_utilizado', 'total', 'ano'
         ]:
             if fname in self.fields:
                 self.fields[fname].required = False
@@ -116,7 +123,7 @@ class AdesaoForm(forms.ModelForm):
         if 'saldo' in self.fields:
             self.fields['saldo'].required = True
         
-        # Inicializações padrão
+    # Inicializações padrão
         if not self.instance.pk:
             self.fields['saldo_atual'].initial = self.initial.get('saldo', 0)
             if 'data_inicio' in self.fields and not self.fields['data_inicio'].initial:
@@ -125,16 +132,7 @@ class AdesaoForm(forms.ModelForm):
             self.fields['saldo_atual'].widget.attrs['readonly'] = True
             self.fields['saldo_atual'].help_text = 'Este campo é atualizado automaticamente pelos lançamentos'
         
-        # Queryset de clientes (tipo Cliente / ativos)
-        try:
-            self.fields['cliente'].queryset = ClientesParceiros.objects.filter(
-                id_tipo_relacionamento__id=1,
-                ativo=True
-            ).select_related('id_company_vinculada')
-        except Exception as e:
-            print(f"Erro ao filtrar clientes: {e}")
-            self.fields['cliente'].queryset = ClientesParceiros.objects.none()
-        
+
         # Label amigável
         self.fields['cliente'].label_from_instance = lambda obj: f"{obj.id_company_vinculada.nome_fantasia or obj.id_company_vinculada.razao_social} ({obj.nome_referencia})"
 
@@ -143,8 +141,10 @@ class AdesaoForm(forms.ModelForm):
         metodo = cleaned.get('metodo_credito')
 
         if metodo == 'Pedido de compensação':  # Ressarcimento
-            if not cleaned.get('ano_trimestre'):
-                self.add_error('ano_trimestre', 'Informe o Ano/Trimestre.')
+            if not cleaned.get('ano'):
+                self.add_error('ano', 'Informe o Ano.')
+            if not cleaned.get('trimestre'):
+                self.add_error('trimestre', 'Informe o Trimestre.')
             if not cleaned.get('tipo_credito'):
                 self.add_error('tipo_credito', 'Informe o Tipo de Crédito.')
         elif metodo == 'Pedido de restituição':
@@ -167,3 +167,21 @@ class AdesaoForm(forms.ModelForm):
                 self.add_error('periodo_apuracao_debito', 'Informe o Período de Apuração (Débito).')
 
         return cleaned
+
+    # clean_ano_trimestre não necessário: DateField já converte usando input_formats
+
+    def clean_periodo_apuracao_credito(self):
+        v = self.cleaned_data.get('periodo_apuracao_credito')
+        if not v:
+            return v
+        if not MMYYYY_REGEX.match(v):
+            raise forms.ValidationError('Formato deve ser mm/aaaa.')
+        return v
+
+    def clean_periodo_apuracao_debito(self):
+        v = self.cleaned_data.get('periodo_apuracao_debito')
+        if not v:
+            return v
+        if not MMYYYY_REGEX.match(v):
+            raise forms.ValidationError('Formato deve ser mm/aaaa.')
+        return v

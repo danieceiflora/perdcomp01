@@ -28,21 +28,26 @@ class CorrecaoForm(forms.ModelForm):
 class tipoTeseForm(forms.ModelForm):
     class Meta:
         model = tipoTese
-        fields = ['descricao']
+        fields = ['descricao', 'periodicidade']
         widgets = {
             'descricao': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Descrição do tipo de tese'
             }),
+            'periodicidade': forms.Select(attrs={
+                'class': 'form-select',
+                'placeholder': 'Selecione'
+            }),  
         }
         labels = {
             'descricao': 'Descrição',
+            'periodicidade': 'Periodicidade'
         }
 
 class TeseCreditoForm(forms.ModelForm):
     class Meta:
         model = TeseCredito
-        fields = ['id_correcao', 'id_tipo_tese', 'cod_origem', 'descricao', 'jurisprudencia', 'corrige',]
+        fields = ['id_correcao', 'id_tipo_tese', 'cod_origem', 'descricao', 'jurisprudencia', 'corrige']
         widgets = {
             'id_correcao': forms.Select(attrs={
                 'class': 'form-select',
@@ -65,6 +70,7 @@ class TeseCreditoForm(forms.ModelForm):
             'corrige': forms.CheckboxInput(attrs={
                 'class': 'form-check-input',
             }),
+            
         }
         labels = {
             'id_correcao': 'Correção',
@@ -72,5 +78,6 @@ class TeseCreditoForm(forms.ModelForm):
             'cod_origem': 'Código de Origem',
             'descricao': 'Descrição',
             'jurisprudencia': 'Jurisprudência',
-            'corrige': 'Aplicar Correção'
+            'corrige': 'Aplicar Correção',
+            
         }

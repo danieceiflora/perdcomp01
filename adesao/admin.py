@@ -33,11 +33,11 @@ class AdesaoAdminForm(forms.ModelForm):
 class AdesaoAdmin(admin.ModelAdmin):
 
     form = AdesaoAdminForm  # Usa o formulário personalizado
-    list_display = ('perdcomp', 'cliente_info', 'tese_credito', 'metodo_credito', 'data_inicio', 'ano_trimestre', 'periodo_apuracao_credito', 'codigo_receita', 'saldo_inicial', 'saldo_atual_display', 'ativo_display', 'lancamentos_count')
-    list_filter = ('cliente__id_company_base', 'tese_credito_id__id_tipo_tese', 'metodo_credito', 'ano_trimestre')
+    list_display = ('perdcomp', 'cliente_info', 'tese_credito', 'metodo_credito', 'data_inicio', 'ano', 'periodo_apuracao_credito', 'codigo_receita', 'saldo_inicial', 'saldo_atual_display', 'ativo_display', 'lancamentos_count')
+    list_filter = ('cliente__id_company_base', 'tese_credito_id__id_tipo_tese', 'metodo_credito', 'ano')
     search_fields = ('perdcomp', 'cliente__nome_referencia', 'cliente__empresa_vinculada__razao_social', 'codigo_receita', 'periodo_apuracao_credito')
 
-    fields = ('perdcomp', 'cliente', 'tese_credito_id', 'metodo_credito', 'ano_trimestre', 'periodo_apuracao_credito', 'periodo_apuracao_debito', 'codigo_receita', 'codigo_receita_denominacao', 'credito_original_utilizado', 'saldo', 'saldo_atual', 'data_inicio', 'ativo')
+    fields = ('perdcomp', 'cliente', 'tese_credito_id', 'metodo_credito', 'ano', 'periodo_apuracao_credito', 'periodo_apuracao_debito', 'codigo_receita', 'codigo_receita_denominacao', 'credito_original_utilizado', 'saldo', 'saldo_atual', 'data_inicio', 'ativo')
 
     # Controla a permissão para edição
     def has_change_permission(self, request, obj=None):

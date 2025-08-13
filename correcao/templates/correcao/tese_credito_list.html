@@ -21,7 +21,6 @@
                                 <thead>
                                     <tr>
                                         <th>ID</th>
-                                        <th>Correção</th>
                                         <th>Tipo de Tese</th>
                                         <th>Código Origem</th>
                                         <th>Descrição</th>
@@ -34,11 +33,6 @@
                                     {% for tese in teses_credito %}
                                     <tr>
                                         <td>{{ tese.id }}</td>
-                                        {% if tese.id_correcao != None %}
-                                            <td>{{ tese.id_correcao }}</td>
-                                        {% else %}
-                                            <td></td>
-                                        {% endif %}
                                         <td>{{ tese.id_tipo_tese }}</td>
                                         {% if tese.cod_origem != None %}
                                             <td>{{ tese.cod_origem }}</td>
