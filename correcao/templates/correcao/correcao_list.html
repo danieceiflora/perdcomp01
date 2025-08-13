@@ -31,7 +31,11 @@
                                     {% for correcao in correcoes %}
                                     <tr>
                                         <td>{{ correcao.id }}</td>
-                                        <td>{{ correcao.cod_origem }}</td>
+                                        {% if correcao.cod_origem != None%}                             
+                                            <td>{{ correcao.cod_origem }}</td>                              
+                                        {% else %}
+                                            <td></td>
+                                        {% endif %}
                                         <td>{{ correcao.descricao }}</td>
                                         <td>{{ correcao.fonte_correcao }}</td>
                                         <td>

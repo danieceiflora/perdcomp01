@@ -34,9 +34,17 @@
                                     {% for tese in teses_credito %}
                                     <tr>
                                         <td>{{ tese.id }}</td>
-                                        <td>{{ tese.id_correcao }}</td>
+                                        {% if tese.id_correcao != None %}
+                                            <td>{{ tese.id_correcao }}</td>
+                                        {% else %}
+                                            <td></td>
+                                        {% endif %}
                                         <td>{{ tese.id_tipo_tese }}</td>
-                                        <td>{{ tese.cod_origem }}</td>
+                                        {% if tese.cod_origem != None %}
+                                            <td>{{ tese.cod_origem }}</td>
+                                        {% else %}
+                                            <td></td>
+                                        {% endif %}
                                         <td>{{ tese.descricao }}</td>
                                         <td>
                                             {% if tese.corrige %}
