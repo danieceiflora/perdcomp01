@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -47,6 +47,29 @@ class AdesaoUpdateView(AdminRequiredMixin, UpdateView):
     def form_valid(self, form):
         messages.success(self.request, 'Adesão atualizada com sucesso!')
         return super().form_valid(form)
+
+class AdesaoDetailView(LoginRequiredMixin, DetailView):
+    model = Adesao
+    template_name = 'adesao/adesao_detail.html'
+    context_object_name = 'adesao'
+
+    def get_queryset(self):
+        base = Adesao.objects.select_related('cliente__id_company_vinculada', 'tese_credito_id')
+        user = self.request.user
+        if user.is_superuser or user.is_staff:
+            return base
+        # Usuário comum: filtra pelas empresas acessíveis se houver profile
+        if hasattr(user, 'profile'):
+            try:
+                profile = user.profile
+                if getattr(profile, 'eh_cliente', False) and getattr(profile, 'empresa_vinculada', None):
+                    return base.filter(cliente__id_company_vinculada=profile.empresa_vinculada)
+                empresas = profile.get_empresas_acessiveis() if hasattr(profile, 'get_empresas_acessiveis') else []
+                if empresas:
+                    return base.filter(cliente__id_company_vinculada__in=empresas)
+            except Exception:
+                return base.none()
+        return base.none()
 
 
 class AdesaoListAPI(APIView):

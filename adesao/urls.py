@@ -8,6 +8,7 @@ urlpatterns = [
     path('', views.AdesaoListView.as_view(), name='list'),
     path('novo/', views.AdesaoCreateView.as_view(), name='create'),
     path('editar/<int:pk>/', views.AdesaoUpdateView.as_view(), name='update'),
+    path('detalhe/<int:pk>/', views.AdesaoDetailView.as_view(), name='detail'),
 
     ## API endpoint for listing adesoes 
     path('api/listar-adesoes/', views.AdesaoListAPI.as_view(), name='api-list'),

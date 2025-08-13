@@ -65,7 +65,12 @@ class EmpresaAccessMixin(BasePermissionMixin, UserPassesTestMixin):
             return True
             
         # Verifica se o usuário tem acesso a esta empresa
-        return self.request.user.profile.pode_acessar_empresa(empresa_id)
+        if not hasattr(self.request.user, 'profile'):
+            return False
+        try:
+            return self.request.user.profile.pode_acessar_empresa(empresa_id)
+        except Exception:
+            return False
     
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
@@ -82,6 +87,7 @@ class EmpresaAccessMixin(BasePermissionMixin, UserPassesTestMixin):
             
         # Verifica permissão para acessar esta empresa
         if empresa and not self.request.user.profile.pode_acessar_empresa(empresa.id):
+            # Se o usuário não tem profile ou não pode acessar, lança PermissionDenied
             raise PermissionDenied(self.permission_denied_message)
             
         return obj

@@ -2,6 +2,7 @@ from accounts.permissions import BasePermissionMixin, EmpresaAccessMixin
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import redirect
 from django.contrib import messages
+from django.core.exceptions import ObjectDoesNotExist
 
 class AdesaoPermissionMixin(EmpresaAccessMixin):
     """
@@ -21,10 +22,10 @@ class AdesaoPermissionMixin(EmpresaAccessMixin):
             return queryset
             
         # Se não tem perfil, nega acesso
-        if not hasattr(self.request.user, 'profile'):
+        try:
+            profile = self.request.user.profile
+        except (AttributeError, ObjectDoesNotExist):
             return queryset.none()
-            
-        profile = self.request.user.profile
         empresas_acessiveis = profile.get_empresas_acessiveis()
         empresa_ids = [empresa.id for empresa in empresas_acessiveis]
         
@@ -55,7 +56,18 @@ class AdesaoClienteViewOnlyMixin(AdesaoPermissionMixin):
     
     def dispatch(self, request, *args, **kwargs):
         # Para clientes, permite apenas métodos GET (visualização)
-        if hasattr(request.user, 'profile') and request.user.profile.eh_cliente:
+        # Admins não passam pela restrição de método
+        if request.user.is_superuser or request.user.is_staff:
+            return super().dispatch(request, *args, **kwargs)
+
+        is_cliente = False
+        try:
+            profile = request.user.profile
+            is_cliente = getattr(profile, 'eh_cliente', False)
+        except ObjectDoesNotExist:
+            is_cliente = False
+
+        if is_cliente:
             if request.method != 'GET':
                 from django.contrib import messages
                 from django.shortcuts import redirect
