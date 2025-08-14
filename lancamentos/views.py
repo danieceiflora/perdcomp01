@@ -235,6 +235,60 @@ class LancamentoCreateView(AdminRequiredMixin, CreateView):
                 # Prepara o lançamento
                 self.object = form.save(commit=False)
                 
+                # Lógica de negócios baseada no método escolhido (campo extra do form)
+                metodo = form.cleaned_data.get('metodo_escolhido') or ''
+                metodo_norm = metodo.lower().strip()
+
+                # Campos dinâmicos vindos do POST
+                total_credito_original_utilizado = self.request.POST.get('lanc_total_credito_original_utilizado')
+                debito = self.request.POST.get('lanc_debito')
+                periodo_apuracao = self.request.POST.get('lanc_periodo_apuracao')
+                total_r = self.request.POST.get('lanc_total_r')  # usado em pedido de ressarcimento
+                # Sanitiza conversões numéricas
+                def to_float(v):
+                    try:
+                        return float(v) if v not in (None, '',) else None
+                    except ValueError:
+                        return None
+                val_total_credito = to_float(total_credito_original_utilizado)
+                val_debito = to_float(debito)
+                val_total_r = to_float(total_r)
+
+                adesao = self.object.id_adesao
+                if not adesao:
+                    form.add_error('id_adesao', 'Selecione uma adesão.')
+                    raise ValidationError('Adesão obrigatória')
+
+                # Pedido de restituição: usar total_credito_original_utilizado como débito que reduz saldo
+                if 'restituicao' in metodo_norm:
+                    if val_total_credito is None:
+                        form.add_error(None, 'Informe o Total Crédito Original Utilizado.')
+                        raise ValidationError('Valor obrigatório')
+                    if adesao.saldo_atual is None:
+                        adesao.saldo_atual = adesao.saldo
+                    if val_total_credito > adesao.saldo_atual:
+                        form.add_error(None, f"Saldo insuficiente. Saldo atual: {adesao.saldo_atual} < débito: {val_total_credito}")
+                        raise ValidationError('Saldo insuficiente')
+                    # Define lançamento como débito
+                    self.object.valor = val_total_credito
+                    self.object.sinal = '-'
+                    self.object.descricao = self.object.descricao or 'Pedido de restituição'
+
+                # Pedido de ressarcimento: usar total_r como crédito que aumenta saldo
+                elif 'ressarcimento' in metodo_norm or 'compensacao' in metodo_norm and 'pedido' in metodo_norm:
+                    # Aqui consideramos mapGroups para 'pedido de compensacao' ou 'pedido de ressarcimento'
+                    if val_total_r is None:
+                        form.add_error(None, 'Informe o Total.')
+                        raise ValidationError('Total obrigatório')
+                    self.object.valor = val_total_r
+                    self.object.sinal = '+'
+                    self.object.descricao = self.object.descricao or 'Pedido de ressarcimento/compensação'
+
+                # Caso nenhum método mapeado, garantir valor já fornecido (fallback)
+                if not self.object.valor:
+                    form.add_error('valor', 'Não foi possível determinar o valor do lançamento.')
+                    raise ValidationError('Valor ausente')
+
                 # Limpa o objeto para que validações específicas sejam aplicadas
                 self.object.clean()
                 

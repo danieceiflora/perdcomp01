@@ -43,7 +43,7 @@ class Adesao(models.Model):
     )
 
     saldo = models.FloatField(
-        verbose_name='Valor do crédito',
+        verbose_name='Valor do crédito ',
     )
 
     # Armazena o primeiro dia do mês referente (entrada do usuário mm/aaaa)
@@ -134,7 +134,17 @@ class Adesao(models.Model):
     
     def save(self, *args, **kwargs):
         """Sobrescreve o método save para garantir que o saldo_atual seja inicializado corretamente"""
-        # Se é um novo objeto (não tem ID) e o saldo_atual não foi definido
+        # Regras específicas para 'Declaração de compensação pagamento indevido'
+        if self.metodo_credito == 'Declaração de compensação pagamento indevido':
+            # Se ambos valores existem, calcula saldo como diferença
+            if self.valor_do_principal is not None and self.total is not None:
+                diferenca = self.valor_do_principal - self.total
+                # Garante que não fique negativo
+                if diferenca < 0:
+                    # Evita persistir saldo negativo; força a zero
+                    diferenca = 0
+                self.saldo = diferenca
+        # Se é um novo objeto (não tem ID) e o saldo_atual não foi definido, inicializa com saldo calculado/fornecido
         if not self.pk and not self.saldo_atual:
             self.saldo_atual = self.saldo
         super().save(*args, **kwargs)
@@ -150,6 +160,17 @@ class Adesao(models.Model):
             nome_empresa = empresa.nome_fantasia or empresa.razao_social
             return f"{self.perdcomp} - {nome_empresa}"
         return f"{self.perdcomp} - N/A"
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        # Validação específica do método pagamento indevido
+        if self.metodo_credito == 'Declaração de compensação pagamento indevido':
+            if self.valor_do_principal is not None and self.total is not None:
+                if self.total > self.valor_do_principal:
+                    raise ValidationError({'total': 'O Total não pode ser maior que o Valor do Principal.'})
+            # Exige ambos preenchidos
+            if (self.valor_do_principal is None) or (self.total is None):
+                raise ValidationError('Preencha Valor do Principal e Total para este método.')
     
     
     class Meta:

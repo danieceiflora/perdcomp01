@@ -75,9 +75,14 @@ class Lancamentos(models.Model):
         # Se for um novo lançamento de débito, verifica se o saldo ficaria negativo
         if not self.pk and self.sinal == '-':
             adesao = self.id_adesao
-            valor_numerico = self.valor
-            novo_saldo = adesao.saldo_atual - valor_numerico
-            
+            # Inicializa saldo_atual se estiver None
+            if adesao.saldo_atual is None:
+                adesao.saldo_atual = adesao.saldo or 0
+            try:
+                valor_numerico = float(self.valor or 0)
+            except (TypeError, ValueError):
+                raise ValidationError({'valor': 'Valor inválido.'})
+            novo_saldo = (adesao.saldo_atual or 0) - valor_numerico
             if novo_saldo < 0:
                 raise ValidationError({
                     'valor': f"O saldo não pode ficar negativo. Saldo atual: R$ {adesao.saldo_atual}, Valor do débito: R$ {valor_numerico}"
@@ -120,13 +125,18 @@ class Lancamentos(models.Model):
         Esta função deve ser chamada dentro de um bloco de transação para garantir a atomicidade.
         """
         adesao = self.id_adesao
-        valor_numerico = self.valor
-        
-        # Atualiza o saldo conforme o sinal do lançamento
+        if adesao.saldo_atual is None:
+            adesao.saldo_atual = adesao.saldo or 0
+        try:
+            valor_numerico = float(self.valor or 0)
+        except (TypeError, ValueError):
+            valor_numerico = 0
+        # Atualiza o saldo conforme o sinal do lançamento (protegendo negativo em débito)
         if self.sinal == '-':
-            adesao.saldo_atual -= valor_numerico
+            novo = adesao.saldo_atual - valor_numerico
+            adesao.saldo_atual = novo if novo >= 0 else 0
         else:
-            adesao.saldo_atual += valor_numerico
+            adesao.saldo_atual = (adesao.saldo_atual or 0) + valor_numerico
         
         # Registra o saldo restante no lançamento (registro histórico)
         self.saldo_restante = adesao.saldo_atual
