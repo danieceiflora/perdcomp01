@@ -59,6 +59,7 @@
         <div class="card-header py-2"><strong>Informações Gerais</strong></div>
         <div class="card-body small">
           <dl class="row mb-0">
+            <dt class="col-sm-5">PERDCOMP</dt><dd class="col-sm-7">{{ adesao.perdcomp|default:'--' }}</dd>
             <dt class="col-sm-5">Cliente</dt><dd class="col-sm-7">{{ adesao.cliente|default:'--' }}</dd>
             <dt class="col-sm-5">Tese de Crédito</dt><dd class="col-sm-7">{{ adesao.tese_credito_id|default:'--' }}</dd>
             <dt class="col-sm-5">Método de Crédito</dt><dd class="col-sm-7">{{ adesao.metodo_credito|default:'--' }}</dd>
@@ -75,10 +76,9 @@
     <!-- Coluna Direita -->
     <div class="col-lg-6">
       <div class="card mb-4">
-        <div class="card-header py-2"><strong>Períodos</strong></div>
+        <div class="card-header py-2"><strong>Informação Adicional</strong></div>
         <div class="card-body small">
           <dl class="row mb-0">
-            <dt class="col-sm-5">PERDCOMP</dt><dd class="col-sm-7">{{ adesao.perdcomp|default:'--' }}</dd>
             <dt class="col-sm-5">Ano</dt><dd class="col-sm-7">{{ adesao.ano|default:'--' }}</dd>
             <dt class="col-sm-5">Trimestre</dt><dd class="col-sm-7">{{ adesao.get_trimestre_display|default:'--' }}</dd>
             <dt class="col-sm-5">Apuração Crédito</dt><dd class="col-sm-7">{{ adesao.periodo_apuracao_credito|default:'--' }}</dd>
