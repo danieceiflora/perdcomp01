@@ -14,12 +14,54 @@ class LancamentosForm(forms.ModelForm):
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     # Campos dinâmicos (não persistem diretamente; serão copiados aos campos do model)
-    lanc_total_credito_original_utilizado = forms.DecimalField(required=False, max_digits=15, decimal_places=2)
-    lanc_debito = forms.DecimalField(required=False, max_digits=15, decimal_places=2)
-    lanc_periodo_apuracao = forms.CharField(required=False, max_length=20)
-    lanc_debito_r = forms.DecimalField(required=False, max_digits=15, decimal_places=2)
-    lanc_periodo_apuracao_r = forms.CharField(required=False, max_length=20)
-    lanc_total_r = forms.DecimalField(required=False, max_digits=15, decimal_places=2)
+    lanc_total_credito_original_utilizado = forms.DecimalField(
+        required=False, 
+        max_digits=15, 
+        decimal_places=2,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': '0,00'})
+    )
+    lanc_debito = forms.DecimalField(
+        required=False, 
+        max_digits=15, 
+        decimal_places=2,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': '0,00'})
+    )
+    lanc_periodo_apuracao = forms.CharField(
+        required=False, 
+        max_length=20,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: 01/2025'})
+    )
+    lanc_debito_r = forms.DecimalField(
+        required=False, 
+        max_digits=15, 
+        decimal_places=2,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': '0,00'})
+    )
+    lanc_periodo_apuracao_r = forms.CharField(
+        required=False, 
+        max_length=20,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: 01/2025'})
+    )
+    lanc_total_r = forms.DecimalField(
+        required=False, 
+        max_digits=15, 
+        decimal_places=2,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': '0,00'})
+    )
+    
+    # Campo para exibir o saldo atual da adesão selecionada (somente leitura)
+    saldo_atual_adesao = forms.DecimalField(
+        required=False,
+        max_digits=15,
+        decimal_places=2,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control', 
+            'readonly': True, 
+            'placeholder': 'Selecione uma adesão...',
+            'style': 'background-color: #f8f9fa;'
+        }),
+        label='Saldo Atual da Adesão'
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -224,6 +224,15 @@ class LancamentoCreateView(AdminRequiredMixin, CreateView):
             context['anexos_formset'] = AnexosFormSet(self.request.POST, self.request.FILES)
         else:
             context['anexos_formset'] = AnexosFormSet()
+        
+        # Adicionar saldos das adesões para o JavaScript
+        from adesao.models import Adesao
+        import json
+        adesoes_saldos = {}
+        for adesao in Adesao.objects.all():
+            adesoes_saldos[str(adesao.id)] = float(adesao.saldo_atual or 0)
+        context['adesoes_saldos'] = json.dumps(adesoes_saldos)
+        
         return context
     
     def form_valid(self, form):

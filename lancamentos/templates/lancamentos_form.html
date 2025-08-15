@@ -64,6 +64,15 @@
                         </div>
 
                         <div class="form-group mb-3">
+                            <label for="{{ form.saldo_atual_adesao.id_for_label }}" class="form-label">{{ form.saldo_atual_adesao.label }}:</label>
+                            <div class="input-group">
+                                {{ form.saldo_atual_adesao }}
+                                <span class="input-group-text">R$</span>
+                            </div>
+                            <small class="form-text text-muted">Saldo disponível na adesão selecionada.</small>
+                        </div>
+
+                        <div class="form-group mb-3">
                             <label for="{{ form.metodo_escolhido.id_for_label }}" class="form-label">Método:</label>
                             {{ form.metodo_escolhido }}
                             {% if form.metodo_escolhido.errors %}
@@ -272,6 +281,29 @@
         function hideAll(){document.querySelectorAll('[id^="lanc-group-"]').forEach(el=>{el.classList.add('d-none');});}
         function update(){hideAll(); const sel = norm(metodoField.value); const groups = mapGroups[sel]||[]; groups.forEach(id=>{const el=document.getElementById(id); if(el) el.classList.remove('d-none');});}
         if(metodoField){metodoField.addEventListener('change',update); update();}
+        
+        // Atualizar saldo quando adesão for selecionada
+        const adesaoField = document.querySelector('select[name="id_adesao"]');
+        const saldoField = document.querySelector('input[name="saldo_atual_adesao"]');
+        const adesoesSaldos = JSON.parse('{{ adesoes_saldos|escapejs }}');
+        
+        function updateSaldo() {
+            const adesaoId = adesaoField.value;
+            if (adesaoId && adesoesSaldos[adesaoId] !== undefined) {
+                const saldo = adesoesSaldos[adesaoId];
+                saldoField.value = saldo.toFixed(2);
+                saldoField.placeholder = `R$ ${saldo.toFixed(2)}`;
+            } else {
+                saldoField.value = '';
+                saldoField.placeholder = 'Selecione uma adesão...';
+            }
+        }
+        
+        if (adesaoField && saldoField) {
+            adesaoField.addEventListener('change', updateSaldo);
+            // Executar na inicialização se já houver uma adesão selecionada
+            updateSaldo();
+        }
         // Garantir que o campo de data esteja preenchido corretamente
         const dataField = document.querySelector('input[name="data_lancamento"]');
         if (dataField && !dataField.value) {
