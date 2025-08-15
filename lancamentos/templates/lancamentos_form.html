@@ -321,11 +321,19 @@
         
         // Atualizando os campos quando um novo anexo é adicionado
         const updateElementIndex = function(el, prefix, ndx) {
-            const id_regex = new RegExp('(' + prefix + '-\\d+)');
+            const id_regex = new RegExp('(' + prefix + '-\\d+)', 'g');
             const replacement = prefix + '-' + ndx;
             
-            if (el.id) el.id = el.id.replace(id_regex, replacement);
-            if (el.name) el.name = el.name.replace(id_regex, replacement);
+            // Atualizar todos os elementos input, select, textarea
+            el.querySelectorAll('input, select, textarea').forEach((element) => {
+                ['id', 'name'].forEach((attr) => {
+                    if (element.getAttribute(attr)) {
+                        element.setAttribute(attr, 
+                            element.getAttribute(attr).replace(id_regex, replacement)
+                        );
+                    }
+                });
+            });
             
             // Atualizando os atributos for de todas as labels dentro deste elemento
             el.querySelectorAll('label').forEach((label) => {
@@ -334,6 +342,17 @@
                         label.getAttribute('for').replace(id_regex, replacement)
                     );
                 }
+            });
+            
+            // Atualizar qualquer outro atributo que contenha o padrão
+            el.querySelectorAll('*').forEach((element) => {
+                ['data-target', 'data-toggle', 'aria-describedby'].forEach((attr) => {
+                    if (element.getAttribute(attr)) {
+                        element.setAttribute(attr, 
+                            element.getAttribute(attr).replace(id_regex, replacement)
+                        );
+                    }
+                });
             });
         };
         
@@ -347,19 +366,36 @@
             
             // Pegando o primeiro form como template
             const formTemplate = anexosContainer.querySelector('.anexo-form');
+            if (!formTemplate) return;
+            
             const newForm = formTemplate.cloneNode(true);
+            
+            // Remover informações de anexo existente
+            const anexoAtualDiv = newForm.querySelector('.col-12.mb-2');
+            if (anexoAtualDiv) {
+                anexoAtualDiv.remove();
+            }
             
             // Resetando todos os valores dos inputs
             newForm.querySelectorAll('input, select, textarea').forEach((input) => {
-                if (input.getAttribute('type') !== 'hidden') {
+                if (input.getAttribute('type') === 'hidden') {
+                    // Para campos hidden, limpar apenas se não for o ID
+                    if (input.name && input.name.includes('-id')) {
+                        input.value = '';
+                    }
+                } else {
                     input.value = '';
                 }
+                
                 // Limpando quaisquer mensagens de erro
                 const errorDiv = input.nextElementSibling;
                 if (errorDiv && errorDiv.classList.contains('text-danger')) {
                     errorDiv.innerHTML = '';
                 }
             });
+            
+            // Remover classe delete-form se existir
+            newForm.classList.remove('delete-form');
             
             // Atualizando os índices
             updateElementIndex(newForm, prefix, currentFormCount);

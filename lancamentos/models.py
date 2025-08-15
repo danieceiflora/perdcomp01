@@ -203,12 +203,16 @@ class Anexos(models.Model):
     
     nome_anexo = models.CharField(
         max_length=100,
-        verbose_name='Nome do anexo'
+        verbose_name='Nome do anexo',
+        blank=True,
+        null=True
     )
     
     descricao = models.CharField(
         max_length=200,
-        verbose_name='Descrição do conteúdo'
+        verbose_name='Descrição do conteúdo',
+        blank=True,
+        null=True
     )
     
     data_upload = models.DateTimeField(
@@ -217,5 +221,5 @@ class Anexos(models.Model):
     )
     
     def __str__(self):
-        return self.nome_anexo
+        return self.nome_anexo or f"Anexo {self.id}" or "Anexo sem nome"
 

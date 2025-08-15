@@ -266,7 +266,15 @@ class LancamentoCreateView(AdminRequiredMixin, CreateView):
     
     def form_invalid(self, form):
         messages.error(self.request, 'Erro ao cadastrar lançamento. Verifique os campos.')
+        # Debug: mostrar erros do formset
         context = self.get_context_data(form=form)
+        anexos_formset = context['anexos_formset']
+        if anexos_formset.errors:
+            for i, form_errors in enumerate(anexos_formset.errors):
+                if form_errors:
+                    messages.error(self.request, f'Erro no anexo {i+1}: {form_errors}')
+        if anexos_formset.non_form_errors():
+            messages.error(self.request, f'Erros do formset: {anexos_formset.non_form_errors()}')
         return self.render_to_response(context)
 
 # Removemos as views LancamentoUpdateView, LancamentoDeleteView e confirmar_lancamento

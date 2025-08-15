@@ -1,5 +1,5 @@
 from django import forms
-from django.forms import inlineformset_factory
+from django.forms import inlineformset_factory, BaseInlineFormSet
 from .models import Lancamentos, Anexos
 from adesao.models import Adesao
 
@@ -145,12 +145,50 @@ class AnexosForm(forms.ModelForm):
                 'placeholder': 'Descrição do conteúdo'
             }),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Tornar os campos opcionais
+        self.fields['nome_anexo'].required = False
+        self.fields['descricao'].required = False
+        self.fields['arquivo'].required = False
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        arquivo = cleaned_data.get('arquivo')
+        
+        # Se não há arquivo, este form deve ser considerado vazio e não salvo
+        if not arquivo and not self.instance.pk:
+            # Form vazio - não deve ser processado
+            return cleaned_data
+            
+        return cleaned_data
+
+class BaseAnexosFormSet(BaseInlineFormSet):
+    def clean(self):
+        """
+        Valida o formset e filtra formas vazias
+        """
+        super().clean()
+        
+        # Contar quantos anexos válidos temos
+        valid_forms = 0
+        for form in self.forms:
+            if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
+                if form.cleaned_data.get('arquivo'):
+                    valid_forms += 1
+        
+        # Pelo menos um anexo é obrigatório? (Se desejar, pode remover esta validação)
+        # if valid_forms == 0:
+        #     raise forms.ValidationError('Pelo menos um anexo é obrigatório.')
 
 # Cria um FormSet para gerenciar múltiplos anexos
 AnexosFormSet = inlineformset_factory(
     Lancamentos, 
     Anexos, 
     form=AnexosForm, 
+    formset=BaseAnexosFormSet,
     extra=1, 
-    can_delete=True
+    can_delete=True,
+    can_delete_extra=True
 )
