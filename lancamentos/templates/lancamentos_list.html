@@ -149,7 +149,7 @@
                                         <td>{% if lancamento.id_adesao.cliente.id_company_vinculada %}{{ lancamento.id_adesao.cliente.id_company_vinculada.razao_social }}{% else %}{{ lancamento.id_adesao.cliente }}{% endif %}</td>
                                         <td>{{ lancamento.data_lancamento|date:"d/m/Y" }}</td>
                                         <td class="fw-bold {% if lancamento.sinal == '+' %}text-success{% else %}text-danger{% endif %}">{{ lancamento.sinal }} R$ {{ lancamento.valor|floatformat:2 }}</td>
-                                        <td class="fw-bold {% if lancamento.saldo_restante > 0 %}text-success{% elif lancamento.saldo_restante < 0 %}text-danger{% endif %}">{% if lancamento.saldo_restante != None %}R$ {{ lancamento.saldo_restante|floatformat:2 }}{% else %}<span class="text-muted">--</span>{% endif %}</td>
+                                        <td class="fw-bold">R$ {{ lancamento.saldo_restante|floatformat:2 }}</td>
                                         <td><span class="badge bg-info">{{ lancamento.anexos.count }} anexo(s)</span></td>
                                         <td><span class="badge bg-{% if lancamento.sinal == '+' %}success{% else %}danger{% endif %} status-badge">{% if lancamento.sinal == '+' %}Crédito{% elif lancamento.sinal == '-' %}Débito{% else %}<span class="text-muted">Indefinido</span>{% endif %}</span></td>
                                         <td>
