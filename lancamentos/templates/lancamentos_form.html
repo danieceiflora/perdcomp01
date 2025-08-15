@@ -26,121 +26,154 @@
         <div class="col-12">
             <form method="post" enctype="multipart/form-data" class="card card-body" novalidate>
                 {% csrf_token %}
-                                    <!-- Campo Valor ocultado do front: mantém input para submissão -->
-                                    <div class="col-md-3 d-none">
-                                        <label class="form-label visually-hidden" for="{{ form.valor.id_for_label }}">{{ form.valor.label }}</label>
-                                        <div class="input-group">
-                                            {{ form.valor }}
-                                            <span class="input-group-text">R$</span>
+                
+                <!-- Exibir erros gerais (não específicos de um campo) -->
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger" role="alert">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                
+                <!-- Campo Valor ocultado do front: mantém input para submissão -->
+                <div class="col-md-3 d-none">
+                    <label class="form-label visually-hidden" for="{{ form.valor.id_for_label }}">{{ form.valor.label }}</label>
+                    <div class="input-group">
+                        {{ form.valor }}
+                        <span class="input-group-text">R$</span>
+                    </div>
+                    <!-- Erros ainda serão exibidos se ocorrerem, útil para depuração -->
+                    {% if form.valor.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.valor.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+        
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="{{ form.id_adesao.id_for_label }}" class="form-label">{{ form.id_adesao.label }}:</label>
+                            {{ form.id_adesao }}
+                            {% if form.id_adesao.errors %}
+                                <div class="text-danger">
+                                    {{ form.id_adesao.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="{{ form.metodo_escolhido.id_for_label }}" class="form-label">Método:</label>
+                            {{ form.metodo_escolhido }}
+                            {% if form.metodo_escolhido.errors %}
+                                <div class="text-danger">
+                                    {{ form.metodo_escolhido.errors }}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">Selecione o método para exibir os campos específicos.</small>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="{{ form.data_lancamento.id_for_label }}" class="form-label">{{ form.data_lancamento.label }}:</label>
+                            {{ form.data_lancamento }}
+                            {% if form.data_lancamento.errors %}
+                                <div class="text-danger">
+                                    {{ form.data_lancamento.errors }}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">{{ form.data_lancamento.help_text }}</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="{{ form.tipo.id_for_label }}" class="form-label">{{ form.tipo.label }}:</label>
+                            {{ form.tipo }}
+                            {% if form.tipo.errors %}
+                                <div class="text-danger">
+                                    {{ form.tipo.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label for="{{ form.sinal.id_for_label }}" class="form-label">{{ form.sinal.label }}:</label>
+                                    {{ form.sinal }}
+                                    {% if form.sinal.errors %}
+                                        <div class="text-danger">
+                                            {{ form.sinal.errors }}
                                         </div>
-                                        <!-- Erros ainda serão exibidos se ocorrerem, útil para depuração -->
-                                        {% if form.valor.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.valor.errors }}
-                                        </div>
-                                        {% endif %}
-                                    </div>
-                    
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <div class="form-group mb-3">
-                                <label for="{{ form.id_adesao.id_for_label }}" class="form-label">{{ form.id_adesao.label }}:</label>
-                                {{ form.id_adesao }}
-                                {% if form.id_adesao.errors %}
-                                    <div class="text-danger">
-                                        {{ form.id_adesao.errors }}
-                                    </div>
-                                {% endif %}
-                            </div>
-
-                            <div class="form-group mb-3">
-                                <label for="{{ form.metodo_escolhido.id_for_label }}" class="form-label">Método:</label>
-                                {{ form.metodo_escolhido }}
-                                <small class="form-text text-muted">Selecione o método para exibir os campos específicos.</small>
-                            </div>
-
-                            <div class="form-group mb-3">
-                                <label for="{{ form.data_lancamento.id_for_label }}" class="form-label">{{ form.data_lancamento.label }}:</label>
-                                {{ form.data_lancamento }}
-                                {% if form.data_lancamento.errors %}
-                                    <div class="text-danger">
-                                        {{ form.data_lancamento.errors }}
-                                    </div>
-                                {% endif %}
-                                <small class="form-text text-muted">{{ form.data_lancamento.help_text }}</small>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group mb-3">
-                                <label for="{{ form.tipo.id_for_label }}" class="form-label">{{ form.tipo.label }}:</label>
-                                {{ form.tipo }}
-                                {% if form.tipo.errors %}
-                                    <div class="text-danger">
-                                        {{ form.tipo.errors }}
-                                    </div>
-                                {% endif %}
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="form-group mb-3">
-                                        <label for="{{ form.sinal.id_for_label }}" class="form-label">{{ form.sinal.label }}:</label>
-                                        {{ form.sinal }}
-                                        {% if form.sinal.errors %}
-                                            <div class="text-danger">
-                                                {{ form.sinal.errors }}
-                                            </div>
-                                        {% endif %}
-                                    </div>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Seção dinâmica: Detalhes do método -->
-                    <div class="card mb-4">
-                        <div class="card-header"><strong>Detalhes do método</strong></div>
-                        <div class="card-body">
-                            <div class="row g-3">
-                                <!-- Pedido de restituição -->
-                                <div id="lanc-group-total_credito_original_utilizado" class="col-md-4 d-none">
-                                    <label class="form-label">Total Crédito Original Utilizado</label>
-                                    <input type="number" step="0.01" class="form-control" name="lanc_total_credito_original_utilizado">
-                                </div>
-                                <div id="lanc-group-debito" class="col-md-4 d-none">
-                                    <label class="form-label">Débito</label>
-                                    <input type="number" step="0.01" class="form-control" name="lanc_debito">
-                                </div>
-                                <div id="lanc-group-periodo_apuracao" class="col-md-4 d-none">
-                                    <label class="form-label">Período de Apuração</label>
-                                    <input type="text" class="form-control" name="lanc_periodo_apuracao" placeholder="AAAA-MM">
-                                </div>
-                                <!-- Pedido de ressarcimento -->
-                                <div id="lanc-group-debito_r" class="col-md-4 d-none">
-                                    <label class="form-label">Débito</label>
-                                    <input type="number" step="0.01" class="form-control" name="lanc_debito_r">
-                                </div>
-                                <div id="lanc-group-periodo_apuracao_r" class="col-md-4 d-none">
-                                    <label class="form-label">Período de Apuração</label>
-                                    <input type="text" class="form-control" name="lanc_periodo_apuracao_r" placeholder="AAAA-MM">
-                                </div>
-                                <div id="lanc-group-total_r" class="col-md-4 d-none">
-                                    <label class="form-label">Total</label>
-                                    <input type="number" step="0.01" class="form-control" name="lanc_total_r">
-                                </div>
+                </div>
+                
+                <!-- Seção dinâmica: Detalhes do método -->
+                <div class="card mb-4">
+                    <div class="card-header"><strong>Detalhes do método</strong></div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <!-- Pedido de restituição -->
+                            <div id="lanc-group-total_credito_original_utilizado" class="col-md-4 d-none">
+                                <label for="{{ form.lanc_total_credito_original_utilizado.id_for_label }}" class="form-label">Total Crédito Original Utilizado</label>
+                                {{ form.lanc_total_credito_original_utilizado }}
+                                {% if form.lanc_total_credito_original_utilizado.errors %}
+                                    <div class="text-danger">{{ form.lanc_total_credito_original_utilizado.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div id="lanc-group-debito" class="col-md-4 d-none">
+                                <label for="{{ form.lanc_debito.id_for_label }}" class="form-label">Débito</label>
+                                {{ form.lanc_debito }}
+                                {% if form.lanc_debito.errors %}
+                                    <div class="text-danger">{{ form.lanc_debito.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div id="lanc-group-periodo_apuracao" class="col-md-4 d-none">
+                                <label for="{{ form.lanc_periodo_apuracao.id_for_label }}" class="form-label">Período de Apuração</label>
+                                {{ form.lanc_periodo_apuracao }}
+                                {% if form.lanc_periodo_apuracao.errors %}
+                                    <div class="text-danger">{{ form.lanc_periodo_apuracao.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <!-- Pedido de ressarcimento -->
+                            <div id="lanc-group-debito_r" class="col-md-4 d-none">
+                                <label for="{{ form.lanc_debito_r.id_for_label }}" class="form-label">Débito</label>
+                                {{ form.lanc_debito_r }}
+                                {% if form.lanc_debito_r.errors %}
+                                    <div class="text-danger">{{ form.lanc_debito_r.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div id="lanc-group-periodo_apuracao_r" class="col-md-4 d-none">
+                                <label for="{{ form.lanc_periodo_apuracao_r.id_for_label }}" class="form-label">Período de Apuração</label>
+                                {{ form.lanc_periodo_apuracao_r }}
+                                {% if form.lanc_periodo_apuracao_r.errors %}
+                                    <div class="text-danger">{{ form.lanc_periodo_apuracao_r.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div id="lanc-group-total_r" class="col-md-4 d-none">
+                                <label for="{{ form.lanc_total_r.id_for_label }}" class="form-label">Total</label>
+                                {{ form.lanc_total_r }}
+                                {% if form.lanc_total_r.errors %}
+                                    <div class="text-danger">{{ form.lanc_total_r.errors }}</div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <div class="form-group mb-4">
-                        <label for="{{ form.observacao.id_for_label }}" class="form-label">{{ form.observacao.label }}:</label>
-                        {{ form.observacao }}
-                        {% if form.observacao.errors %}
-                            <div class="text-danger">
-                                {{ form.observacao.errors }}
-                            </div>
-                        {% endif %}
-                    </div>
+                <div class="form-group mb-4">
+                    <label for="{{ form.descricao.id_for_label }}" class="form-label">{{ form.descricao.label }}:</label>
+                    {{ form.descricao }}
+                    {% if form.descricao.errors %}
+                        <div class="text-danger">
+                            {{ form.descricao.errors }}
+                        </div>
+                    {% endif %}
+                </div>
                     
                                        
                     <h4 class="border-bottom pb-2 mb-3">Anexos</h4>
@@ -230,7 +263,6 @@
     document.addEventListener('DOMContentLoaded', function() {
         const metodoField = document.getElementById('{{ form.metodo_escolhido.id_for_label }}') || document.querySelector('select[name="metodo_escolhido"]');
         const mapGroups = {
-            'pedido de compensacao': ['lanc-group-debito_r','lanc-group-periodo_apuracao_r','lanc-group-total_r'],
             'pedido de ressarcimento': ['lanc-group-debito_r','lanc-group-periodo_apuracao_r','lanc-group-total_r'],
             'pedido de restituição': ['lanc-group-total_credito_original_utilizado','lanc-group-debito','lanc-group-periodo_apuracao'],
             'pedido de restituiçao': ['lanc-group-total_credito_original_utilizado','lanc-group-debito','lanc-group-periodo_apuracao'],

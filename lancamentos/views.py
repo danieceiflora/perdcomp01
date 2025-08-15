@@ -227,92 +227,27 @@ class LancamentoCreateView(AdminRequiredMixin, CreateView):
         return context
     
     def form_valid(self, form):
+        """Processa o formulário principal e os anexos."""
         context = self.get_context_data()
         anexos_formset = context['anexos_formset']
         
         try:
             with transaction.atomic():
-                # Prepara o lançamento
-                self.object = form.save(commit=False)
-                
-                # Lógica de negócios baseada no método escolhido (campo extra do form)
-                metodo = form.cleaned_data.get('metodo_escolhido') or ''
-                metodo_norm = metodo.lower().strip()
-
-                # Campos dinâmicos vindos do POST
-                total_credito_original_utilizado = self.request.POST.get('lanc_total_credito_original_utilizado')
-                debito = self.request.POST.get('lanc_debito')
-                periodo_apuracao = self.request.POST.get('lanc_periodo_apuracao')
-                total_r = self.request.POST.get('lanc_total_r')  # usado em pedido de ressarcimento
-                # Sanitiza conversões numéricas
-                def to_float(v):
-                    try:
-                        return float(v) if v not in (None, '',) else None
-                    except ValueError:
-                        return None
-                val_total_credito = to_float(total_credito_original_utilizado)
-                val_debito = to_float(debito)
-                val_total_r = to_float(total_r)
-
-                adesao = self.object.id_adesao
-                if not adesao:
-                    form.add_error('id_adesao', 'Selecione uma adesão.')
-                    raise ValidationError('Adesão obrigatória')
-
-                # Pedido de restituição: usar total_credito_original_utilizado como débito que reduz saldo
-                if 'restituicao' in metodo_norm:
-                    if val_total_credito is None:
-                        form.add_error(None, 'Informe o Total Crédito Original Utilizado.')
-                        raise ValidationError('Valor obrigatório')
-                    if adesao.saldo_atual is None:
-                        adesao.saldo_atual = adesao.saldo
-                    if val_total_credito > adesao.saldo_atual:
-                        form.add_error(None, f"Saldo insuficiente. Saldo atual: {adesao.saldo_atual} < débito: {val_total_credito}")
-                        raise ValidationError('Saldo insuficiente')
-                    # Define lançamento como débito
-                    self.object.valor = val_total_credito
-                    self.object.sinal = '-'
-                    self.object.descricao = self.object.descricao or 'Pedido de restituição'
-
-                # Pedido de ressarcimento: usar total_r como crédito que aumenta saldo
-                elif 'ressarcimento' in metodo_norm or 'compensacao' in metodo_norm and 'pedido' in metodo_norm:
-                    # Aqui consideramos mapGroups para 'pedido de compensacao' ou 'pedido de ressarcimento'
-                    if val_total_r is None:
-                        form.add_error(None, 'Informe o Total.')
-                        raise ValidationError('Total obrigatório')
-                    self.object.valor = val_total_r
-                    self.object.sinal = '+'
-                    self.object.descricao = self.object.descricao or 'Pedido de ressarcimento/compensação'
-
-                # Caso nenhum método mapeado, garantir valor já fornecido (fallback)
-                if not self.object.valor:
-                    form.add_error('valor', 'Não foi possível determinar o valor do lançamento.')
-                    raise ValidationError('Valor ausente')
-
-                # Limpa o objeto para que validações específicas sejam aplicadas
-                self.object.clean()
-                
-                # Salva o lançamento (a validação já foi feita pelo clean())
-                self.object.save()
-                
-                # Salva anexos
-                if anexos_formset.is_valid():
-                    anexos_formset.instance = self.object
-                    anexos_formset.save()
-                else:
+                # Validar o formset de anexos
+                if not anexos_formset.is_valid():
                     return self.form_invalid(form)
                 
-                # Mensagem de sucesso
-                messages.success(self.request, 'Lançamento cadastrado com sucesso!')
+                # O formulário já fez toda a validação no método clean()
+                # incluindo a definição de valor e sinal
+                self.object = form.save()
+                
+                # Associar os anexos ao lançamento
+                anexos_formset.instance = self.object
+                anexos_formset.save()
+                
+                messages.success(self.request, 'Lançamento criado com sucesso!')
                 return super().form_valid(form)
-        
-        except ValidationError as e:
-            # Transfere erros de validação do modelo para o formulário
-            for field, errors in e.message_dict.items():
-                for error in errors:
-                    form.add_error(field, error)
-            messages.error(self.request, "Erro ao cadastrar lançamento. Verifique os campos.")
-            return self.form_invalid(form)
+                
         except Exception as e:
             # Log do erro para depuração
             import logging
@@ -322,7 +257,8 @@ class LancamentoCreateView(AdminRequiredMixin, CreateView):
     
     def form_invalid(self, form):
         messages.error(self.request, 'Erro ao cadastrar lançamento. Verifique os campos.')
-        return super().form_invalid(form)
+        context = self.get_context_data(form=form)
+        return self.render_to_response(context)
 
 # Removemos as views LancamentoUpdateView, LancamentoDeleteView e confirmar_lancamento
 # já que lançamentos não podem mais ser editados ou excluídos

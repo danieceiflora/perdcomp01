@@ -18,7 +18,9 @@ class Lancamentos(models.Model):
     
     valor = models.FloatField(
         verbose_name='Valor do Lançamento',
-        help_text='Valor do lançamento realizado'
+        help_text='Valor do lançamento realizado',
+        null=True,
+        blank=True
     )
     
     sinal = models.CharField(
@@ -60,6 +62,47 @@ class Lancamentos(models.Model):
         help_text='Saldo da adesão após este lançamento',
         null=True,
         blank=True
+    )
+
+    # Campos adicionais para rastrear origem dos valores conforme método
+    metodo = models.CharField(
+        max_length=60,
+        verbose_name='Método do Lançamento',
+        blank=True,
+        null=True,
+        help_text='Pedido de ressarcimento, Pedido de restituição, etc.'
+    )
+    total = models.FloatField(
+        verbose_name='Total (Ressarcimento / Compensação)',
+        blank=True,
+        null=True
+    )
+    total_credito_original_utilizado = models.FloatField(
+        verbose_name='Total Crédito Original Utilizado (Restituição)',
+        blank=True,
+        null=True
+    )
+    periodo_apuracao = models.CharField(
+        max_length=20,
+        verbose_name='Período de Apuração',
+        blank=True,
+        null=True
+    )
+    periodo_apuracao_r = models.CharField(
+        max_length=20,
+        verbose_name='Período de Apuração (Ressarcimento)',
+        blank=True,
+        null=True
+    )
+    debito = models.FloatField(
+        verbose_name='Débito (Restituição)',
+        blank=True,
+        null=True
+    )
+    debito_r = models.FloatField(
+        verbose_name='Débito (Ressarcimento)',
+        blank=True,
+        null=True
     )
 
     def __str__(self):
