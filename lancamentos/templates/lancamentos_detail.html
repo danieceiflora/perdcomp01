@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load utils_filters %}
 
 {% block title %}Detalhes do Lançamento{% endblock %}
 
@@ -22,39 +23,95 @@
                     <div class="row">
                         <div class="col-md-12">
                             <h5 class="border-bottom pb-2">Informações do Lançamento</h5>
-                            <table class="table table-sm">
-                                <tr>
-                                    <th style="width: 30%">Perdcomp:</th>
-                                    <td>{{ lancamento.id_adesao.perdcomp }}</td>
-                                </tr>
-                                <tr>
-                                    <th><strong>Saldo Restante:</strong></th>
-                                    <td class="fw-bold {% if lancamento.saldo_restante > 0 %}text-success{% elif lancamento.saldo_restante < 0 %}text-danger{% endif %}">
-                                        {% if lancamento.saldo_restante != None %}
-                                            R$ {{ lancamento.saldo_restante|floatformat:2 }}
-                                        {% else %}
-                                            <span class="text-muted">Não disponível</span>
+                            <table class="table table-sm align-middle mb-0">
+                                <tbody>
+                                    <tr>
+                                        <th style="width: 30%">Perdcomp:</th>
+                                        <td>{{ lancamento.id_adesao.perdcomp|default:'--' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Data do Lançamento:</th>
+                                        <td>{{ lancamento.data_lancamento|date:"d/m/Y" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Valor do Lançamento:</th>
+                                        <td class="{% if lancamento.sinal == '+' %}text-success{% else %}text-danger{% endif %}">
+                                            <strong>{{ lancamento.sinal }} R$ {{ lancamento.valor|floatformat:2 }}</strong>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Saldo Restante:</th>
+                                        <td class="fw-bold {% if lancamento.saldo_restante > 0 %}text-success{% elif lancamento.saldo_restante < 0 %}text-danger{% endif %}">
+                                            {% if lancamento.saldo_restante != None %}
+                                                R$ {{ lancamento.saldo_restante|floatformat:2 }}
+                                            {% else %}
+                                                <span class="text-muted">Não disponível</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Observação:</th>
+                                        <td>{{ lancamento.descricao|linebreaks|default:"Nenhuma observação" }}</td>
+                                    </tr>
+                                    {% with metodo_raw=lancamento.metodo|default:'' ml=lancamento.metodo|default:''|lower %}
+                                        {% if metodo_raw %}
+                                            <tr class="table-secondary">
+                                                <th colspan="2">Detalhes do Método</th>
+                                            </tr>
+                                            <tr>
+                                                <th>Método</th>
+                                                <td>{{ metodo_raw }}</td>
+                                            </tr>
+                                            {% if 'restitu' in ml %}
+                                                <tr>
+                                                    <th>Total Crédito Original Utilizado</th>
+                                                    <td>
+                                                        {% if lancamento.total_credito_original_utilizado != None %}
+                                                            {{ lancamento.total_credito_original_utilizado|br_currency }}
+                                                        {% else %}<span class="text-muted">--</span>{% endif %}
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Débito</th>
+                                                    <td>
+                                                        {% if lancamento.debito != None %}
+                                                            {{ lancamento.debito|br_currency }}
+                                                        {% else %}<span class="text-muted">--</span>{% endif %}
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Período de Apuração</th>
+                                                    <td>{{ lancamento.periodo_apuracao|default:'--' }}</td>
+                                                </tr>
+                                            {% elif 'ressarc' in ml %}{# ressarcimento #}
+                                                <tr>
+                                                    <th>Total</th>
+                                                    <td>
+                                                        {% if lancamento.total != None %}
+                                                            {{ lancamento.total|br_currency }}
+                                                        {% else %}<span class="text-muted">--</span>{% endif %}
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Débito</th>
+                                                    <td>
+                                                        {% if lancamento.debito_r != None %}
+                                                            {{ lancamento.debito_r|br_currency }}
+                                                        {% else %}<span class="text-muted">--</span>{% endif %}
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Período de Apuração</th>
+                                                    <td>{{ lancamento.periodo_apuracao_r|default:'--' }}</td>
+                                                </tr>
+                                            {% else %}
+                                                <tr>
+                                                    <td colspan="2" class="text-muted">Nenhum detalhe adicional para este método.</td>
+                                                </tr>
+                                            {% endif %}
                                         {% endif %}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th>Data do Lançamento:</th>
-                                    <td>{{ lancamento.data_lancamento|date:"d/m/Y" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Valor do Lançamento:</th>
-                                    <td class="{% if lancamento.sinal == '+' %}text-success{% else %}text-danger{% endif %}">
-                                        <strong>{{ lancamento.sinal }} R$ {{ lancamento.valor|floatformat:2 }}</strong>
-                                    </td>
-                                </tr>
-                                
-                                <!-- Removida linha do status, já que não é mais necessária -->
-                                
-                                <tr>
-                                    <th>Observação:</th>
-                                    <td>{{ lancamento.observacao|linebreaks|default:"Nenhuma observação" }}</td>
-                                </tr>
-                                
+                                    {% endwith %}
+                                </tbody>
                             </table>
                         </div>
                         
