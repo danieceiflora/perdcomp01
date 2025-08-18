@@ -37,7 +37,6 @@ class NewEmpresaView(CreateView):
                 Contatos.objects.create(
                     tipo_contato=tipo_contato,
                     empresa_base=empresa,
-                    empresa_vinculada=empresa,
                     telefone=telefone or "",
                     email=email or "",
                     site=site or ""
@@ -103,7 +102,6 @@ class EmpresaUpdateView(UpdateView):
                         Contatos.objects.create(
                             tipo_contato=tipo_contato,
                             empresa_base=empresa,
-                            empresa_vinculada=empresa,
                             telefone=telefone or "",
                             email=email or "",
                             site=site or ""
@@ -113,7 +111,6 @@ class EmpresaUpdateView(UpdateView):
                     Contatos.objects.create(
                         tipo_contato=tipo_contato,
                         empresa_base=empresa,
-                        empresa_vinculada=empresa,
                         telefone=telefone or "",
                         email=email or "",
                         site=site or ""

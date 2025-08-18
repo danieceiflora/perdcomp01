@@ -60,19 +60,18 @@
                           <li><a class="dropdown-item" href="{% url 'empresas:cadastro_empresa' %}"><i class="bi bi-plus me-1"></i>Cadastrar</a></li>
                           {% endif %}
                           <li><a class="dropdown-item" href="{% url 'empresas:lista_empresas' %}"><i class="bi bi-list me-1"></i>Listar Empresas</a></li>
-                          {% if user.is_superuser or user.is_staff %}
-                          <li><a class="dropdown-item" href="{% url 'tipo_relacionamento' %}"><i class="bi bi-pencil me-1"></i>Tipo de parceria</a></li>
-                          {% endif %}
+                          
                         </ul>
                       </li>
                       
                         {% if user.is_superuser or user.is_staff %}
                         <li class="nav-item dropdown">
                           <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-people me-1"></i>Clientes
+                            <i class="bi bi-people me-1"></i>Vinculos
                           </a>
                           <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{% url 'cadastrar_cliente_parceiro' %}"><i class="bi bi-person-plus me-1"></i>Cadastrar Cliente</a></li>
+                            <li><a class="dropdown-item" href="{% url 'cadastrar_cliente_parceiro' %}"><i class="bi bi-person-plus me-1"></i>Cliente</a></li>
+                            <li><a class="dropdown-item" href="{% url 'cadastrar_cliente_parceiro' %}"><i class="bi bi-person-plus me-1"></i>Parceiro </a></li>
                             <li><a class="dropdown-item" href="{% url 'lista_clientes_parceiros' %}"><i class="bi bi-list me-1"></i>Listar Clientes</a></li>
                           </ul>
                         </li>
