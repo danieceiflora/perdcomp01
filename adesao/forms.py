@@ -1,7 +1,7 @@
 from django import forms
 from django.utils.timezone import now
 from .models import Adesao
-from clientes_parceiros.models import ClientesParceiros, TipoRelacionamento
+from clientes_parceiros.models import ClientesParceiros
 
 import re
 

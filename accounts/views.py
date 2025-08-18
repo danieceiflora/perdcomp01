@@ -147,9 +147,9 @@ class ClienteDashboardView(LoginRequiredMixin, TemplateView):
         # Encontra o relacionamento com o parceiro
         relacionamento_com_parceiro = ClientesParceiros.objects.filter(
             id_company_vinculada=profile.empresa_vinculada,
-            id_tipo_relacionamento__tipo_relacionamento__icontains='cliente',
+            tipo_parceria='cliente',
             ativo=True
-        ).select_related('id_company_base', 'id_tipo_relacionamento').first()
+        ).select_related('id_company_base').first()
         
         # Informações sobre o parceiro que atende este cliente (se existir)
         parceiro_info = None
@@ -220,10 +220,10 @@ class ParceiroDashboardView(LoginRequiredMixin, TemplateView):
         # - O tipo de relacionamento é "Cliente" (ou contém "cliente")
         # - O relacionamento está ativo
         clientes_relacionamentos = ClientesParceiros.objects.filter(
-            id_company_base=profile.empresa_vinculada,  # Empresa do parceiro (empresa_vinculada no perfil)
-            id_tipo_relacionamento__tipo_relacionamento__icontains='cliente',  # Relacionamento tipo Cliente
-            ativo=True  # Apenas relacionamentos ativos
-        ).select_related('id_company_vinculada', 'id_tipo_relacionamento')
+            id_company_base=profile.empresa_vinculada,
+            tipo_parceria='cliente',
+            ativo=True
+        ).select_related('id_company_vinculada')
         
         # Lista de empresas clientes (id_company_vinculada são as empresas clientes)
         empresas_clientes = [rel.id_company_vinculada for rel in clientes_relacionamentos]
@@ -231,7 +231,7 @@ class ParceiroDashboardView(LoginRequiredMixin, TemplateView):
         # Informações detalhadas dos relacionamentos para uso no template
         relacionamentos_info = [{
             'empresa': rel.id_company_vinculada,
-            'tipo_relacionamento': rel.id_tipo_relacionamento.tipo_relacionamento,
+            'tipo_relacionamento': rel.tipo_parceria,
             'nome_referencia': rel.nome_referencia,
             'cargo_referencia': rel.cargo_referencia,
             'data_inicio': rel.data_inicio_parceria,

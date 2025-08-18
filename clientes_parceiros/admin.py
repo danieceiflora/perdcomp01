@@ -2,7 +2,7 @@ from django import forms
 from clientes_parceiros.models import ClientesParceiros
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import TipoRelacionamento, ClientesParceiros
+from .models import ClientesParceiros
 from django.core.exceptions import ValidationError
 
 class ClientesParceirosAdminForm(forms.ModelForm):
@@ -14,30 +14,18 @@ class ClientesParceirosAdminForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         tipo_id = None
         # Tenta obter o tipo de relacionamento do POST ou do objeto
-        if self.data.get('id_id_tipo_relacionamento'):
-            tipo_id = self.data.get('id_id_tipo_relacionamento')
+        if self.data.get('id_tipo_parceria'):
+            tipo_id = self.data.get('id_tipo_parceria')
         elif self.instance and self.instance.pk:
-            tipo_id = getattr(self.instance, 'id_tipo_relacionamento_id', None)
+            tipo_id = getattr(self.instance, 'tipo_parceria_id', None)
         if tipo_id:
-            empresas_vinculadas = ClientesParceiros.objects.filter(id_tipo_relacionamento=tipo_id).values_list('id_company_vinculada', flat=True)
+            empresas_vinculadas = ClientesParceiros.objects.filter(tipo_parceria=tipo_id).values_list('id_company_vinculada', flat=True)
             self.fields['id_company_vinculada'].queryset = self.fields['id_company_vinculada'].queryset.exclude(pk__in=empresas_vinculadas)
 
 
-@admin.register(TipoRelacionamento)
-class TipoRelacionamentoAdmin(admin.ModelAdmin):
-    list_display = ('tipo_relacionamento', 'count_parceiros')
-    search_fields = ('tipo_relacionamento',)
-    
-    def count_parceiros(self, obj):
-        count = obj.clientes_parceiros.count()
-        return format_html('<span style="color:{}">{}</span>', 
-                          'green' if count > 0 else 'gray', 
-                          f"{count} parceria(s)")
-    count_parceiros.short_description = 'Parcerias'
-
 class ClientesParceirosInline(admin.TabularInline):
     model = ClientesParceiros
-    fk_name = 'id_tipo_relacionamento'
+    fk_name = 'tipo_parceria'
     extra = 0
     fields = ('id_company_base', 'id_company_vinculada', 'nome_referencia', 'data_inicio_parceria', 'ativo')
     readonly_fields = ('data_inicio_parceria',)
@@ -51,12 +39,12 @@ class ClientesParceirosAdmin(admin.ModelAdmin):
         js = ('filter_empresas.js',)
     list_display = ('nome_referencia', 'cargo_referencia', 'empresa_base', 'empresa_vinculada', 
                    'tipo_relacionamento', 'status_ativo')
-    list_filter = ('ativo', 'id_tipo_relacionamento',)
+    list_filter = ('ativo', 'tipo_parceria',)
     search_fields = ('nome_referencia', 'cargo_referencia', 
                     'id_company_base__razao_social', 'id_company_vinculada__razao_social')
     fieldsets = (
         ('Informações da Parceria', {
-            'fields': ('id_tipo_relacionamento', 'nome_referencia', 'cargo_referencia')
+            'fields': ('tipo_parceria', 'nome_referencia', 'cargo_referencia')
         }),
         ('Empresas', {
             'fields': ('id_company_base', 'id_company_vinculada')
@@ -75,7 +63,7 @@ class ClientesParceirosAdmin(admin.ModelAdmin):
     empresa_vinculada.short_description = 'Empresa Vinculada'
 
     def tipo_relacionamento(self, obj):
-        return obj.id_tipo_relacionamento.tipo_relacionamento
+        return obj.tipo_parceria.tipo_relacionamento
     tipo_relacionamento.short_description = 'Tipo'
 
     def status_ativo(self, obj):
@@ -88,10 +76,8 @@ class ClientesParceirosAdmin(admin.ModelAdmin):
         # Trava para não permitir empresa vinculada duplicada para o mesmo tipo de relacionamento
         if ClientesParceiros.objects.filter(
             id_company_vinculada=obj.id_company_vinculada,
-            id_tipo_relacionamento=obj.id_tipo_relacionamento
+            tipo_parceria=obj.tipo_parceria
         ).exclude(pk=obj.pk).exists():
             raise ValidationError("Esta empresa já está vinculada como cliente ou parceiro para este tipo de relacionamento.")
         super().save_model(request, obj, form, change)
 
-# Atualizar o admin do TipoRelacionamento para incluir o inline
-TipoRelacionamentoAdmin.inlines = [ClientesParceirosInline]

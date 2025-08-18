@@ -22,7 +22,7 @@ class AdesaoAdminForm(forms.ModelForm):
             # Filtra apenas clientes (tipo_relacionamento=1) e ativos
             try:
                 self.fields['cliente'].queryset = ClientesParceiros.objects.filter(
-                    id_tipo_relacionamento__id=1,  # Apenas clientes
+                    tipo_parceria='cliente',
                     ativo=True
                 ).select_related('id_company_vinculada')
             except Exception as e:

@@ -48,8 +48,7 @@ class CustomUserForm(forms.ModelForm):
         return super().get_queryset(request).select_related(
             'relacionamento',
             'relacionamento__id_company_base',
-            'relacionamento__id_company_vinculada',
-            'relacionamento__id_tipo_relacionamento'
+            'relacionamento__id_company_vinculada'
         )
 
 class UserProfileInline(admin.StackedInline):
@@ -106,8 +105,7 @@ class UserAdmin(BaseUserAdmin):
             'profile',
             'profile__relacionamento',
             'profile__relacionamento__id_company_base',
-            'profile__relacionamento__id_company_vinculada',
-            'profile__relacionamento__id_tipo_relacionamento'
+            'profile__relacionamento__id_company_vinculada'
         )
     
     def get_empresa_base(self, obj):
@@ -130,17 +128,17 @@ class UserAdmin(BaseUserAdmin):
         """Exibe o tipo de acesso do usuário"""
         try:
             if hasattr(obj, 'profile') and obj.profile.relacionamento:
-                tipo = obj.profile.relacionamento.id_tipo_relacionamento.tipo_relacionamento
-                if 'cliente' in tipo.lower():
-                    return format_html('<span class="badge badge-primary">👤 Cliente</span>')
-                elif 'parceiro' in tipo.lower():
-                    return format_html('<span class="badge badge-success">🤝 Parceiro</span>')
-                return format_html('<span class="badge badge-secondary">{}</span>', tipo)
+                tipo = obj.profile.relacionamento.tipo_parceria
+                if tipo == 'cliente':
+                    return format_html('<span class="badge bg-primary">👤 Cliente</span>')
+                elif tipo == 'parceiro':
+                    return format_html('<span class="badge bg-success">🤝 Parceiro</span>')
+                return format_html('<span class="badge bg-secondary">{}</span>', tipo)
         except (AttributeError, UserProfile.DoesNotExist):
             pass
         return format_html('<span class="text-muted">Sem acesso</span>')
     get_tipo_acesso.short_description = 'Tipo de Acesso'
-    get_tipo_acesso.admin_order_field = 'profile__relacionamento__id_tipo_relacionamento__tipo_relacionamento'
+    get_tipo_acesso.admin_order_field = 'profile__relacionamento__tipo_parceria'
 
 # Desregistrar o User admin padrão e registrar o customizado
 admin.site.unregister(User)

@@ -1,6 +1,6 @@
 from django import forms
 from django.forms import formset_factory
-from .models import ClientesParceiros, TipoRelacionamento
+from .models import ClientesParceiros
 from empresas.models import Empresa
 from contatos.models import Contatos
 
@@ -48,15 +48,17 @@ class NovoClienteForm(forms.ModelForm):
     )
     
     # Seção 3: Seleção do Vínculo
-    vinculo = forms.ModelChoiceField(
-        queryset=TipoRelacionamento.objects.all(),
-        empty_label="Selecione o tipo de vínculo...",
+    vinculo = forms.ChoiceField(
+        choices=[
+            ('cliente', 'Cliente'),
+            ('parceiro', 'Parceiro')
+        ],
         widget=forms.Select(attrs={
             'class': 'form-control',
             'id': 'id_vinculo'
         }),
-        label="Tipo de Vínculo",
-        help_text="Selecione o tipo de relacionamento entre as empresas"
+        label="Vínculo",
+        help_text="Selecione o tipo de vínculo"
     )
 
     class Meta:

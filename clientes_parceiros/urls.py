@@ -1,17 +1,12 @@
 from django.urls import path
 from clientes_parceiros import views
 from .views import (
-    NovoClienteView, NewClienteParceiroView, ListClienteParceiroView, 
-    NewTipoRelacionamentoView, TipoRelacionamentoListView,
-    TipoRelacionamentoUpdateView,  EmpresasAjaxView
+    NovoClienteView, NewClienteParceiroView, ListClienteParceiroView, EmpresasAjaxView,
+    NovoParceiroView, ParceiroDetailView, EditarParceiroView
 )
 
 urlpatterns = [
-    # Tipo de Relacionamento
-    path('tipo-relacionamento/', NewTipoRelacionamentoView.as_view(), name='tipo_relacionamento'),
-    path('tipo-relacionamento/editar/<int:pk>/', TipoRelacionamentoUpdateView.as_view(), name='editar_tipo_relacionamento'),
-    path('tipo-relacionamento/listar/', TipoRelacionamentoListView.as_view(), name='lista_tipos_relacionamento'),
-    
+   
     # Cliente/Parceiro - Versão nova
     path('novo-cliente/', NovoClienteView.as_view(), name='novo_cliente'),
     
@@ -23,4 +18,9 @@ urlpatterns = [
     # AJAX
     path('ajax/empresas/', EmpresasAjaxView.as_view(), name='empresas_ajax'),
     path('empresas-disponiveis-ajax/<int:tipo_id>/', views.empresas_disponiveis_ajax, name='empresas_disponiveis_ajax'),
+    
+    # Parceiro
+    path('parceiro/novo/', NovoParceiroView.as_view(), name='novo_parceiro'),
+    path('parceiro/<int:pk>/', ParceiroDetailView.as_view(), name='detalhe_parceiro'),
+    path('parceiro/<int:pk>/editar/', EditarParceiroView.as_view(), name='editar_parceiro'),
 ]

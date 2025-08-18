@@ -96,7 +96,7 @@ class Command(BaseCommand):
         
         # Listar relacionamentos disponíveis
         relacionamentos = ClientesParceiros.objects.select_related(
-            'id_company_base', 'id_company_vinculada', 'id_tipo_relacionamento'
+            'id_company_base', 'id_company_vinculada', 'tipo_parceria'
         ).all()
         
         if not relacionamentos.exists():
@@ -110,7 +110,7 @@ class Command(BaseCommand):
             self.stdout.write(
                 f'{i:2d}. {rel.id_company_base.nome_fantasia or rel.id_company_base.razao_social} '
                 f'-> {rel.id_company_vinculada.nome_fantasia or rel.id_company_vinculada.razao_social} '
-                f'({rel.id_tipo_relacionamento.tipo_relacionamento})'
+                f'({rel.tipo_parceria})'
             )
         
         # Solicitar escolha

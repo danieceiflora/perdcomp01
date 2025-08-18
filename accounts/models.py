@@ -39,31 +39,27 @@ class UserProfile(models.Model):
     
     @property
     def tipo_relacionamento(self):
-        """Tipo de relacionamento (cliente/parceiro)"""
-        return self.relacionamento.id_tipo_relacionamento
+        """Retorna o código do relacionamento (cliente/parceiro)."""
+        if self.relacionamento:
+            return self.relacionamento.tipo_parceria
+        return None
     
     @property
     def eh_cliente(self):
         """Verifica se o usuário tem acesso como cliente"""
-        return 'cliente' in self.tipo_relacionamento.tipo_relacionamento.lower()
+        return self.relacionamento and self.relacionamento.tipo_parceria == 'cliente'
     
     @property
     def eh_parceiro(self):
         """Verifica se o usuário tem acesso como parceiro"""
-        return 'parceiro' in self.tipo_relacionamento.tipo_relacionamento.lower()
-    
+        return self.relacionamento and self.relacionamento.tipo_parceria == 'parceiro'
+        
     def get_empresas_acessiveis(self):
         """Retorna empresas que o usuário pode acessar baseado no relacionamento"""
         if self.eh_parceiro:
-            # Hierarquia: Empresa principal -> Parceiros -> Clientes
-            # Parceiro vê todas as empresas clientes que sua empresa atende
-            # Na tabela clientes_parceiros:
-            # - id_company_base = empresa do parceiro (empresa_vinculada no perfil)
-            # - id_company_vinculada = empresas clientes deste parceiro
-            # - tipo_relacionamento contém "cliente"
             relacionamentos = ClientesParceiros.objects.filter(
-                id_company_base=self.empresa_vinculada,  # Empresa do parceiro
-                id_tipo_relacionamento__tipo_relacionamento__icontains='cliente',
+                id_company_base=self.empresa_vinculada,
+                tipo_parceria='cliente',
                 ativo=True
             )
             return [rel.id_company_vinculada for rel in relacionamentos]
