@@ -49,21 +49,7 @@
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                   {% if user.is_authenticated %}
                     
-                    {% if user.is_superuser or user.is_staff %}
-                      <!-- Menu Admin: Acesso completo -->
-                      <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                          <i class="bi bi-building me-1"></i>Empresas
-                        </a>
-                        <ul class="dropdown-menu">
-                          {% if user.is_superuser or user.is_staff %}
-                          <li><a class="dropdown-item" href="{% url 'empresas:cadastro_empresa' %}"><i class="bi bi-plus me-1"></i>Cadastrar</a></li>
-                          {% endif %}
-                          <li><a class="dropdown-item" href="{% url 'empresas:lista_empresas' %}"><i class="bi bi-list me-1"></i>Listar Empresas</a></li>
-                          
-                        </ul>
-                      </li>
-                      
+                   
                         {% if user.is_superuser or user.is_staff %}
                         <li class="nav-item dropdown">
                           <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -196,7 +182,7 @@
                         </ul>
                       </li>
                     {% endif %}
-                  {% endif %}
+                 
                 </ul>
             </div>
         </div>

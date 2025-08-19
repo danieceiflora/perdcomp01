@@ -14,7 +14,7 @@ class NovoClienteForm(forms.ModelForm):
         queryset=Empresa.objects.all(),
         empty_label="Selecione o parceiro...",
         widget=forms.Select(attrs={
-            'class': 'form-control',
+            'class': 'form-select',  # altera para form-select para exibir a seta padrão do select
             'id': 'id_parceiro'
         }),
         label="Parceiro",
@@ -118,8 +118,8 @@ class ContatoForm(forms.ModelForm):
 
 # Criando um formset para múltiplos contatos
 ContatoFormSet = formset_factory(
-    ContatoForm, 
-    extra=1,  # Começa com 1 formulário vazio
+    ContatoForm,
+    extra=0,  # Não gera formulários extras automaticamente
     can_delete=True,
     min_num=1,  # Pelo menos 1 contato obrigatório
     validate_min=True

@@ -214,6 +214,10 @@ function addContactForm() {
     
     // Clonar o primeiro formulário de contato
     const firstForm = contactForms.querySelector('.contact-form');
+    if(!firstForm){
+        console.error('Nenhum formulário de contato base encontrado.');
+        return;
+    }
     const newForm = firstForm.cloneNode(true);
     
     // Limpar os valores dos campos
@@ -291,15 +295,9 @@ function renumberContactForms() {
 // Validação do formulário
 document.getElementById('clienteForm').addEventListener('submit', function(e) {
     const parceiro = document.getElementById('id_parceiro').value;
-    const cliente = document.getElementById('id_cliente').value;
-    if (!parceiro || !cliente) {
+    if (!parceiro) {
         e.preventDefault();
-        alert('Por favor, preencha os campos obrigatórios.');
-        return false;
-    }
-    if (parceiro === cliente) {
-        e.preventDefault();
-        alert('O parceiro e o cliente não podem ser a mesma empresa.');
+        alert('Selecione o parceiro.');
         return false;
     }
     // Validar se pelo menos um contato foi preenchido

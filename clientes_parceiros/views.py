@@ -55,7 +55,7 @@ class EditarClienteView(LoginRequiredMixin, UpdateView):
         else:
             context['empresa_form'] = EmpresaForm(instance=cliente_parceiro.id_company_vinculada, prefix='empresa')
             contatos_qs = cliente_parceiro.id_company_vinculada.empresa_base_contato.all()
-            initial = [{'tipo_contato': c.tipo_contato, 'telefone': c.telefone, 'email': c.email, 'site': c.site} for c in contatos_qs]
+            initial = [{'tipo_contato': c.tipo_contato, 'telefone': c.telefone, 'email': c.email, 'site': c.site} for c in contatos_qs] or [{}]
             context['contato_formset'] = ContatoFormSet(initial=initial)
         # Empresa base: apenas a vinculada ao usuário logado
         empresa_vinculada = None
@@ -135,10 +135,10 @@ class NovoClienteView(UserPassesTestMixin, LoginRequiredMixin, CreateView):
         # Formulário de nova empresa
         if self.request.POST:
             context['empresa_form'] = EmpresaForm(self.request.POST, self.request.FILES, prefix='empresa')
-            context['contato_formset'] = ContatoFormSet(self.request.POST)
+            context['contato_formset'] = ContatoFormSet(self.request.POST, initial=[{}])
         else:
             context['empresa_form'] = EmpresaForm(prefix='empresa')
-            context['contato_formset'] = ContatoFormSet()
+            context['contato_formset'] = ContatoFormSet(initial=[{}])
         # Só mostra a empresa vinculada ao usuário
         context['parceiros'] = Empresa.objects.filter(id=empresa_vinculada.id) if empresa_vinculada else Empresa.objects.none()
         return context
@@ -224,12 +224,21 @@ class ListClienteParceiroView(LoginRequiredMixin, ListView):
             'id_company_base', 
             'id_company_vinculada'
         ).filter(ativo=True, tipo_parceria='cliente')  # agora só clientes
-        # Filtra apenas os clientes do parceiro logado
-        empresa_vinculada = None
-        if hasattr(self.request.user, 'profile'):
-            empresa_vinculada = self.request.user.profile.empresa_vinculada
-        if empresa_vinculada:
-            qs = qs.filter(id_company_base=empresa_vinculada)
+        # Filtro por parceiro específico via GET (parceiro=<id>)
+        parceiro_id = self.request.GET.get('parceiro')
+        empresa_vinculada = getattr(getattr(self.request.user, 'profile', None), 'empresa_vinculada', None)
+        # Se usuário comum (não staff/superuser), restringe sempre à empresa vinculada
+        if not (self.request.user.is_staff or self.request.user.is_superuser):
+            if empresa_vinculada:
+                qs = qs.filter(id_company_base=empresa_vinculada)
+        else:
+            # Admin pode filtrar por qualquer parceiro
+            if parceiro_id:
+                qs = qs.filter(id_company_base_id=parceiro_id)
+            elif empresa_vinculada:
+                # Se quiser que admin veja todos por padrão, não aplicar este filtro.
+                # Deixe comentado para mostrar todos.
+                pass
         # Filtro de busca
         q = self.request.GET.get('q')
         if q:
@@ -247,6 +256,12 @@ class ListClienteParceiroView(LoginRequiredMixin, ListView):
         context['total_empresas_cliente_unicas'] = len(set(cp.id_company_vinculada_id for cp in clientes_parceiros))
         context['empresa_base_atual'] = getattr(getattr(self.request.user, 'profile', None), 'empresa_vinculada', None)
         context['q'] = self.request.GET.get('q', '')
+        # Lista de parceiros para filtro (apenas para staff/superuser)
+        if self.request.user.is_staff or self.request.user.is_superuser:
+            # Parceiros são empresas que aparecem como base em vínculos de cliente
+            partner_ids = ClientesParceiros.objects.filter(tipo_parceria='cliente').values_list('id_company_base_id', flat=True).distinct()
+            context['parceiros_filtro'] = Empresa.objects.filter(id__in=partner_ids).order_by('razao_social')
+            context['parceiro_selecionado'] = self.request.GET.get('parceiro', '')
         return context
 
 class ListParceirosView(LoginRequiredMixin, ListView):
@@ -338,10 +353,10 @@ class NovoParceiroView(UserPassesTestMixin, LoginRequiredMixin, CreateView):
         context = super().get_context_data(**kwargs)
         if self.request.POST:
             context['empresa_form'] = EmpresaForm(self.request.POST, self.request.FILES, prefix='empresa')
-            context['contato_formset'] = ContatoFormSet(self.request.POST)
+            context['contato_formset'] = ContatoFormSet(self.request.POST, initial=[{}])
         else:
             context['empresa_form'] = EmpresaForm(prefix='empresa')
-            context['contato_formset'] = ContatoFormSet()
+            context['contato_formset'] = ContatoFormSet(initial=[{}])
         # Remover campo 'parceiro' se presente (vínculo já é fixo na view)
         if 'form' in context and 'parceiro' in context['form'].fields:
             context['form'].fields['parceiro'].widget = forms.HiddenInput()
