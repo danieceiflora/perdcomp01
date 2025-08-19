@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Detalhe do Cliente{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
+        <div>
+          <h1 class="h3 mb-1"><i class="fas fa-users"></i> Detalhe do Cliente</h1>
+          <p class="text-muted mb-0">Informações completas do cliente cadastrado</p>
+        </div>
+        <div class="d-flex flex-column flex-sm-row">
+          <a href="{% url 'lista_clientes' %}" class="btn btn-outline-secondary mb-2 mb-sm-0">
+            <i class="fas fa-arrow-left"></i> Voltar
+          </a>
+          {% if user.is_superuser or user.is_staff %}
+          <a href="{% url 'editar_cliente' cliente.pk %}" class="btn btn-primary ms-sm-1">
+            <i class="fas fa-edit"></i> Editar
+          </a>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Mensagens -->
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <div class="row g-4">
+        <div class="col-lg-4">
+          <div class="card shadow-sm h-100">
+            <div class="card-header bg-primary text-white fw-bold"><i class="fas fa-building"></i> Empresa Cliente</div>
+            <div class="card-body">
+              <div class="text-center mb-3">
+                {% if cliente.id_company_vinculada.logomarca %}
+                  <img src="{{ cliente.id_company_vinculada.logomarca.url }}" alt="Logo" style="max-height:90px; max-width:100%; background:#f8f9fa; border:1px solid #dee2e6; border-radius:6px; padding:4px;">
+                {% else %}
+                  <div class="text-muted"><i class="fas fa-building fa-3x"></i><br>Sem logomarca</div>
+                {% endif %}
+              </div>
+              <h5 class="fw-bold mb-1">{{ cliente.id_company_vinculada.nome_fantasia|default:cliente.id_company_vinculada.razao_social }}</h5>
+              <p class="text-muted small mb-2">Razão Social:<br>{{ cliente.id_company_vinculada.razao_social }}</p>
+              <p class="mb-2"><span class="text-muted fw-bold">CNPJ:</span> {{ cliente.id_company_vinculada.cnpj }}</p>
+              <p class="mb-2"><span class="text-muted fw-bold">Data Início:</span> {{ cliente.data_inicio_parceria|date:'d/m/Y' }}</p>
+              <p class="mb-2"><span class="text-muted fw-bold">Status:</span>
+                {% if cliente.ativo %}
+                  <span class="badge bg-success">Ativo</span>
+                {% else %}
+                  <span class="badge bg-danger">Inativo</span>
+                {% endif %}
+              </p>
+              <p class="mb-0"><span class="text-muted fw-bold">Tipo de Relacionamento:</span> 
+                <span class="badge bg-info text-dark">Cliente</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-4">
+          <div class="card shadow-sm h-100">
+            <div class="card-header bg-primary text-white fw-bold"><i class="fas fa-user"></i> Referência</div>
+            <div class="card-body">
+              <p class="mb-2"><span class="text-muted fw-bold">Nome:</span><br>{{ cliente.nome_referencia|default:'-' }}</p>
+              <p class="mb-2"><span class="text-muted fw-bold">Cargo:</span><br>{{ cliente.cargo_referencia|default:'-' }}</p>
+              <hr>
+              <p class="text-muted small mb-0">Esses dados identificam o responsável pelo relacionamento.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-4">
+          <div class="card shadow-sm h-100">
+            <div class="card-header bg-primary text-white fw-bold"><i class="fas fa-address-book"></i> Contatos</div>
+            <div class="card-body">
+              {% if contatos %}
+                <ul class="list-unstyled mb-0">
+                  {% for c in contatos %}
+                    <li class="mb-3 pb-2 border-bottom">
+                      <span class="fw-bold d-block">{{ c.tipo_contato }}</span>
+                      {% if c.telefone %}<span class="d-block text-muted"><i class="fas fa-phone-alt me-1"></i>{{ c.telefone }}</span>{% endif %}
+                      {% if c.email %}<a href="mailto:{{ c.email }}" class="d-block text-decoration-none"><i class="fas fa-envelope me-1"></i>{{ c.email }}</a>{% endif %}
+                      {% if c.site %}<a href="{{ c.site }}" target="_blank" class="d-block text-decoration-none"><i class="fas fa-globe me-1"></i>{{ c.site }}</a>{% endif %}
+                    </li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <p class="text-muted mb-0">Nenhum contato cadastrado.</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm mt-4">
+        <div class="card-header bg-light fw-bold"><i class="fas fa-link"></i> Relação com Parceiro</div>
+        <div class="card-body">
+          <p class="mb-1"><span class="text-muted fw-bold">Empresa Parceira:</span> {{ cliente.id_company_base.nome_fantasia|default:cliente.id_company_base.razao_social }}</p>
+          <p class="mb-0 text-muted small">Este cliente está vinculado ao parceiro acima.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

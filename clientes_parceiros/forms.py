@@ -95,7 +95,7 @@ class ContatoForm(forms.ModelForm):
         fields = ['tipo_contato', 'telefone', 'email', 'site']
         widgets = {
             'tipo_contato': forms.Select(attrs={
-                'class': 'form-control'
+                'class': 'form-select'
             }),
             'telefone': forms.TextInput(attrs={
                 'class': 'form-control',

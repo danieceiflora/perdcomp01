@@ -17,9 +17,9 @@
         <div class="col-12">
             <div class="page-header mb-4">
                 <h1 class="h3 mb-0">
-                    <i class="fas fa-user-plus"></i> Cadastrar Novo Cliente
+                    <i class="fas fa-user-plus"></i> {% if object %}Editar Cliente{% else %}Cadastrar Novo Cliente{% endif %}
                 </h1>
-                <p class="text-muted">Preencha os dados para cadastrar um novo cliente e estabelecer o vínculo com o parceiro</p>
+                <p class="text-muted">{% if object %}Atualize os dados do cliente{% else %}Preencha os dados para cadastrar um novo cliente e estabelecer o vínculo com o parceiro{% endif %}</p>
             </div>
             <form method="post" id="clienteForm" class="needs-validation" novalidate>
                 {% csrf_token %}
@@ -27,7 +27,7 @@
                 <!-- Seção 1: Seleção do Parceiro -->
                 <div class="card mb-4">
                     <div class="card-header bg-primary text-white">
-                        <i class="fas fa-handshake"></i> 1. Seleção do Parceiro
+                        <i class="fas fa-handshake"></i> 1. {% if object %}Parceiro Vinculado{% else %}Seleção do Parceiro{% endif %}
                     </div>
                     <div class="card-body">
                         <div class="row">
@@ -55,7 +55,7 @@
                 <!-- Seção 2: Cadastro de Nova Empresa -->
                 <div class="card mb-4">
                     <div class="card-header bg-primary text-white">
-                        <i class="fas fa-building"></i> 2. Cadastro de Nova Empresa
+                        <i class="fas fa-building"></i> 2. {% if object %}Dados da Empresa{% else %}Cadastro de Nova Empresa{% endif %}
                     </div>
                     <div class="card-body">
                         <div class="row">

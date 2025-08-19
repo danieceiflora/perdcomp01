@@ -74,7 +74,21 @@ class EditarClienteView(LoginRequiredMixin, UpdateView):
         # Campo 'parceiro' deve listar somente empresas cadastradas como parceiros
         partner_ids = ClientesParceiros.objects.filter(tipo_parceria='parceiro').values_list('id_company_vinculada_id', flat=True).distinct()
         if 'parceiro' in form.fields:
-            form.fields['parceiro'].queryset = Empresa.objects.filter(id__in=partner_ids).order_by('razao_social')
+            # Ao editar, bloqueia o campo parceiro e mantém o parceiro atual
+            current_partner = self.object.id_company_base
+            field = form.fields['parceiro']
+            field.queryset = Empresa.objects.filter(id=current_partner.id)
+            # Remove o empty_label para não mostrar "Selecione o parceiro"
+            if hasattr(field, 'empty_label'):
+                field.empty_label = None
+            # Garante que o initial esteja definido
+            form.initial['parceiro'] = current_partner.pk
+            form.fields['parceiro'].disabled = True
+            # Ajusta atributos do widget
+            css = field.widget.attrs.get('class', '')
+            field.widget.attrs['class'] = f"{css} disabled".strip()
+            field.widget.attrs['readonly'] = 'readonly'
+            field.help_text = 'Não é possível alterar o parceiro vinculado após a criação do cliente'
         return form
 
     def form_valid(self, form):
@@ -87,8 +101,9 @@ class EditarClienteView(LoginRequiredMixin, UpdateView):
                 try:
                     # Atualiza empresa vinculada
                     empresa = empresa_form.save()
-                    # Atualiza vínculo
-                    cliente_parceiro.id_company_base = form.cleaned_data['parceiro']
+                    # Atualiza vínculo - mantém parceiro original
+                    # Não usa form.cleaned_data['parceiro'] porque o campo está disabled
+                    # cliente_parceiro.id_company_base não muda - mantém o parceiro original
                     cliente_parceiro.id_company_vinculada = empresa
                     cliente_parceiro.tipo_parceria = 'cliente'
                     cliente_parceiro.nome_referencia = form.cleaned_data['nome_referencia']
@@ -400,6 +415,16 @@ class ParceiroDetailView(LoginRequiredMixin, View):
         contatos = parceiro.id_company_vinculada.empresa_base_contato.all()
         return render(request, self.template_name, {
             'parceiro': parceiro,
+            'contatos': contatos,
+        })
+
+class ClienteDetailView(LoginRequiredMixin, View):
+    template_name = 'cliente_detail.html'
+    def get(self, request, pk):
+        cliente = get_object_or_404(ClientesParceiros, pk=pk, tipo_parceria='cliente')
+        contatos = cliente.id_company_vinculada.empresa_base_contato.all()
+        return render(request, self.template_name, {
+            'cliente': cliente,
             'contatos': contatos,
         })
 

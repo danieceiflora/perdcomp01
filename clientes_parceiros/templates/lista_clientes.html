@@ -112,7 +112,7 @@
                                             {% endif %}
                                         </td>
                                         <td>
-                                            <span class="fw-bold">{{ cliente_parceiro.id_company_vinculada.nome_fantasia|default:cliente_parceiro.id_company_vinculada.razao_social }}</span>
+                                            <a href="{% url 'detalhe_cliente' cliente_parceiro.pk %}" class="fw-bold text-decoration-none">{{ cliente_parceiro.id_company_vinculada.nome_fantasia|default:cliente_parceiro.id_company_vinculada.razao_social }}</a>
                                             <br><small class="text-muted">Desde {{ cliente_parceiro.data_inicio_parceria|date:"d/m/Y" }}</small>
                                             <div class="mt-1"><span class="badge bg-info text-dark">Cliente</span></div>
                                         </td>
@@ -158,7 +158,7 @@
                                                 <i class="fas fa-building text-secondary fa-2x me-3" title="Sem logomarca"></i>
                                             {% endif %}
                                             <div>
-                                                <span class="fw-bold">{{ cliente_parceiro.id_company_vinculada.nome_fantasia|default:cliente_parceiro.id_company_vinculada.razao_social }}</span>
+                                                <a href="{% url 'detalhe_cliente' cliente_parceiro.pk %}" class="fw-bold text-decoration-none">{{ cliente_parceiro.id_company_vinculada.nome_fantasia|default:cliente_parceiro.id_company_vinculada.razao_social }}</a>
                                                 <br><small class="text-muted">Parceiro: {{ cliente_parceiro.id_company_base.nome_fantasia|default:cliente_parceiro.id_company_base.razao_social }}</small>
                                                 <br><small class="text-muted">Desde {{ cliente_parceiro.data_inicio_parceria|date:"d/m/Y" }}</small>
                                                 <div class="mt-1"><span class="badge bg-info text-dark">Cliente</span></div>

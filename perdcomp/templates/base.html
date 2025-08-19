@@ -188,30 +188,6 @@
         </div>
     </nav>
 
-    <!-- Modal de Mensagem de Sucesso -->
-    <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header bg-success text-white">
-            <h5 class="modal-title" id="successModalLabel">Sucesso</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-          </div>
-          <div class="modal-body">
-            {% if messages %}
-              {% for message in messages %}
-                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} mb-0" role="alert">
-                  {% if message.tags == 'success' %}<i class="bi bi-check-circle-fill me-2"></i>{% endif %}
-                  {% if message.tags == 'warning' %}<i class="bi bi-exclamation-triangle-fill me-2"></i>{% endif %}
-                  {% if message.tags == 'error' %}<i class="bi bi-x-circle-fill me-2"></i>{% endif %}
-                  {% if message.tags == 'info' %}<i class="bi bi-info-circle-fill me-2"></i>{% endif %}
-                  {{ message }}
-                </div>
-              {% endfor %}
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
 
     <main class="container py-4" tabindex="-1">
         <!-- Mensagens do sistema -->
