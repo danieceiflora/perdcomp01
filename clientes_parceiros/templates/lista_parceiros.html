@@ -19,6 +19,9 @@
                 <i class="fas fa-plus"></i> Novo Parceiro
               </a>
             {% endif %}
+            <a href="{% url 'lista_clientes' %}" class="btn btn-outline-secondary ms-1">
+              <i class="fas fa-users"></i> Clientes
+            </a>
           </div>
         </div>
       </div>
@@ -33,6 +36,28 @@
       {% endif %}
 
       {% if parceiros %}
+        <form method="get" class="row g-3 mb-3 align-items-end">
+          <div class="col-md-4">
+            <label class="form-label mb-1">Buscar</label>
+            <input type="text" class="form-control" name="q" value="{{ q }}" placeholder="Razão social, fantasia ou CNPJ...">
+          </div>
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-outline-primary w-100"><i class="fas fa-search"></i> Filtrar</button>
+          </div>
+          {% if q %}
+          <div class="col-md-2">
+            <a href="." class="btn btn-outline-secondary w-100"><i class="fas fa-times"></i> Limpar</a>
+          </div>
+          {% endif %}
+        </form>
+        <div class="row g-2 mb-3">
+          <div class="col-md-auto">
+            <div class="badge bg-primary p-3 fw-normal">Total Parceiros: <span class="fw-bold">{{ total_parceiros }}</span></div>
+          </div>
+          <div class="col-md-auto">
+            <div class="badge bg-secondary p-3 fw-normal">Empresas Únicas: <span class="fw-bold">{{ total_empresas_unicas }}</span></div>
+          </div>
+        </div>
         <div class="card shadow-sm">
           <div class="card-header bg-primary text-white fw-bold">
             <i class="fas fa-handshake"></i> Parceiros Cadastrados
@@ -64,6 +89,7 @@
                       <td>
                         <a href="{% url 'detalhe_parceiro' p.pk %}" class="fw-bold text-decoration-none">{{ p.id_company_vinculada.nome_fantasia|default:p.id_company_vinculada.razao_social }}</a>
                         <br><small class="text-muted">Ref.: {{ p.nome_referencia }}{% if p.cargo_referencia %} ({{ p.cargo_referencia }}){% endif %}</small>
+                        <div class="mt-1"><span class="badge bg-warning text-dark">Parceiro</span></div>
                       </td>
                       <td>
                         {% with contatos=p.id_company_vinculada.empresa_base_contato.all %}
@@ -112,6 +138,7 @@
                       <div>
                         <a href="{% url 'detalhe_parceiro' p.pk %}" class="fw-bold text-decoration-none">{{ p.id_company_vinculada.nome_fantasia|default:p.id_company_vinculada.razao_social }}</a>
                         <br><small class="text-muted">Desde {{ p.data_inicio_parceria|date:'d/m/Y' }}</small>
+                        <div class="mt-1"><span class="badge bg-warning text-dark">Parceiro</span></div>
                       </div>
                     </div>
                     <div class="mb-1"><span class="text-muted fw-bold">CNPJ:</span> {{ p.id_company_vinculada.cnpj }}</div>

@@ -11,9 +11,9 @@ urlpatterns = [
     path('novo-cliente/', NovoClienteView.as_view(), name='novo_cliente'),
     
     # Cliente/Parceiro - Versões antigas (compatibilidade)
-    path('cadastrar/', NewClienteParceiroView.as_view(), name='cadastrar_cliente_parceiro'),
-    path('listar/', ListClienteParceiroView.as_view(), name='lista_clientes_parceiros'),
-    path('editar/<int:pk>/', views.EditarClienteView.as_view(), name='editar_cliente_parceiro'),
+    path('cliente/novo/', NewClienteParceiroView.as_view(), name='novo_cliente'),
+    path('clientes/', ListClienteParceiroView.as_view(), name='lista_clientes'),
+    path('cliente/<int:pk>/editar/', views.EditarClienteView.as_view(), name='editar_cliente'),
     
     # AJAX
     path('ajax/empresas/', EmpresasAjaxView.as_view(), name='empresas_ajax'),

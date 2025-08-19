@@ -5,11 +5,8 @@ from empresas.models import Empresa
 from contatos.models import Contatos
 
 class NovoClienteForm(forms.ModelForm):
-    """
-    Formulário para cadastrar novo cliente com seções:
-    1. Seleção do Parceiro (empresa_base)
-    2. Dados do Cliente (empresa_vinculada) 
-    3. Seleção do Vínculo
+    """Formulário para cadastrar novo cliente.
+    Vínculo agora é sempre 'cliente' definido na view, campo removido.
     """
     
     # Seção 1: Seleção do Parceiro
@@ -47,19 +44,6 @@ class NovoClienteForm(forms.ModelForm):
         help_text="Cargo da pessoa responsável (opcional)"
     )
     
-    # Seção 3: Seleção do Vínculo
-    vinculo = forms.ChoiceField(
-        choices=[
-            ('cliente', 'Cliente'),
-            ('parceiro', 'Parceiro')
-        ],
-        widget=forms.Select(attrs={
-            'class': 'form-control',
-            'id': 'id_vinculo'
-        }),
-        label="Vínculo",
-        help_text="Selecione o tipo de vínculo"
-    )
 
     class Meta:
         model = ClientesParceiros

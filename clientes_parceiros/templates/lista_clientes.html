@@ -13,14 +13,17 @@
                         <h1 class="h3 mb-0">
                             <i class="fas fa-users"></i> Lista de Clientes
                         </h1>
-                        <p class="text-muted">Gerenciar relacionamentos entre clientes e parceiros</p>
+                        <p class="text-muted">Gerenciar clientes vinculados à sua empresa</p>
                     </div>
                     <div>
                         {% if user.is_superuser or user.is_staff %}
-                        <a href="{% url 'cadastrar_cliente_parceiro' %}" class="btn btn-primary">
+                        <a href="{% url 'novo_cliente' %}" class="btn btn-primary">
                             <i class="fas fa-plus"></i> Novo Cliente
                         </a>
                         {% endif %}
+                        <a href="{% url 'lista_parceiros' %}" class="btn btn-outline-secondary ms-1">
+                            <i class="fas fa-handshake"></i> Parceiros
+                        </a>
                     </div>
                 </div>
             </div>
@@ -37,6 +40,35 @@
                 {% endfor %}
             {% endif %}
 
+            <!-- Resumo -->
+            {% if clientes_parceiros %}
+            <form method="get" class="row g-3 mb-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label mb-1">Buscar</label>
+                    <input type="text" class="form-control" name="q" value="{{ q }}" placeholder="Razão social, fantasia ou CNPJ...">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-outline-primary w-100"><i class="fas fa-search"></i> Filtrar</button>
+                </div>
+                {% if q %}
+                <div class="col-md-2">
+                    <a href="." class="btn btn-outline-secondary w-100"><i class="fas fa-times"></i> Limpar</a>
+                </div>
+                {% endif %}
+            </form>
+            <div class="row g-2 mb-3">
+                <div class="col-md-auto">
+                    <div class="badge bg-primary p-3 fw-normal">Total Clientes: <span class="fw-bold">{{ total_clientes }}</span></div>
+                </div>
+                <div class="col-md-auto">
+                    <div class="badge bg-secondary p-3 fw-normal">Empresas Únicas: <span class="fw-bold">{{ total_empresas_cliente_unicas }}</span></div>
+                </div>
+                {% if empresa_base_atual %}
+                <div class="col-md-auto">
+                    <div class="badge bg-info text-dark p-3 fw-normal">Empresa Base: <span class="fw-bold">{{ empresa_base_atual.nome_fantasia|default:empresa_base_atual.razao_social }}</span></div>
+                </div>
+                {% endif %}
+            </div>
             <!-- Lista de Clientes -->
             {% if clientes_parceiros %}
                 <div class="card shadow-sm">
@@ -49,7 +81,6 @@
                                 <thead class="table-primary">
                                     <tr>
                                         <th>CNPJ</th>
-                                        <th>Vinculo</th>
                                         <th>Logomarca</th>
                                         <th>Empresa</th>
                                         <th>Contatos</th>
@@ -63,9 +94,6 @@
                                             <small class="text-muted">{{ cliente_parceiro.id_company_vinculada.cnpj }}</small>
                                         </td>
                                         <td>
-                                            {{ cliente_parceiro.tipo_parceria }}
-                                        </td>
-                                        <td>
                                             {% if cliente_parceiro.id_company_vinculada.logomarca %}
                                                 <img src="{{ cliente_parceiro.id_company_vinculada.logomarca.url }}" alt="Logomarca da {{ cliente_parceiro.id_company_vinculada.nome_fantasia|default:cliente_parceiro.id_company_vinculada.razao_social }}" style="height:32px; width:auto; margin-right:8px; vertical-align:middle; border-radius:4px; background:#f8f9fa; border:1px solid #dee2e6;">
                                             {% else %}
@@ -75,6 +103,9 @@
                                         <td>
                                             <span class="fw-bold">{{ cliente_parceiro.id_company_vinculada.nome_fantasia|default:cliente_parceiro.id_company_vinculada.razao_social }}</span>
                                             <br><small class="text-muted">Desde {{ cliente_parceiro.data_inicio_parceria|date:"d/m/Y" }}</small>
+                                            <div class="mt-1">
+                                                <span class="badge bg-info text-dark">Cliente</span>
+                                            </div>
                                         </td>
                                         <td>
                                             {% if cliente_parceiro.id_company_vinculada.empresa_base_contato.exists %}
@@ -120,10 +151,11 @@
                                             <div>
                                                 <span class="fw-bold">{{ cliente_parceiro.id_company_vinculada.nome_fantasia|default:cliente_parceiro.id_company_vinculada.razao_social }}</span>
                                                 <br><small class="text-muted">Desde {{ cliente_parceiro.data_inicio_parceria|date:"d/m/Y" }}</small>
+                                                <div class="mt-1"><span class="badge bg-info text-dark">Cliente</span></div>
                                             </div>
                                         </div>
                                         <div class="mb-1"><span class="text-muted fw-bold">CNPJ:</span> {{ cliente_parceiro.id_company_vinculada.cnpj }}</div>
-                                        <div class="mb-1"><span class="text-muted fw-bold">Vínculo:</span> {{ cliente_parceiro.tipo_parceria }}</div>
+                                        
                                         <div class="mb-1">
                                             <span class="text-muted fw-bold">Contatos:</span>
                                             {% if cliente_parceiro.id_company_vinculada.empresa_base_contato.exists %}
@@ -158,6 +190,7 @@
                         </div>
                     </div>
                 </div>
+                {% endif %}
 
                 <!-- Paginação -->
                 {% if is_paginated %}
@@ -195,7 +228,7 @@
                     <i class="fas fa-users fa-5x text-muted mb-3"></i>
                     <h3 class="text-muted">Nenhum cliente cadastrado</h3>
                     <p class="text-muted">Comece cadastrando seu primeiro cliente!</p>
-                    <a href="{% url 'cadastrar_cliente_parceiro' %}" class="btn btn-primary btn-lg">
+                    <a href="{% url 'novo_cliente' %}" class="btn btn-primary btn-lg">
                         <i class="fas fa-plus"></i> Cadastrar Primeiro Cliente
                     </a>
                 </div>

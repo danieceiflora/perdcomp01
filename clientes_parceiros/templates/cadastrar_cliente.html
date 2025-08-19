@@ -177,33 +177,7 @@
                     </div>
                 </div>
 
-                <!-- Seção 3: Seleção do Vínculo -->
-                <div class="card mb-4">
-                    <div class="card-header bg-primary text-white">
-                        <i class="fas fa-link"></i> 4. Tipo de Vínculo
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="mb-3">
-                                    <label for="{{ form.vinculo.id_for_label }}" class="form-label required-field">
-                                        {{ form.vinculo.label }}
-                                    </label>
-                                    {{ form.vinculo }}
-                                    {% if form.vinculo.help_text %}
-                                        <div class="form-text">{{ form.vinculo.help_text }}</div>
-                                    {% endif %}
-                                    {% if form.vinculo.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.vinculo.errors }}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
+                
                 <!-- Erros gerais do formulário -->
                 {% if form.non_field_errors %}
                     <div class="alert alert-danger">
@@ -215,7 +189,7 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="d-flex justify-content-between">
-                            <a href="{% url 'lista_clientes_parceiros' %}" class="btn btn-secondary">
+                            <a href="{% url 'lista_clientes' %}" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left"></i> Voltar
                             </a>
                             <button type="submit" class="btn btn-primary btn-lg">
@@ -318,20 +292,16 @@ function renumberContactForms() {
 document.getElementById('clienteForm').addEventListener('submit', function(e) {
     const parceiro = document.getElementById('id_parceiro').value;
     const cliente = document.getElementById('id_cliente').value;
-    const vinculo = document.getElementById('id_vinculo').value;
-    
-    if (!parceiro || !cliente || !vinculo) {
+    if (!parceiro || !cliente) {
         e.preventDefault();
-        alert('Por favor, preencha todos os campos obrigatórios.');
+        alert('Por favor, preencha os campos obrigatórios.');
         return false;
     }
-    
     if (parceiro === cliente) {
         e.preventDefault();
         alert('O parceiro e o cliente não podem ser a mesma empresa.');
         return false;
     }
-    
     // Validar se pelo menos um contato foi preenchido
     const contactForms = document.querySelectorAll('.contact-form');
     let hasValidContact = false;
