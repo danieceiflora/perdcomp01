@@ -24,7 +24,7 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <form method="post" enctype="multipart/form-data" class="card card-body" novalidate>
+            <form id="lancamento-form" method="post" enctype="multipart/form-data" class="card card-body" novalidate>
                 {% csrf_token %}
                 
                 <!-- Exibir erros gerais (não específicos de um campo) -->
@@ -268,6 +268,103 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+    // AJAX submit para preservar arquivos selecionados em caso de erro
+    (function(){
+        const form = document.getElementById('lancamento-form');
+        if(!form) return;
+        const submitBtn = form.querySelector('button[type="submit"]');
+
+        function clearErrors(){
+            form.querySelectorAll('.ajax-error').forEach(e=>e.remove());
+            form.querySelectorAll('.is-invalid').forEach(el=>el.classList.remove('is-invalid'));
+        }
+        function showError(el, msgs){
+            if(!el) return;
+            el.classList.add('is-invalid');
+            const div = document.createElement('div');
+            div.className = 'invalid-feedback d-block ajax-error';
+            div.innerHTML = msgs.map(m=>`<div>${m}</div>`).join('');
+            // Evita duplicado
+            el.parentElement.appendChild(div);
+        }
+        function applyErrors(data){
+            clearErrors();
+            if(!data) return;
+            if(data.form){
+                Object.entries(data.form.fields||{}).forEach(([field,msgs])=>{
+                    const el = form.querySelector(`[name="${field}"]`);
+                    showError(el,msgs);
+                });
+                if(data.form.non_field && data.form.non_field.length){
+                    const alert = document.createElement('div');
+                    alert.className='alert alert-danger ajax-error';
+                    alert.innerHTML=data.form.non_field.join('<br>');
+                    form.prepend(alert);
+                }
+            }
+            if(Array.isArray(data.anexos)){
+                const forms = form.querySelectorAll('#anexos-container .anexo-form');
+                data.anexos.forEach((fErr, idx)=>{
+                    const frm = forms[idx];
+                    if(!frm) return;
+                    Object.entries(fErr.fields||{}).forEach(([field,msgs])=>{
+                        const fieldEl = frm.querySelector(`[name$='-${field}']`);
+                        showError(fieldEl, msgs);
+                    });
+                    if(fErr.non_field && fErr.non_field.length){
+                        const nf = document.createElement('div');
+                        nf.className='alert alert-danger ajax-error mb-2';
+                        nf.innerHTML=fErr.non_field.join('<br>');
+                        frm.prepend(nf);
+                    }
+                });
+            }
+            if(data.anexos_non_form && data.anexos_non_form.length){
+                const alert2 = document.createElement('div');
+                alert2.className='alert alert-danger ajax-error';
+                alert2.innerHTML=data.anexos_non_form.join('<br>');
+                form.prepend(alert2);
+            }
+        }
+        form.addEventListener('submit', function(e){
+            if(!window.fetch) return; // fallback
+            e.preventDefault();
+            clearErrors();
+            const fd = new FormData(form);
+            if(submitBtn){
+                submitBtn.disabled = true;
+                submitBtn.dataset.originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Salvando...';
+            }
+            fetch(form.action||window.location.href, {
+                method: 'POST',
+                body: fd,
+                headers:{'X-Requested-With':'XMLHttpRequest'}
+            }).then(r=>r.json().then(j=>({status:r.status,data:j})))
+              .then(({status,data})=>{
+                if(data.ok){
+                    window.location.href = data.redirect || '/';
+                } else {
+                    applyErrors(data);
+                }
+              })
+              .catch(err=>{
+                const alert = document.createElement('div');
+                alert.className='alert alert-danger ajax-error';
+                alert.textContent='Erro inesperado ao enviar.';
+                form.prepend(alert);
+                console.error(err);
+              })
+              .finally(()=>{
+                if(submitBtn){
+                    submitBtn.disabled=false;
+                    submitBtn.innerHTML = submitBtn.dataset.originalText || 'Salvar';
+                }
+              });
+        });
+    })();
+</script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const metodoField = document.getElementById('{{ form.metodo_escolhido.id_for_label }}') || document.querySelector('select[name="metodo_escolhido"]');
