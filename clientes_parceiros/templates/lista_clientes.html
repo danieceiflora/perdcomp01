@@ -63,7 +63,7 @@
                                             <small class="text-muted">{{ cliente_parceiro.id_company_vinculada.cnpj }}</small>
                                         </td>
                                         <td>
-                                            {{ cliente_parceiro.id_tipo_relacionamento.tipo_relacionamento }}
+                                            {{ cliente_parceiro.tipo_parceria }}
                                         </td>
                                         <td>
                                             {% if cliente_parceiro.id_company_vinculada.logomarca %}
@@ -123,7 +123,7 @@
                                             </div>
                                         </div>
                                         <div class="mb-1"><span class="text-muted fw-bold">CNPJ:</span> {{ cliente_parceiro.id_company_vinculada.cnpj }}</div>
-                                        <div class="mb-1"><span class="text-muted fw-bold">Vínculo:</span> {{ cliente_parceiro.id_tipo_relacionamento.tipo_relacionamento }}</div>
+                                        <div class="mb-1"><span class="text-muted fw-bold">Vínculo:</span> {{ cliente_parceiro.tipo_parceria }}</div>
                                         <div class="mb-1">
                                             <span class="text-muted fw-bold">Contatos:</span>
                                             {% if cliente_parceiro.id_company_vinculada.empresa_base_contato.exists %}

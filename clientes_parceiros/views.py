@@ -14,9 +14,10 @@ from django.utils.decorators import method_decorator
 from django.views import View
 import json
 from django.contrib.auth.mixins import UserPassesTestMixin
+from django import forms
 
 from .models import ClientesParceiros
-from .forms import NovoClienteForm, ContatoFormSet
+from .forms import NovoClienteForm, ContatoFormSet, NovoParceiroForm
 from empresas.forms import EmpresaForm
 from empresas.models import Empresa
 from contatos.models import Contatos
@@ -222,8 +223,7 @@ class ListClienteParceiroView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         qs = ClientesParceiros.objects.select_related(
             'id_company_base', 
-            'id_company_vinculada', 
-            'tipo_parceria'
+            'id_company_vinculada'
         ).filter(ativo=True)
         # Filtra apenas os clientes do parceiro logado
         empresa_vinculada = None
@@ -239,7 +239,31 @@ class ListClienteParceiroView(LoginRequiredMixin, ListView):
         context['total_relacionamentos'] = clientes_parceiros.count()
         context['total_clientes_unicos'] = len(set(cp.id_company_vinculada_id for cp in clientes_parceiros))
         context['total_parceiros_unicos'] = len(set(cp.id_company_base_id for cp in clientes_parceiros))
-        context['total_vinculos_unicos'] = len(set(cp.tipo_parceria_id for cp in clientes_parceiros))
+        context['total_vinculos_unicos'] = len(set(cp.tipo_parceria for cp in clientes_parceiros))
+        return context
+
+class ListParceirosView(LoginRequiredMixin, ListView):
+    """Lista somente vínculos cujo tipo_parceria = 'parceiro'."""
+    model = ClientesParceiros
+    template_name = 'lista_parceiros.html'
+    context_object_name = 'parceiros'
+    paginate_by = 20
+
+    def get_queryset(self):
+        qs = ClientesParceiros.objects.select_related('id_company_base', 'id_company_vinculada').filter(
+            ativo=True,
+            tipo_parceria='parceiro'
+        )
+        empresa_vinculada = getattr(getattr(self.request.user, 'profile', None), 'empresa_vinculada', None)
+        if empresa_vinculada:
+            qs = qs.filter(id_company_base=empresa_vinculada)
+        return qs.order_by('-data_inicio_parceria')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        parceiros = context['parceiros']
+        context['total_parceiros'] = parceiros.count()
+        context['total_empresas_unicas'] = len(set(p.id_company_vinculada_id for p in parceiros))
         return context
 
 class ClienteParceiroUpdateView(LoginRequiredMixin, UpdateView):
@@ -289,7 +313,7 @@ class EmpresasAjaxView(LoginRequiredMixin, View):
 class NovoParceiroView(UserPassesTestMixin, LoginRequiredMixin, CreateView):
     """Cadastro de novo parceiro (tipo_parceria='parceiro')."""
     model = ClientesParceiros
-    form_class = NovoClienteForm
+    form_class = NovoParceiroForm
     template_name = 'cadastrar_parceiro.html'
     success_url = reverse_lazy('lista_parceiros')
 
@@ -304,6 +328,11 @@ class NovoParceiroView(UserPassesTestMixin, LoginRequiredMixin, CreateView):
         else:
             context['empresa_form'] = EmpresaForm(prefix='empresa')
             context['contato_formset'] = ContatoFormSet()
+        # Remover campos que não são necessários para parceiro (parceiro/vinculo) pois são automáticos
+        if 'form' in context:
+            for fld in ['parceiro', 'vinculo']:
+                if fld in context['form'].fields:
+                    context['form'].fields[fld].widget = forms.HiddenInput()
         return context
 
     def form_valid(self, form):
@@ -313,7 +342,12 @@ class NovoParceiroView(UserPassesTestMixin, LoginRequiredMixin, CreateView):
         if form.is_valid() and empresa_form.is_valid() and contato_formset.is_valid():
             with transaction.atomic():
                 empresa_parceiro = empresa_form.save()
-                parceiro_base = form.cleaned_data['parceiro']
+                # Localiza empresa base fixa pelo CNPJ informado
+                try:
+                    parceiro_base = Empresa.objects.get(cnpj='42994794000104')
+                except Empresa.DoesNotExist:
+                    messages.error(self.request, 'Empresa base com CNPJ 42994794000104 não encontrada. Cadastre-a primeiro.')
+                    return self.form_invalid(form)
                 obj = ClientesParceiros(
                     id_company_base=parceiro_base,
                     id_company_vinculada=empresa_parceiro,
@@ -344,7 +378,7 @@ class ParceiroDetailView(LoginRequiredMixin, View):
 
 class EditarParceiroView(LoginRequiredMixin, UpdateView):
     model = ClientesParceiros
-    form_class = NovoClienteForm
+    form_class = NovoParceiroForm
     template_name = 'cadastrar_parceiro.html'
     success_url = reverse_lazy('lista_parceiros')
 

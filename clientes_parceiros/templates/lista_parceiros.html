@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Lista de Parceiros{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="page-header mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h1 class="h3 mb-0"><i class="fas fa-handshake"></i> Parceiros</h1>
+            <p class="text-muted">Relações cadastradas como parceiros</p>
+          </div>
+          <div>
+            {% if user.is_superuser or user.is_staff %}
+              <a href="{% url 'novo_parceiro' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Novo Parceiro
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      {% if parceiros %}
+        <div class="card shadow-sm">
+          <div class="card-header bg-primary text-white fw-bold">
+            <i class="fas fa-handshake"></i> Parceiros Cadastrados
+          </div>
+          <div class="table-responsive">
+            <div class="d-none d-md-block">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="table-primary">
+                  <tr>
+                    <th>CNPJ</th>
+                    <th>Logomarca</th>
+                    <th>Empresa Parceira</th>
+                    <th>Contatos</th>
+                    <th>Desde</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for p in parceiros %}
+                    <tr>
+                      <td><small class="text-muted">{{ p.id_company_vinculada.cnpj }}</small></td>
+                      <td>
+                        {% if p.id_company_vinculada.logomarca %}
+                          <img src="{{ p.id_company_vinculada.logomarca.url }}" alt="Logomarca" style="height:32px;width:auto;border-radius:4px;background:#f8f9fa;border:1px solid #dee2e6;">
+                        {% else %}
+                          <i class="fas fa-building text-secondary" title="Sem logomarca"></i>
+                        {% endif %}
+                      </td>
+                      <td>
+                        <a href="{% url 'detalhe_parceiro' p.pk %}" class="fw-bold text-decoration-none">{{ p.id_company_vinculada.nome_fantasia|default:p.id_company_vinculada.razao_social }}</a>
+                        <br><small class="text-muted">Ref.: {{ p.nome_referencia }}{% if p.cargo_referencia %} ({{ p.cargo_referencia }}){% endif %}</small>
+                      </td>
+                      <td>
+                        {% with contatos=p.id_company_vinculada.empresa_base_contato.all %}
+                          {% if contatos %}
+                            <ul class="list-unstyled mb-0">
+                              {% for c in contatos|slice:':2' %}
+                                <li class="mb-1">
+                                  <span class="fw-bold">{{ c.tipo_contato }}</span>
+                                  {% if c.telefone %}<br><span class="text-muted"><i class="fas fa-phone-alt me-1"></i>{{ c.telefone }}</span>{% endif %}
+                                  {% if c.email %}<br><a href="mailto:{{ c.email }}" class="text-decoration-none"><i class="fas fa-envelope me-1"></i>{{ c.email }}</a>{% endif %}
+                                  {% if c.site %}<br><a href="{{ c.site }}" target="_blank" class="text-decoration-none"><i class="fas fa-globe me-1"></i>{{ c.site }}</a>{% endif %}
+                                </li>
+                              {% endfor %}
+                              {% if contatos.count > 2 %}
+                                <li><span class="text-muted">e mais {{ contatos.count|add:'-2' }} contato(s)...</span></li>
+                              {% endif %}
+                            </ul>
+                          {% else %}
+                            <span class="text-muted">Sem contatos</span>
+                          {% endif %}
+                        {% endwith %}
+                      </td>
+                      <td>{{ p.data_inicio_parceria|date:'d/m/Y' }}</td>
+                      <td>
+                        {% if p.ativo %}
+                          <span class="badge bg-success px-3 py-2">Ativo</span>
+                        {% else %}
+                          <span class="badge bg-danger px-3 py-2">Inativo</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <div class="d-block d-md-none">
+              {% for p in parceiros %}
+                <div class="card mb-3 shadow-sm">
+                  <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                      {% if p.id_company_vinculada.logomarca %}
+                        <img src="{{ p.id_company_vinculada.logomarca.url }}" alt="Logo" style="height:32px;width:auto;margin-right:12px;border-radius:4px;background:#f8f9fa;border:1px solid #dee2e6;">
+                      {% else %}
+                        <i class="fas fa-building text-secondary fa-2x me-3" title="Sem logomarca"></i>
+                      {% endif %}
+                      <div>
+                        <a href="{% url 'detalhe_parceiro' p.pk %}" class="fw-bold text-decoration-none">{{ p.id_company_vinculada.nome_fantasia|default:p.id_company_vinculada.razao_social }}</a>
+                        <br><small class="text-muted">Desde {{ p.data_inicio_parceria|date:'d/m/Y' }}</small>
+                      </div>
+                    </div>
+                    <div class="mb-1"><span class="text-muted fw-bold">CNPJ:</span> {{ p.id_company_vinculada.cnpj }}</div>
+                    <div class="mb-1"><span class="text-muted fw-bold">Referência:</span> {{ p.nome_referencia }}{% if p.cargo_referencia %} ({{ p.cargo_referencia }}){% endif %}</div>
+                    <div class="mb-1">
+                      <span class="text-muted fw-bold">Contatos:</span>
+                      {% with contatos=p.id_company_vinculada.empresa_base_contato.all %}
+                        {% if contatos %}
+                          <ul class="list-unstyled mb-0">
+                            {% for c in contatos|slice:':2' %}
+                              <li class="mb-1">
+                                <span class="fw-bold">{{ c.tipo_contato }}</span>
+                                {% if c.telefone %}<br><span class="text-muted"><i class="fas fa-phone-alt me-1"></i>{{ c.telefone }}</span>{% endif %}
+                                {% if c.email %}<br><a href="mailto:{{ c.email }}" class="text-decoration-none"><i class="fas fa-envelope me-1"></i>{{ c.email }}</a>{% endif %}
+                                {% if c.site %}<br><a href="{{ c.site }}" target="_blank" class="text-decoration-none"><i class="fas fa-globe me-1"></i>{{ c.site }}</a>{% endif %}
+                              </li>
+                            {% endfor %}
+                            {% if contatos.count > 2 %}
+                              <li><span class="text-muted">e mais {{ contatos.count|add:'-2' }}...</span></li>
+                            {% endif %}
+                          </ul>
+                        {% else %}
+                          <span class="text-muted">Sem contatos</span>
+                        {% endif %}
+                      {% endwith %}
+                    </div>
+                    <div class="mb-1">
+                      <span class="text-muted fw-bold">Status:</span>
+                      {% if p.ativo %}
+                        <span class="badge bg-success px-3 py-2">Ativo</span>
+                      {% else %}
+                        <span class="badge bg-danger px-3 py-2">Inativo</span>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        {% if is_paginated %}
+          <nav aria-label="Navegação de parceiros">
+            <ul class="pagination justify-content-center">
+              {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page=1">Primeira</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a></li>
+              {% endif %}
+              <li class="page-item active"><span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
+              {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Próxima</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a></li>
+              {% endif %}
+            </ul>
+          </nav>
+        {% endif %}
+      {% else %}
+        <div class="text-center py-5">
+          <i class="fas fa-handshake fa-5x text-muted mb-3"></i>
+          <h3 class="text-muted">Nenhum parceiro cadastrado</h3>
+          <p class="text-muted">Cadastre seu primeiro parceiro para começar.</p>
+          {% if user.is_superuser or user.is_staff %}
+            <a href="{% url 'novo_parceiro' %}" class="btn btn-primary btn-lg"><i class="fas fa-plus"></i> Cadastrar Primeiro Parceiro</a>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -2,7 +2,7 @@ from django.urls import path
 from clientes_parceiros import views
 from .views import (
     NovoClienteView, NewClienteParceiroView, ListClienteParceiroView, EmpresasAjaxView,
-    NovoParceiroView, ParceiroDetailView, EditarParceiroView
+    NovoParceiroView, ParceiroDetailView, EditarParceiroView, ListParceirosView
 )
 
 urlpatterns = [
@@ -21,6 +21,7 @@ urlpatterns = [
     
     # Parceiro
     path('parceiro/novo/', NovoParceiroView.as_view(), name='novo_parceiro'),
+    path('parceiros/', ListParceirosView.as_view(), name='lista_parceiros'),
     path('parceiro/<int:pk>/', ParceiroDetailView.as_view(), name='detalhe_parceiro'),
     path('parceiro/<int:pk>/editar/', EditarParceiroView.as_view(), name='editar_parceiro'),
 ]

@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Cadastrar Novo Cliente{% endblock %}
+{% block title %}Cadastrar Novo Parceiro{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -16,21 +16,17 @@
     <div class="row">
         <div class="col-12">
             <div class="page-header mb-4">
-                <h1 class="h3 mb-0">
-                    <i class="fas fa-user-plus"></i> Cadastrar Novo Parceiro
-                </h1>
-                <p class="text-muted">Preencha os dados para cadastrar um novo cliente e estabelecer o vínculo com o parceiro</p>
+                <h1 class="h3 mb-0"><i class="fas fa-handshake"></i> Cadastrar Novo Parceiro</h1>
+                <p class="text-muted">Informe os dados da empresa parceira e contato de referência.</p>
             </div>
-            <form method="post" id="clienteForm" class="needs-validation" novalidate>
+            <form method="post" id="parceiroForm" class="needs-validation" novalidate>
                 {% csrf_token %}
                 
                 
 
                 <!-- Seção 2: Cadastro de Nova Empresa -->
                 <div class="card mb-4">
-                    <div class="card-header bg-primary text-white">
-                        <i class="fas fa-building"></i> 2. Cadastro Parceiro
-                    </div>
+                    <div class="card-header bg-primary text-white"><i class="fas fa-building"></i> Dados da Empresa Parceira</div>
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-12">
@@ -52,9 +48,7 @@
 
                 <!-- Seção 3: Dados de Referência e Contato -->
                 <div class="card mb-4">
-                    <div class="card-header bg-primary text-white">
-                        <i class="fas fa-user"></i> 3. Dados de Referência e Contato
-                    </div>
+                    <div class="card-header bg-primary text-white"><i class="fas fa-user"></i> Referência e Contatos</div>
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6">
@@ -164,7 +158,7 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="d-flex justify-content-between">
-                            <a href="{% url 'lista_clientes_parceiros' %}" class="btn btn-secondary">
+                            <a href="{% url 'lista_parceiros' %}" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left"></i> Voltar
                             </a>
                             <button type="submit" class="btn btn-primary btn-lg">
@@ -181,7 +175,7 @@
 
 {% block extra_js %}
 <script>
-let contactFormIndex = {{ contato_formset.total_form_count }};
+let contactFormIndex = parseInt('{{ contato_formset.total_form_count|default:0 }}');
 
 function addContactForm() {
     const contactForms = document.getElementById('contato-forms');
@@ -264,23 +258,7 @@ function renumberContactForms() {
 }
 
 // Validação do formulário
-document.getElementById('clienteForm').addEventListener('submit', function(e) {
-    const parceiro = document.getElementById('id_parceiro').value;
-    const cliente = document.getElementById('id_cliente').value;
-    const vinculo = document.getElementById('id_vinculo').value;
-    
-    if (!parceiro || !cliente || !vinculo) {
-        e.preventDefault();
-        alert('Por favor, preencha todos os campos obrigatórios.');
-        return false;
-    }
-    
-    if (parceiro === cliente) {
-        e.preventDefault();
-        alert('O parceiro e o cliente não podem ser a mesma empresa.');
-        return false;
-    }
-    
+document.getElementById('parceiroForm').addEventListener('submit', function(e) {
     // Validar se pelo menos um contato foi preenchido
     const contactForms = document.querySelectorAll('.contact-form');
     let hasValidContact = false;
@@ -296,7 +274,7 @@ document.getElementById('clienteForm').addEventListener('submit', function(e) {
     
     if (!hasValidContact) {
         e.preventDefault();
-        alert('Por favor, preencha pelo menos um telefone ou e-mail de contato.');
+    alert('Informe ao menos um telefone ou e-mail de contato.');
         return false;
     }
 });

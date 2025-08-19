@@ -79,6 +79,29 @@ class NovoClienteForm(forms.ModelForm):
         # A validação de cliente agora é feita na view, pois a empresa será criada pelo EmpresaForm
         return cleaned_data
 
+class NovoParceiroForm(forms.ModelForm):
+    """Formulário simplificado para cadastro/edição de parceiro.
+    Campos de vínculo e parceiro são fixos na view, portanto não aparecem aqui.
+    """
+    nome_referencia = forms.CharField(
+        max_length=200,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nome da pessoa de referência'}),
+        label="Nome de Referência"
+    )
+    cargo_referencia = forms.CharField(
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Cargo da pessoa de referência'}),
+        label="Cargo de Referência"
+    )
+
+    class Meta:
+        model = ClientesParceiros
+        fields = ['nome_referencia', 'cargo_referencia']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
 class ContatoForm(forms.ModelForm):
     """
     Formulário para dados de contato do cliente
