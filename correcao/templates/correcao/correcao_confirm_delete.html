@@ -14,10 +14,23 @@
                     </h3>
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        Tem certeza que deseja excluir a correção <strong>"{{ object.descricao }}"</strong>?
-                    </div>
+                    {% if has_references %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-ban"></i> Esta correção não pode ser excluída porque existem teses vinculadas.
+                        </div>
+                        <p><strong>Correção:</strong> {{ object.descricao }}</p>
+                        <p><strong>Teses vinculadas ({{ referencias|length }}):</strong></p>
+                        <ul class="list-group mb-3">
+                            {% for tese in referencias %}
+                                <li class="list-group-item">{{ tese.descricao }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Tem certeza que deseja excluir a correção <strong>"{{ object.descricao }}"</strong>?
+                        </div>
+                    {% endif %}
                     
                     <div class="row">
                         <div class="col-md-6">
@@ -35,15 +48,21 @@
                     </div>
                 </div>
                 <div class="card-footer">
-                    <form method="post">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-danger">
-                            <i class="fas fa-trash"></i> Confirmar Exclusão
-                        </button>
+                    {% if has_references %}
                         <a href="{% url 'correcao:list' %}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Cancelar
+                            <i class="fas fa-arrow-left"></i> Voltar
                         </a>
-                    </form>
+                    {% else %}
+                        <form method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Confirmar Exclusão
+                            </button>
+                            <a href="{% url 'correcao:list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                        </form>
+                    {% endif %}
                 </div>
             </div>
         </div>

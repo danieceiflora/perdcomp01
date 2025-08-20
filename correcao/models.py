@@ -1,9 +1,12 @@
 from django.db import models
+from simple_history.models import HistoricalRecords
+
 
 class Correcao(models.Model):
     descricao = models.CharField(max_length=50)
     fonte_correcao = models.CharField(max_length=200)
     cod_origem = models.CharField(max_length=20, blank=True, null=True)
+    historico = HistoricalRecords()
 
     def __str__(self):
         return self.descricao

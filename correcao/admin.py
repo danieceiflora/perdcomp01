@@ -1,12 +1,14 @@
 from django.contrib import admin
 from .models import Correcao, tipoTese, TeseCredito
+from simple_history.admin import SimpleHistoryAdmin
 
 @admin.register(Correcao)
-class CorrecaoAdmin(admin.ModelAdmin):
-    list_display = ('descricao', '' 'fonte_correcao', 'teses_count')
+class CorrecaoAdmin(SimpleHistoryAdmin):
+    list_display = ('descricao', 'fonte_correcao', 'teses_count')
     list_filter = ('cod_origem',)
     search_fields = ('descricao', 'fonte_correcao')
     ordering = ('descricao',)
+    history_list_display = ['fonte_correcao']
     
     def teses_count(self, obj):
         return obj.tesecredito_set.count()

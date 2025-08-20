@@ -49,12 +49,22 @@
                                         </td>
                                         <td>{{ tese.correcao|default_if_none:"--" }}</td>
                                         <td>
-                                            <a href="{% url 'correcao:tese_credito_update' tese.pk %}" class="btn btn-sm btn-warning">
-                                                <i class="bi bi-pencil"></i> Editar
-                                            </a>
-                                            <a href="{% url 'correcao:tese_credito_delete' tese.pk %}" class="btn btn-sm btn-danger">
-                                                <i class="bi bi-trash"></i> Excluir
-                                            </a>
+                                            <div class="d-flex">
+                                                <a href="{% url 'correcao:tese_credito_update' tese.pk %}" class="btn btn-sm btn-warning me-1">
+                                                    <i class="bi bi-pencil"></i> Editar
+                                                </a>
+                                                {% with total=tese.adesoes_total|default:tese.adesoes.count %}
+                                                    {% if total == 0 %}
+                                                        <a href="{% url 'correcao:tese_credito_delete' tese.pk %}" class="btn btn-sm btn-danger">
+                                                            <i class="bi bi-trash"></i> Excluir
+                                                        </a>
+                                                    {% else %}
+                                                        <button type="button" class="btn btn-sm btn-secondary" disabled data-bs-toggle="tooltip" title="Há {{ total }} adesão(ões) vinculada(s)">
+                                                            <i class="bi bi-lock"></i> Excluir
+                                                        </button>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </div>
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -95,4 +105,16 @@
         </div>
     </div>
 </div>
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializa tooltips do Bootstrap 5
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    });
+</script>
+{% endblock %}
 {% endblock %}

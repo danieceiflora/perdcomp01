@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}Histórico de {{ tipo_objeto }} - {{ objeto }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        Histórico de {{ tipo_objeto }}: {{ objeto.id_company_vinculada.razao_social }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <a href="{% if tipo_objeto == 'Cliente' %}{% url 'detalhe_cliente' objeto.pk %}{% else %}{% url 'detalhe_parceiro' objeto.pk %}{% endif %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Voltar
+                        </a>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Data/Hora</th>
+                                    <th>Usuário</th>
+                                    <th>Ação</th>
+                                    <th>Detalhes da Alteração</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for registro in historico %}
+                                <tr>
+                                    <td>{{ registro.history_date|date:"d/m/Y H:i:s" }}</td>
+                                    <td>
+                                        {% if registro.history_user %}
+                                            {{ registro.history_user.username }}
+                                        {% else %}
+                                            <em>Usuário não registrado</em>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if registro.history_type == '+' %}
+                                            <span class="badge bg-success">Criação</span>
+                                        {% elif registro.history_type == '-' %}
+                                            <span class="badge bg-danger">Exclusão</span>
+                                        {% else %}
+                                            <span class="badge bg-primary">Atualização</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <ul class="list-unstyled mb-0">
+                                            {% if registro.history_type == '+' %}
+                                                <p><strong>Criação do registro:</strong></p>
+                                                {% if registro.changes %}
+                                                    {% for field, value in registro.changes.items %}
+                                                        <li>
+                                                            <strong>{{ field }}</strong>: {{ value.new }}
+                                                        </li>
+                                                    {% endfor %}
+                                                {% endif %}
+                                            {% elif registro.history_type == '-' %}
+                                                <li>Exclusão do registro</li>
+                                            {% else %}
+                                                {% if registro.changes %}
+                                                    {% for field, value in registro.changes.items %}
+                                                        <li>
+                                                            <strong>{{ field }}</strong>: 
+                                                            {% if value.old != None %}{{ value.old }}{% else %}<em>não definido</em>{% endif %} → 
+                                                            {% if value.new != None %}{{ value.new }}{% else %}<em>não definido</em>{% endif %}
+                                                        </li>
+                                                    {% empty %}
+                                                        <li><em>Sem alterações detectadas</em></li>
+                                                    {% endfor %}
+                                                {% else %}
+                                                    <li>
+                                                        <em>Primeira versão ou sem alterações significativas</em>
+                                                    </li>
+                                                {% endif %}
+                                            {% endif %}
+                                        </ul>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">
+                                        <em>Nenhum histórico disponível</em>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

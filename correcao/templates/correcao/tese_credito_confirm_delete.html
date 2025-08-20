@@ -14,20 +14,33 @@
                     </h3>
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-warning">
-                        <i class="bi bi-exclamation-triangle"></i>
-                        Tem certeza que deseja excluir a tese de crédito <strong>"{{ object.descricao }}"</strong>?
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Código Origem:</strong> {{ object.cod_origem }}</p>
-                            <p><strong>Descrição:</strong> {{ object.descricao }}</p>
+                    {% if has_references %}
+                        <div class="alert alert-danger">
+                            <i class="bi bi-ban"></i> Esta tese de crédito não pode ser excluída porque existem adesões vinculadas.
                         </div>
-                        <div class="col-md-6">
-                            <p><strong>Tipo de Tese:</strong> {{ object.id_tipo_tese }}</p>
-                            <p><strong>Correção:</strong> {{ object.id_correcao }}</p>
+                        <p><strong>Tese de crédito:</strong> {{ object.descricao }}</p>
+                        <p><strong>Adesões vinculadas ({{ referencias|length }}):</strong></p>
+                        <ul class="list-group mb-3">
+                            {% for adesao in referencias %}
+                                <li class="list-group-item">{{ adesao.perdcomp }} - {{ adesao.cliente }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            Tem certeza que deseja excluir a tese de crédito <strong>"{{ object.descricao }}"</strong>?
                         </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Código Origem:</strong> {{ object.cod_origem }}</p>
+                                <p><strong>Descrição:</strong> {{ object.descricao }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Tipo de Tese:</strong> {{ object.id_tipo_tese }}</p>
+                                <p><strong>Correção:</strong> {{ object.id_correcao }}</p>
+                            </div>
+                    {% endif %}
                     </div>
                     
                     <div class="row">
@@ -48,15 +61,21 @@
                     </div>
                 </div>
                 <div class="card-footer">
-                    <form method="post">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-danger">
-                            <i class="bi bi-trash"></i> Confirmar Exclusão
-                        </button>
+                    {% if has_references %}
                         <a href="{% url 'correcao:tese_credito_list' %}" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Cancelar
+                            <i class="bi bi-arrow-left"></i> Voltar
                         </a>
-                    </form>
+                    {% else %}
+                        <form method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Confirmar Exclusão
+                            </button>
+                            <a href="{% url 'correcao:tese_credito_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                        </form>
+                    {% endif %}
                 </div>
             </div>
         </div>

@@ -36,7 +36,8 @@ INSTALLED_APPS = [
     'lancamentos',
     'dashboard',
     'rest_framework',
-    'utils',  # App utilitário (filtros de template, etc.)
+    'utils',
+    'simple_history'  # App utilitário (filtros de template, etc.)
 ]
 # Adicionando configuração do JWT
 REST_FRAMEWORK = {
@@ -46,6 +47,7 @@ REST_FRAMEWORK = {
 }
 
 MIDDLEWARE = [
+    'simple_history.middleware.HistoryRequestMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
