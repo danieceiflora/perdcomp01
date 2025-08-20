@@ -156,11 +156,17 @@ class AnexosForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         arquivo = cleaned_data.get('arquivo')
+        nome_anexo = cleaned_data.get('nome_anexo')
+        descricao = cleaned_data.get('descricao')
         
-        # Se não há arquivo, este form deve ser considerado vazio e não salvo
-        if not arquivo and not self.instance.pk:
+        # Se não há arquivo mas há nome ou descrição, exigir o arquivo
+        if not arquivo and not self.instance.pk and (nome_anexo or descricao):
+            self.add_error('arquivo', 'É necessário incluir o arquivo para este anexo.')
+            
+        # Se não há arquivo nem dados, este form deve ser considerado vazio e não salvo
+        if not arquivo and not nome_anexo and not descricao and not self.instance.pk:
             # Form vazio - não deve ser processado
-            return cleaned_data
+            pass
             
         return cleaned_data
 
@@ -173,11 +179,27 @@ class BaseAnexosFormSet(BaseInlineFormSet):
         
         # Contar quantos anexos válidos temos
         valid_forms = 0
-        for form in self.forms:
+        incomplete_forms = 0
+        
+        # Validar cada formulário individualmente
+        for i, form in enumerate(self.forms):
+            # Ignorar forms marcados para delete
             if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
+                # Se tem arquivo, é um form válido
                 if form.cleaned_data.get('arquivo'):
                     valid_forms += 1
+                # Se não tem arquivo mas tem nome ou descrição, está incompleto
+                elif form.cleaned_data.get('nome_anexo') or form.cleaned_data.get('descricao'):
+                    incomplete_forms += 1
+                    self.forms[i].add_error('arquivo', 'É necessário incluir o arquivo para este anexo.')
         
+        # Se temos forms incompletos, mostrar erro ao nível do formset
+        if incomplete_forms > 0:
+            raise forms.ValidationError(
+                f"Há {incomplete_forms} anexo(s) com nome ou descrição, mas sem arquivo. "
+                "Por favor, selecione novamente os arquivos."
+            )
+            
         # Pelo menos um anexo é obrigatório? (Se desejar, pode remover esta validação)
         # if valid_forms == 0:
         #     raise forms.ValidationError('Pelo menos um anexo é obrigatório.')
