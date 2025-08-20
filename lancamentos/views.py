@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
+from django.http import Http404, HttpResponse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages
@@ -12,7 +12,7 @@ from django.core.exceptions import ValidationError
 from .models import Lancamentos, Anexos
 from .forms import LancamentosForm, AnexosFormSet
 from .permissions import LancamentoPermissionMixin, LancamentoClienteViewOnlyMixin, AdminRequiredMixin
-from django.http import Http404, HttpResponse
+## removido import duplicado de Http404/HttpResponse
 import openpyxl
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font
@@ -236,58 +236,48 @@ class LancamentoCreateView(AdminRequiredMixin, CreateView):
         
         return context
     
-    def is_ajax(self):
-        return self.request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-
     def form_valid(self, form):
-        """Processa o formulário principal e os anexos. Suporta resposta JSON para AJAX."""
+        """Processa o formulário principal e o formset de anexos usando submissão tradicional."""
         context = self.get_context_data()
         anexos_formset = context['anexos_formset']
-
         try:
             with transaction.atomic():
                 if not anexos_formset.is_valid():
                     return self.form_invalid(form)
-
-                self.object = form.save()
+                from django.core.exceptions import ValidationError as DjangoValidationError
+                try:
+                    self.object = form.save()
+                except DjangoValidationError as ve:
+                    # Propaga erros para o form
+                    if hasattr(ve, 'message_dict'):
+                        for field, msgs in ve.message_dict.items():
+                            for m in msgs:
+                                if field in form.fields:
+                                    form.add_error(field, m)
+                                else:
+                                    form.add_error(None, m)
+                    else:
+                        msgs = []
+                        if hasattr(ve, 'messages'):
+                            msgs = ve.messages
+                        elif hasattr(ve, 'message'):
+                            msgs = [ve.message]
+                        for m in msgs:
+                            form.add_error(None, m)
+                    return self.form_invalid(form)
                 anexos_formset.instance = self.object
                 anexos_formset.save()
-
                 messages.success(self.request, 'Lançamento criado com sucesso!')
-                if self.is_ajax():
-                    return JsonResponse({'ok': True, 'redirect': str(self.get_success_url())})
                 return super().form_valid(form)
         except Exception as e:
             import logging
             logging.error(f"Erro ao salvar lançamento: {str(e)}")
-            if self.is_ajax():
-                return JsonResponse({'ok': False, 'errors': {'__all__': [str(e)]}}, status=500)
             messages.error(self.request, f"Erro ao processar lançamento: {str(e)}")
             return self.form_invalid(form)
     
     def form_invalid(self, form):
         context = self.get_context_data(form=form)
         anexos_formset = context['anexos_formset']
-
-        if self.is_ajax():
-            def serialize_form(f):
-                field_errors = {}
-                for field, errs in f.errors.items():
-                    field_errors[field] = [str(e) for e in errs]
-                return {
-                    'fields': field_errors,
-                    'non_field': [str(e) for e in f.non_field_errors()]
-                }
-            main_errors = serialize_form(form)
-            anexos_errors = [serialize_form(f) for f in anexos_formset.forms]
-            payload = {
-                'ok': False,
-                'form': main_errors,
-                'anexos': anexos_errors,
-                'anexos_non_form': [str(e) for e in anexos_formset.non_form_errors()],
-            }
-            return JsonResponse(payload, status=400)
-
         messages.error(self.request, 'Erro ao cadastrar lançamento. Verifique os campos.')
         if anexos_formset.errors:
             for i, form_errors in enumerate(anexos_formset.errors):

@@ -43,12 +43,7 @@
                         {{ form.valor }}
                         <span class="input-group-text">R$</span>
                     </div>
-                    <!-- Erros ainda serão exibidos se ocorrerem, útil para depuração -->
-                    {% if form.valor.errors %}
-                    <div class="invalid-feedback d-block">
-                        {{ form.valor.errors }}
-                    </div>
-                    {% endif %}
+                    <!-- Erros serão exibidos no modal -->
                 </div>
         
                 <div class="row mb-4">
@@ -262,6 +257,26 @@
                         </a>
                     </div>
             </form>
+            
+            <!-- Modal de Erro do Formulário -->
+            <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title" id="errorModalLabel"><i class="bi bi-exclamation-triangle-fill me-2"></i>Erro no Formulário</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div id="modalErrorContent">
+                                <!-- Conteúdo preenchido via JS -->
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -269,6 +284,60 @@
 
 {% block extra_js %}
 <script>
+    // Detectar erros de formulário e mostrar modal
+    document.addEventListener('DOMContentLoaded', function() {
+        const hasFormErrors = {% if form.errors or form.non_field_errors or anexos_formset.errors or anexos_formset.non_form_errors %}true{% else %}false{% endif %};
+        
+        if (hasFormErrors) {
+            // Coletar todos os erros para exibir no modal
+            const errorMessages = [];
+            
+            // Erros gerais do formulário
+            {% if form.non_field_errors %}
+                {% for error in form.non_field_errors %}
+                    errorMessages.push("{{ error }}");
+                {% endfor %}
+            {% endif %}
+            
+            // Erros específicos de campos
+            {% for field in form %}
+                {% if field.errors %}
+                    {% for error in field.errors %}
+                        errorMessages.push("<strong>{{ field.label }}</strong>: {{ error }}");
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+            
+            // Erros do formset
+            {% if anexos_formset.non_form_errors %}
+                {% for error in anexos_formset.non_form_errors %}
+                    errorMessages.push("<strong>Anexos</strong>: {{ error }}");
+                {% endfor %}
+            {% endif %}
+            
+            // Inserir erros no modal
+            const errorContentEl = document.getElementById('modalErrorContent');
+            if (errorContentEl) {
+                const errorList = document.createElement('ul');
+                errorList.className = 'alert alert-danger mb-0 list-unstyled';
+                
+                errorMessages.forEach(msg => {
+                    const li = document.createElement('li');
+                    li.innerHTML = msg;
+                    li.className = 'mb-2';
+                    errorList.appendChild(li);
+                });
+                
+                errorContentEl.innerHTML = '';
+                errorContentEl.appendChild(errorList);
+                
+                // Mostrar o modal
+                const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+                errorModal.show();
+            }
+        }
+    });
+    
     // AJAX submit para preservar arquivos selecionados em caso de erro
     (function(){
         const form = document.getElementById('lancamento-form');
@@ -280,12 +349,18 @@
             form.querySelectorAll('.is-invalid').forEach(el=>el.classList.remove('is-invalid'));
         }
         function showError(el, msgs){
-            if(!el) return;
+            if(!el){
+                // tentar container declarado
+                const fallback = form.querySelector(`[data-field-error-target="${(msgs && msgs.fieldName)||''}"]`) || form.querySelector(`[data-field-error-target]`);
+                if(fallback){
+                    fallback.innerHTML = msgs.map(m=>`<div>${m}</div>`).join('');
+                }
+                return;
+            }
             el.classList.add('is-invalid');
             const div = document.createElement('div');
             div.className = 'invalid-feedback d-block ajax-error';
             div.innerHTML = msgs.map(m=>`<div>${m}</div>`).join('');
-            // Evita duplicado
             el.parentElement.appendChild(div);
         }
         function applyErrors(data){
@@ -294,7 +369,15 @@
             if(data.form){
                 Object.entries(data.form.fields||{}).forEach(([field,msgs])=>{
                     const el = form.querySelector(`[name="${field}"]`);
-                    showError(el,msgs);
+                    if(!el){
+                        // procurar container dedicado
+                        const container = form.querySelector(`[data-field-error-target="${field}"]`);
+                        if(container){
+                            container.innerHTML = msgs.map(m=>`<div>${m}</div>`).join('');
+                        }
+                    } else {
+                        showError(el,msgs);
+                    }
                 });
                 if(data.form.non_field && data.form.non_field.length){
                     const alert = document.createElement('div');
@@ -327,42 +410,7 @@
                 form.prepend(alert2);
             }
         }
-        form.addEventListener('submit', function(e){
-            if(!window.fetch) return; // fallback
-            e.preventDefault();
-            clearErrors();
-            const fd = new FormData(form);
-            if(submitBtn){
-                submitBtn.disabled = true;
-                submitBtn.dataset.originalText = submitBtn.innerHTML;
-                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Salvando...';
-            }
-            fetch(form.action||window.location.href, {
-                method: 'POST',
-                body: fd,
-                headers:{'X-Requested-With':'XMLHttpRequest'}
-            }).then(r=>r.json().then(j=>({status:r.status,data:j})))
-              .then(({status,data})=>{
-                if(data.ok){
-                    window.location.href = data.redirect || '/';
-                } else {
-                    applyErrors(data);
-                }
-              })
-              .catch(err=>{
-                const alert = document.createElement('div');
-                alert.className='alert alert-danger ajax-error';
-                alert.textContent='Erro inesperado ao enviar.';
-                form.prepend(alert);
-                console.error(err);
-              })
-              .finally(()=>{
-                if(submitBtn){
-                    submitBtn.disabled=false;
-                    submitBtn.innerHTML = submitBtn.dataset.originalText || 'Salvar';
-                }
-              });
-        });
+    // Submissão tradicional restaurada: nenhum interceptador AJAX aqui.
     })();
 </script>
 <script>
