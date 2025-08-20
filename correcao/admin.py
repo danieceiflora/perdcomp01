@@ -29,8 +29,10 @@ class TeseInline(admin.TabularInline):
     fields = ('cod_origem', 'descricao', 'corrige',)
     show_change_link = True
 
+from simple_history.admin import SimpleHistoryAdmin
+
 @admin.register(TeseCredito)
-class TeseCreditoAdmin(admin.ModelAdmin):
+class TeseCreditoAdmin(SimpleHistoryAdmin):
     list_display = ('descricao', 'tipo_tese', 'corrige_display', 'adesoes_count')
     list_filter = ('id_tipo_tese', 'corrige', 'id_correcao')
     search_fields = ('descricao', 'jurisprudencia')
@@ -49,7 +51,6 @@ class TeseCreditoAdmin(admin.ModelAdmin):
     def tipo_tese(self, obj):
         return obj.id_tipo_tese.descricao
     tipo_tese.short_description = 'Tipo de Tese'
-    
     
     def corrige_display(self, obj):
         return 'Sim' if obj.corrige else 'Não'

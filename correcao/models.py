@@ -43,6 +43,7 @@ class TeseCredito(models.Model):
     jurisprudencia = models.CharField(max_length=200)
     corrige = models.BooleanField(default=False, null=True, blank=True)
     cod_origem = models.CharField(max_length=20, blank=True, null=True)
+    historico = HistoricalRecords()
 
     class Meta:
         verbose_name = 'Forma de Habilitação'
