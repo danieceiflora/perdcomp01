@@ -291,3 +291,61 @@ def tese_credito_history_json(request, pk):
         result.append(entry)
     result.reverse()
     return JsonResponse({'object_id': tese.id, 'history': result})
+
+@login_required
+@require_GET
+def tipo_tese_history_json(request, pk):
+    """Histórico JSON para tipoTese."""
+    try:
+        tt = tipoTese.objects.get(pk=pk)
+    except tipoTese.DoesNotExist:
+        raise Http404
+    manager = getattr(tt, 'history', None) or getattr(tt, 'historico', None)
+    if manager is None:
+        return JsonResponse({'error': 'Histórico não configurado.'}, status=400)
+    history = list(manager.all().order_by('history_date'))
+    result = []
+    for idx, record in enumerate(history):
+        entry = {
+            'id': record.id,
+            'history_id': getattr(record, 'history_id', None),
+            'history_date': date_format(localtime(record.history_date), 'd/m/Y H:i:s'),
+            'history_user': getattr(record.history_user, 'username', None),
+            'history_type': record.history_type,
+            'changes': [],
+            'note': ''
+        }
+        if idx == 0:
+            for field in record._meta.fields:
+                fname = field.name
+                if fname in ('history_id','history_date','history_change_reason','history_type','history_user','id'):
+                    continue
+                val = getattr(record, fname, None)
+                if val not in (None, ''):
+                    entry['changes'].append({'field': fname, 'old': None, 'new': val})
+        else:
+            prev = history[idx-1]
+            try:
+                diff = record.diff_against(prev)
+                for c in diff.changes:
+                    entry['changes'].append({'field': c.field, 'old': c.old, 'new': c.new})
+            except Exception:
+                pass
+            if not entry['changes']:
+                ignore = {'history_id','history_date','history_change_reason','history_type','history_user','id'}
+                manual = []
+                for field in record._meta.fields:
+                    fname = field.name
+                    if fname in ignore:
+                        continue
+                    curr_val = getattr(record, fname, None)
+                    prev_val = getattr(prev, fname, None)
+                    if curr_val != prev_val:
+                        manual.append({'field': fname, 'old': prev_val, 'new': curr_val})
+                if manual:
+                    entry['changes'] = manual
+                else:
+                    entry['note'] = 'Alteração sem mudança perceptível.'
+        result.append(entry)
+    result.reverse()
+    return JsonResponse({'object_id': tt.id, 'history': result})

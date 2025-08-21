@@ -24,6 +24,7 @@
                                         <th>Descrição</th>
                                         <th>Periodicidade</th>
                                         <th>Ações</th>
+                                        <th>Histórico</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -39,6 +40,9 @@
                                             <a href="{% url 'correcao:tipo_tese_delete' tipo.pk %}" class="btn btn-sm btn-danger">
                                                 <i class="bi bi-trash"></i> Excluir
                                             </a>
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary btn-history" data-history-id="{{ tipo.pk }}" title="Histórico"><i class="bi bi-clock-history"></i></button>
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -78,5 +82,80 @@
             </div>
         </div>
     </div>
+<!-- Modal Histórico Tipo Tese -->
+<div class="modal fade" id="historyModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-clock-history"></i> Histórico do Tipo de Tese</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="historyLoading" class="text-center py-4 d-none">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 text-muted">Carregando histórico...</p>
+                </div>
+                <div id="historyContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
 </div>
+</div>
+{% block scripts %}
+<script>
+function historyBadge(t){
+    if(t==='+') return '<span class="badge bg-success"><i class="bi bi-plus"></i> Criação</span>';
+    if(t==='~') return '<span class="badge bg-warning text-dark"><i class="bi bi-pencil"></i> Alteração</span>';
+    if(t==='-') return '<span class="badge bg-danger"><i class="bi bi-trash"></i> Exclusão</span>';
+    return '<span class="badge bg-secondary">?</span>';
+}
+function loadHistory(id){
+    const modal = new bootstrap.Modal(document.getElementById('historyModal'));
+    document.getElementById('historyContent').innerHTML='';
+    document.getElementById('historyLoading').classList.remove('d-none');
+    modal.show();
+    fetch(`/correcao/tipo-tese/historico/${id}/`)
+        .then(r=>r.json())
+        .then(data=>{
+            const wrap = document.getElementById('historyContent');
+            document.getElementById('historyLoading').classList.add('d-none');
+            if(!data.history || !data.history.length){
+                wrap.innerHTML = '<p class="text-muted">Sem histórico.</p>';return;
+            }
+            let html='';
+            data.history.forEach(entry=>{
+                html += `<div class=\"border rounded p-2 mb-2\">`+
+                    `<div class=\"d-flex justify-content-between small mb-2\">`+
+                    `<span><i class=\"bi bi-clock\"></i> ${entry.history_date}</span>`+
+                    `<span>${historyBadge(entry.history_type)} ${entry.history_user? ' - <i class=\\"bi bi-person\\"></i> '+entry.history_user:''}</span>`+
+                    `</div>`;
+                if(entry.changes.length){
+                    html += '<ul class="mb-0 small">';
+                    entry.changes.forEach(ch=>{
+                        html += `<li><strong>${ch.field}</strong>: <code>${ch.old===null?'-':ch.old}</code> &rarr; <code>${ch.new===null?'-':ch.new}</code></li>`;
+                    });
+                    html += '</ul>';
+                } else {
+                    html += `<p class=\"text-muted mb-0 small\">${entry.note || '(Sem diferenças registradas)'}</p>`;
+                }
+                html += '</div>';
+            });
+            wrap.innerHTML = html;
+        })
+        .catch(()=>{
+            document.getElementById('historyLoading').classList.add('d-none');
+            document.getElementById('historyContent').innerHTML = '<p class="text-danger">Erro ao carregar histórico.</p>';
+        });
+}
+document.addEventListener('click', e=>{
+    const btn = e.target.closest('.btn-history');
+    if(btn){
+        loadHistory(btn.getAttribute('data-history-id'));
+    }
+});
+</script>
+{% endblock %}
 {% endblock %}

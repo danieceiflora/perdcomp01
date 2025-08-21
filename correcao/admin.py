@@ -15,7 +15,7 @@ class CorrecaoAdmin(SimpleHistoryAdmin):
     teses_count.short_description = 'Teses'
 
 @admin.register(tipoTese)
-class TipoTeseAdmin(admin.ModelAdmin):
+class TipoTeseAdmin(SimpleHistoryAdmin):
     list_display = ('id', 'descricao', 'teses_count')
     search_fields = ('descricao',)
     

@@ -30,6 +30,7 @@ class tipoTese(models.Model):
         default='mensal',
         verbose_name='Periodicidade'
     )
+    historico = HistoricalRecords()
     def __str__(self):
         return self.descricao
     class Meta:
