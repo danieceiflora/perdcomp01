@@ -29,5 +29,5 @@ urlpatterns = [
     path('historico/<int:pk>/', clientes_parceiros_history_json, name='clientes_parceiros_history_json'),
     
     # Cliente - Detalhe
-    path('cliente/<int:pk>/', ClienteDetailView.as_view(), name='detalhe_cliente'),
+    path('cliente/<int:pk>/', ClienteDetailView.as_view(), name='cliente_detail'),
 ]

@@ -4,294 +4,470 @@
 {% block title %}Lista de Parceiros{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-  <div class="row">
-    <div class="col-12">
-      <div class="page-header mb-4">
-        <div class="d-flex justify-content-between align-items-center flex-wrap">
-          <div>
-            <h1 class="h3 mb-0"><i class="fas fa-handshake"></i> Parceiros</h1>
-            <p class="text-muted">Relações cadastradas como parceiros</p>
-          </div>
-          <div class="d-flex flex-column flex-sm-row">
-            {% if user.is_superuser or user.is_staff %}
-              <a href="{% url 'novo_parceiro' %}" class="btn btn-primary mb-2 mb-sm-0">
-                <i class="fas fa-plus"></i> Novo Parceiro
-              </a>
-            {% endif %}
-            <a href="{% url 'lista_clientes' %}" class="btn btn-outline-secondary ms-sm-1">
-              <i class="fas fa-users"></i> Clientes
-            </a>
-          </div>
-        </div>
-      </div>
-
-      {% if messages %}
-        {% for message in messages %}
-          <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>
-        {% endfor %}
-      {% endif %}
-
-      {% if parceiros %}
-        <form method="get" class="row g-3 mb-3 align-items-end">
-          <div class="col-md-4">
-            <label class="form-label mb-1">Buscar</label>
-            <input type="text" class="form-control" name="q" value="{{ q }}" placeholder="Razão social, fantasia ou CNPJ...">
-          </div>
-          <div class="col-md-2">
-            <button type="submit" class="btn btn-outline-primary w-100"><i class="fas fa-search"></i> Filtrar</button>
-          </div>
-          {% if q %}
-          <div class="col-md-2">
-            <a href="." class="btn btn-outline-secondary w-100"><i class="fas fa-times"></i> Limpar</a>
-          </div>
-          {% endif %}
-        </form>
-        <div class="row g-2 mb-3">
-          <div class="col-md-auto">
-            <div class="badge bg-primary p-3 fw-normal">Total Parceiros: <span class="fw-bold">{{ total_parceiros }}</span></div>
-          </div>
-          <div class="col-md-auto">
-            <div class="badge bg-secondary p-3 fw-normal">Empresas Únicas: <span class="fw-bold">{{ total_empresas_unicas }}</span></div>
-          </div>
-        </div>
-        <div class="card shadow-sm">
-          <div class="card-header bg-primary text-white fw-bold">
-            <i class="fas fa-handshake"></i> Parceiros Cadastrados
-          </div>
-          <div class="table-responsive">
-            <div class="d-none d-md-block">
-              <table class="table table-hover align-middle mb-0">
-                <thead class="table-primary">
-                  <tr>
-                    <th>CNPJ</th>
-                    <th>Logomarca</th>
-                    <th>Empresa Parceira</th>
-                    <th>Contatos</th>
-                    <th>Desde</th>
-                    <th>Status</th>
-                    <th>Histórico</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for p in parceiros %}
-                    <tr>
-                      <td><small class="text-muted">{{ p.id_company_vinculada.cnpj }}</small></td>
-                      <td>
-                        {% if p.id_company_vinculada.logomarca %}
-                          <img src="{{ p.id_company_vinculada.logomarca.url }}" alt="Logomarca" style="height:32px;width:auto;border-radius:4px;background:#f8f9fa;border:1px solid #dee2e6;">
-                        {% else %}
-                          <i class="fas fa-building text-secondary" title="Sem logomarca"></i>
-                        {% endif %}
-                      </td>
-                      <td>
-                        <a href="{% url 'detalhe_parceiro' p.pk %}" class="fw-bold text-decoration-none">{{ p.id_company_vinculada.nome_fantasia|default:p.id_company_vinculada.razao_social }}</a>
-                        <br><small class="text-muted">Ref.: {{ p.nome_referencia }}{% if p.cargo_referencia %} ({{ p.cargo_referencia }}){% endif %}</small>
-                        <div class="mt-1"><span class="badge bg-warning text-dark">Parceiro</span></div>
-                      </td>
-                      <td>
-                        {% with contatos=p.id_company_vinculada.empresa_base_contato.all %}
-                          {% if contatos %}
-                            <ul class="list-unstyled mb-0">
-                              {% for c in contatos|slice:':2' %}
-                                <li class="mb-1">
-                                  <span class="fw-bold">{{ c.tipo_contato }}</span>
-                                  {% if c.telefone %}<br><span class="text-muted"><i class="fas fa-phone-alt me-1"></i>{{ c.telefone }}</span>{% endif %}
-                                  {% if c.email %}<br><a href="mailto:{{ c.email }}" class="text-decoration-none"><i class="fas fa-envelope me-1"></i>{{ c.email }}</a>{% endif %}
-                                  {% if c.site %}<br><a href="{{ c.site }}" target="_blank" class="text-decoration-none"><i class="fas fa-globe me-1"></i>{{ c.site }}</a>{% endif %}
-                                </li>
-                              {% endfor %}
-                              {% if contatos.count > 2 %}
-                                <li><span class="text-muted">e mais {{ contatos.count|add:'-2' }} contato(s)...</span></li>
-                              {% endif %}
-                            </ul>
-                          {% else %}
-                            <span class="text-muted">Sem contatos</span>
-                          {% endif %}
-                        {% endwith %}
-                      </td>
-                      <td>{{ p.data_inicio_parceria|date:'d/m/Y' }}</td>
-                      <td>
-                        {% if p.ativo %}
-                          <span class="badge bg-success px-3 py-2">Ativo</span>
-                        {% else %}
-                          <span class="badge bg-danger px-3 py-2">Inativo</span>
-                        {% endif %}
-                      </td>
-                      <td>
-                        <button type="button" class="btn btn-sm btn-outline-secondary btn-history" data-history-id="{{ p.pk }}" title="Histórico"><i class="fas fa-history"></i></button>
-                      </td>
-                    </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
+<div class="max-w-7xl mx-auto">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-foreground flex items-center gap-2">
+                    <i class="bi bi-handshake"></i>
+                    Lista de Parceiros
+                </h1>
+                <p class="text-muted-foreground mt-1">Relações cadastradas como parceiros</p>
             </div>
-            <div class="d-block d-md-none">
-              {% for p in parceiros %}
-                <div class="card mb-3 shadow-sm">
-                  <div class="card-body">
-                    <div class="d-flex align-items-center mb-2">
-                      {% if p.id_company_vinculada.logomarca %}
-                        <img src="{{ p.id_company_vinculada.logomarca.url }}" alt="Logo" style="height:32px;width:auto;margin-right:12px;border-radius:4px;background:#f8f9fa;border:1px solid #dee2e6;">
-                      {% else %}
-                        <i class="fas fa-building text-secondary fa-2x me-3" title="Sem logomarca"></i>
-                      {% endif %}
-                      <div>
-                        <a href="{% url 'detalhe_parceiro' p.pk %}" class="fw-bold text-decoration-none">{{ p.id_company_vinculada.nome_fantasia|default:p.id_company_vinculada.razao_social }}</a>
-                        <br><small class="text-muted">Desde {{ p.data_inicio_parceria|date:'d/m/Y' }}</small>
-                        <div class="mt-1"><span class="badge bg-warning text-dark">Parceiro</span></div>
-                      </div>
-                    </div>
-                    <div class="mb-1"><span class="text-muted fw-bold">CNPJ:</span> {{ p.id_company_vinculada.cnpj }}</div>
-                    <div class="mb-1"><span class="text-muted fw-bold">Referência:</span> {{ p.nome_referencia }}{% if p.cargo_referencia %} ({{ p.cargo_referencia }}){% endif %}</div>
-                    <div class="mb-1">
-                      <span class="text-muted fw-bold">Contatos:</span>
-                      {% with contatos=p.id_company_vinculada.empresa_base_contato.all %}
-                        {% if contatos %}
-                          <ul class="list-unstyled mb-0">
-                            {% for c in contatos|slice:':2' %}
-                              <li class="mb-1">
-                                <span class="fw-bold">{{ c.tipo_contato }}</span>
-                                {% if c.telefone %}<br><span class="text-muted"><i class="fas fa-phone-alt me-1"></i>{{ c.telefone }}</span>{% endif %}
-                                {% if c.email %}<br><a href="mailto:{{ c.email }}" class="text-decoration-none"><i class="fas fa-envelope me-1"></i>{{ c.email }}</a>{% endif %}
-                                {% if c.site %}<br><a href="{{ c.site }}" target="_blank" class="text-decoration-none"><i class="fas fa-globe me-1"></i>{{ c.site }}</a>{% endif %}
-                              </li>
-                            {% endfor %}
-                            {% if contatos.count > 2 %}
-                              <li><span class="text-muted">e mais {{ contatos.count|add:'-2' }}...</span></li>
-                            {% endif %}
-                          </ul>
-                        {% else %}
-                          <span class="text-muted">Sem contatos</span>
-                        {% endif %}
-                      {% endwith %}
-                    </div>
-                    <div class="mb-1">
-                      <span class="text-muted fw-bold">Status:</span>
-                      {% if p.ativo %}
-                        <span class="badge bg-success px-3 py-2">Ativo</span>
-                      {% else %}
-                        <span class="badge bg-danger px-3 py-2">Inativo</span>
-                      {% endif %}
-                    </div>
-                    <div class="mt-2">
-                      <button type="button" class="btn btn-sm btn-outline-secondary btn-history" data-history-id="{{ p.pk }}"><i class="fas fa-history"></i> Histórico</button>
-                    </div>
-                  </div>
-                </div>
-              {% endfor %}
+            <div class="flex flex-col sm:flex-row gap-2">
+                {% if user.is_superuser or user.is_staff %}
+                <a href="{% url 'novo_parceiro' %}" class="btn-primary">
+                    <i class="bi bi-plus"></i> Novo Parceiro
+                </a>
+                {% endif %}
+                <a href="{% url 'lista_clientes' %}" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    <i class="bi bi-people mr-2"></i> Clientes
+                </a>
             </div>
-          </div>
         </div>
-
-        {% if is_paginated %}
-          <nav aria-label="Navegação de parceiros">
-            <ul class="pagination justify-content-center">
-              {% if page_obj.has_previous %}
-                <li class="page-item"><a class="page-link" href="?page=1">Primeira</a></li>
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a></li>
-              {% endif %}
-              <li class="page-item active"><span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
-              {% if page_obj.has_next %}
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Próxima</a></li>
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a></li>
-              {% endif %}
-            </ul>
-          </nav>
-        {% endif %}
-      {% else %}
-        <div class="text-center py-5">
-          <i class="fas fa-handshake fa-5x text-muted mb-3"></i>
-          <h3 class="text-muted">Nenhum parceiro cadastrado</h3>
-          <p class="text-muted">Cadastre seu primeiro parceiro para começar.</p>
-          {% if user.is_superuser or user.is_staff %}
-            <a href="{% url 'novo_parceiro' %}" class="btn btn-primary btn-lg"><i class="fas fa-plus"></i> Cadastrar Primeiro Parceiro</a>
-          {% endif %}
-        </div>
-      {% endif %}
     </div>
-  </div>
+
+    {% if parceiros %}
+    <!-- Search Form -->
+    <form method="get" class="card mb-6">
+        <div class="card-content">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="space-y-2">
+                    <label class="text-sm font-medium leading-none">Buscar</label>
+                    <input type="text" name="q" value="{{ q }}" placeholder="Razão social, fantasia ou CNPJ..." class="input" />
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="btn-primary w-full">
+                        <i class="bi bi-search mr-2"></i> Filtrar
+                    </button>
+                </div>
+                {% if q %}
+                <div class="flex items-end">
+                    <a href="." class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring w-full">
+                        <i class="bi bi-x mr-2"></i> Limpar
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div class="card">
+            <div class="card-content">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center">
+                        <i class="bi bi-handshake text-primary"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-muted-foreground">Total Parceiros</p>
+                        <p class="text-2xl font-bold">{{ total_parceiros }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-content">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 rounded-md bg-secondary/10 flex items-center justify-center">
+                        <i class="bi bi-building text-secondary"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-muted-foreground">Empresas Únicas</p>
+                        <p class="text-2xl font-bold">{{ total_empresas_unicas }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Partners Table/List -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="text-lg font-semibold flex items-center gap-2">
+                <i class="bi bi-handshake"></i>
+                Parceiros Cadastrados
+            </h3>
+        </div>
+        
+        <!-- Desktop Table View -->
+        <div class="hidden lg:block">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="border-b bg-muted/50">
+                        <tr class="text-left">
+                            <th class="px-4 py-3 text-sm font-medium text-muted-foreground">CNPJ</th>
+                            <th class="px-4 py-3 text-sm font-medium text-muted-foreground">Logo</th>
+                            <th class="px-4 py-3 text-sm font-medium text-muted-foreground">Empresa Parceira</th>
+                            <th class="px-4 py-3 text-sm font-medium text-muted-foreground">Contatos</th>
+                            <th class="px-4 py-3 text-sm font-medium text-muted-foreground">Desde</th>
+                            <th class="px-4 py-3 text-sm font-medium text-muted-foreground">Status</th>
+                            <th class="px-4 py-3 text-sm font-medium text-muted-foreground">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        {% for p in parceiros %}
+                        <tr class="hover:bg-muted/50 transition-colors">
+                            <td class="px-4 py-3 text-sm text-muted-foreground font-mono">
+                                {{ p.id_company_vinculada.cnpj }}
+                            </td>
+                            <td class="px-4 py-3">
+                                {% if p.id_company_vinculada.logomarca %}
+                                <img src="{{ p.id_company_vinculada.logomarca.url }}" 
+                                     alt="Logomarca" 
+                                     class="w-8 h-8 object-contain rounded border border-border bg-background" />
+                                {% else %}
+                                <div class="w-8 h-8 rounded border border-border bg-muted flex items-center justify-center">
+                                    <i class="bi bi-building text-muted-foreground"></i>
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3">
+                                <div>
+                                    <a href="{% url 'detalhe_parceiro' p.pk %}" 
+                                       class="font-medium text-primary hover:text-primary/80 transition-colors">
+                                        {{ p.id_company_vinculada.nome_fantasia|default:p.id_company_vinculada.razao_social }}
+                                    </a>
+                                    <p class="text-xs text-muted-foreground">
+                                        Ref.: {{ p.nome_referencia }}{% if p.cargo_referencia %} ({{ p.cargo_referencia }}){% endif %}
+                                    </p>
+                                    <span class="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-700 dark:text-amber-300 mt-1">
+                                        Parceiro
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 text-sm">
+                                {% with contatos=p.id_company_vinculada.empresa_base_contato.all %}
+                                {% if contatos %}
+                                <div class="space-y-1">
+                                    {% for c in contatos|slice:':2' %}
+                                    <div>
+                                        <p class="font-medium text-xs">{{ c.tipo_contato }}</p>
+                                        {% if c.telefone %}
+                                        <p class="text-xs text-muted-foreground flex items-center gap-1">
+                                            <i class="bi bi-telephone"></i>{{ c.telefone }}
+                                        </p>
+                                        {% endif %}
+                                        {% if c.email %}
+                                        <a href="mailto:{{ c.email }}" class="text-xs text-primary hover:text-primary/80 flex items-center gap-1">
+                                            <i class="bi bi-envelope"></i>{{ c.email }}
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                    {% if contatos.count > 2 %}
+                                    <p class="text-xs text-muted-foreground">
+                                        +{{ contatos.count|add:'-2' }} mais
+                                    </p>
+                                    {% endif %}
+                                </div>
+                                {% else %}
+                                <span class="text-xs text-muted-foreground">Sem contatos</span>
+                                {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td class="px-4 py-3 text-sm text-muted-foreground">
+                                {{ p.data_inicio_parceria|date:'d/m/Y' }}
+                            </td>
+                            <td class="px-4 py-3">
+                                {% if p.ativo %}
+                                <span class="inline-flex items-center rounded-full bg-green-500/10 px-2 py-1 text-xs font-medium text-green-700 dark:text-green-300">
+                                    Ativo
+                                </span>
+                                {% else %}
+                                <span class="inline-flex items-center rounded-full bg-red-500/10 px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300">
+                                    Inativo
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3">
+                                <button type="button" 
+                                        class="inline-flex items-center justify-center rounded-md p-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors btn-history" 
+                                        data-history-id="{{ p.pk }}" 
+                                        title="Histórico">
+                                    <i class="bi bi-clock-history"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Mobile Card View -->
+        <div class="lg:hidden">
+            <div class="space-y-4 p-4">
+                {% for p in parceiros %}
+                <div class="card">
+                    <div class="card-content">
+                        <div class="flex items-center gap-3 mb-4">
+                            {% if p.id_company_vinculada.logomarca %}
+                            <img src="{{ p.id_company_vinculada.logomarca.url }}" 
+                                 alt="Logomarca" 
+                                 class="w-12 h-12 object-contain rounded border border-border bg-background" />
+                            {% else %}
+                            <div class="w-12 h-12 rounded border border-border bg-muted flex items-center justify-center">
+                                <i class="bi bi-building text-muted-foreground text-lg"></i>
+                            </div>
+                            {% endif %}
+                            <div class="flex-1">
+                                <a href="{% url 'detalhe_parceiro' p.pk %}" 
+                                   class="font-medium text-primary hover:text-primary/80 transition-colors">
+                                    {{ p.id_company_vinculada.nome_fantasia|default:p.id_company_vinculada.razao_social }}
+                                </a>
+                                <p class="text-xs text-muted-foreground">
+                                    Desde {{ p.data_inicio_parceria|date:'d/m/Y' }}
+                                </p>
+                                <span class="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-700 dark:text-amber-300 mt-1">
+                                    Parceiro
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-2 text-sm">
+                            <div>
+                                <span class="font-medium text-muted-foreground">CNPJ:</span>
+                                <span class="font-mono">{{ p.id_company_vinculada.cnpj }}</span>
+                            </div>
+                            
+                            <div>
+                                <span class="font-medium text-muted-foreground">Referência:</span>
+                                <span>{{ p.nome_referencia }}{% if p.cargo_referencia %} ({{ p.cargo_referencia }}){% endif %}</span>
+                            </div>
+                            
+                            <div>
+                                <span class="font-medium text-muted-foreground">Contatos:</span>
+                                {% with contatos=p.id_company_vinculada.empresa_base_contato.all %}
+                                {% if contatos %}
+                                <div class="mt-1 space-y-1">
+                                    {% for c in contatos|slice:':2' %}
+                                    <div class="pl-2 border-l-2 border-muted">
+                                        <p class="font-medium text-xs">{{ c.tipo_contato }}</p>
+                                        {% if c.telefone %}
+                                        <p class="text-xs text-muted-foreground flex items-center gap-1">
+                                            <i class="bi bi-telephone"></i>{{ c.telefone }}
+                                        </p>
+                                        {% endif %}
+                                        {% if c.email %}
+                                        <a href="mailto:{{ c.email }}" class="text-xs text-primary hover:text-primary/80 flex items-center gap-1">
+                                            <i class="bi bi-envelope"></i>{{ c.email }}
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                    {% if contatos.count > 2 %}
+                                    <p class="text-xs text-muted-foreground pl-2">
+                                        +{{ contatos.count|add:'-2' }} mais contato(s)
+                                    </p>
+                                    {% endif %}
+                                </div>
+                                {% else %}
+                                <span class="text-muted-foreground">Sem contatos</span>
+                                {% endif %}
+                                {% endwith %}
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <span class="font-medium text-muted-foreground">Status:</span>
+                                    {% if p.ativo %}
+                                    <span class="inline-flex items-center rounded-full bg-green-500/10 px-2 py-1 text-xs font-medium text-green-700 dark:text-green-300 ml-2">
+                                        Ativo
+                                    </span>
+                                    {% else %}
+                                    <span class="inline-flex items-center rounded-full bg-red-500/10 px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300 ml-2">
+                                        Inativo
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <button type="button" 
+                                        class="inline-flex items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground btn-history" 
+                                        data-history-id="{{ p.pk }}">
+                                    <i class="bi bi-clock-history"></i> Histórico
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <nav class="flex items-center justify-center mt-6" aria-label="Navegação de parceiros">
+        <div class="flex items-center space-x-1">
+            {% if page_obj.has_previous %}
+            <a href="?page=1" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground">
+                Primeira
+            </a>
+            <a href="?page={{ page_obj.previous_page_number }}" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground">
+                Anterior
+            </a>
+            {% endif %}
+            
+            <span class="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground">
+                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+            </span>
+            
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground">
+                Próxima
+            </a>
+            <a href="?page={{ page_obj.paginator.num_pages }}" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground">
+                Última
+            </a>
+            {% endif %}
+        </div>
+    </nav>
+    {% endif %}
+    
+    {% else %}
+    <!-- Empty State -->
+    <div class="text-center py-12">
+        <div class="w-16 h-16 mx-auto rounded-full bg-muted flex items-center justify-center mb-4">
+            <i class="bi bi-handshake text-2xl text-muted-foreground"></i>
+        </div>
+        <h3 class="text-lg font-semibold mb-2">Nenhum parceiro cadastrado</h3>
+        <p class="text-muted-foreground mb-6">Cadastre seu primeiro parceiro para começar.</p>
+        {% if user.is_superuser or user.is_staff %}
+        <a href="{% url 'novo_parceiro' %}" class="btn-primary">
+            <i class="bi bi-plus mr-2"></i> Cadastrar Primeiro Parceiro
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
 </div>
 
-<!-- Modal Histórico -->
-<div class="modal fade" id="historyModal" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="fas fa-history"></i> Histórico do Parceiro</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <div id="historyLoading" class="text-center py-4 d-none">
-          <div class="spinner-border text-primary" role="status"></div>
-          <p class="mt-2 text-muted">Carregando histórico...</p>
+<!-- History Modal -->
+<div id="historyModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-background rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+        <div class="flex items-center justify-between p-6 border-b">
+            <h3 class="text-lg font-semibold flex items-center gap-2">
+                <i class="bi bi-clock-history"></i>
+                Histórico do Parceiro
+            </h3>
+            <button type="button" class="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors" onclick="closeHistoryModal()">
+                <i class="bi bi-x text-lg"></i>
+            </button>
         </div>
-        <div id="historyContent"></div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-      </div>
+        
+        <div class="flex-1 overflow-y-auto p-6">
+            <div id="historyLoading" class="text-center py-8 hidden">
+                <div class="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p class="text-muted-foreground">Carregando histórico...</p>
+            </div>
+            <div id="historyContent"></div>
+        </div>
+        
+        <div class="flex justify-end p-6 border-t">
+            <button type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground" onclick="closeHistoryModal()">
+                Fechar
+            </button>
+        </div>
     </div>
-  </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-function historyBadge(type){
-  if(type === '+' ) return '<span class="badge bg-success"><i class="fas fa-plus"></i> Criação</span>';
-  if(type === '~' ) return '<span class="badge bg-warning text-dark"><i class="fas fa-edit"></i> Alteração</span>';
-  if(type === '-' ) return '<span class="badge bg-danger"><i class="fas fa-trash"></i> Exclusão</span>';
-  return '<span class="badge bg-secondary">?</span>';
+function historyBadge(type) {
+    if (type === '+') return '<span class="inline-flex items-center rounded-full bg-green-500/10 px-2 py-1 text-xs font-medium text-green-700 dark:text-green-300"><i class="bi bi-plus mr-1"></i> Criação</span>';
+    if (type === '~') return '<span class="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-700 dark:text-amber-300"><i class="bi bi-pencil mr-1"></i> Alteração</span>';
+    if (type === '-') return '<span class="inline-flex items-center rounded-full bg-red-500/10 px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300"><i class="bi bi-trash mr-1"></i> Exclusão</span>';
+    return '<span class="inline-flex items-center rounded-full bg-slate-500/10 px-2 py-1 text-xs font-medium text-slate-700 dark:text-slate-300">?</span>';
 }
-function loadHistory(id){
-  const modalEl = document.getElementById('historyModal');
-  const modal = new bootstrap.Modal(modalEl);
-  document.getElementById('historyContent').innerHTML='';
-  document.getElementById('historyLoading').classList.remove('d-none');
-  modal.show();
-  fetch(`/clientes-parceiros/historico/${id}/`)
-    .then(r=>r.json())
-    .then(data=>{
-      const wrap = document.getElementById('historyContent');
-      document.getElementById('historyLoading').classList.add('d-none');
-      if(!data.history || !data.history.length){
-        wrap.innerHTML = '<p class="text-muted">Sem histórico.</p>';return;
-      }
-      let html='';
-      data.history.forEach(entry=>{
-        html += `<div class="border rounded p-2 mb-2">`+
-          `<div class="d-flex justify-content-between small mb-2">`+
-          `<span><i class="far fa-clock me-1"></i>${entry.history_date}</span>`+
-          `<span>${historyBadge(entry.history_type)} ${entry.history_user? ' - <i class=\"fas fa-user\"></i> '+entry.history_user:''}</span>`+
-          `</div>`;
-        if(entry.changes.length){
-          html += '<ul class="mb-0 small">';
-          entry.changes.forEach(ch=>{
-            html += `<li><strong>${ch.field}</strong>: <code>${ch.old===null?'-':ch.old}</code> &rarr; <code>${ch.new===null?'-':ch.new}</code></li>`;
-          });
-          html += '</ul>';
-        } else {
-          html += `<p class="text-muted mb-0 small">${entry.note || '(Sem diferenças registradas)'}</p>`;
-        }
-        html += '</div>';
-      });
-      wrap.innerHTML = html;
-    }).catch(()=>{
-      document.getElementById('historyLoading').classList.add('d-none');
-      document.getElementById('historyContent').innerHTML = '<p class="text-danger">Erro ao carregar histórico.</p>';
-    });
+
+function openHistoryModal() {
+    document.getElementById('historyModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
 }
-// Delegação de eventos (fora da função para não registrar múltiplas vezes)
-document.addEventListener('click', function(e){
-  const btn = e.target.closest('.btn-history');
-  if(btn){
-    const id = btn.getAttribute('data-history-id');
-    loadHistory(id);
-  }
+
+function closeHistoryModal() {
+    document.getElementById('historyModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+function loadHistory(id) {
+    document.getElementById('historyContent').innerHTML = '';
+    document.getElementById('historyLoading').classList.remove('hidden');
+    openHistoryModal();
+    
+    fetch(`/clientes-parceiros/historico/${id}/`)
+        .then(r => r.json())
+        .then(data => {
+            const wrap = document.getElementById('historyContent');
+            document.getElementById('historyLoading').classList.add('hidden');
+            
+            if (!data.history || !data.history.length) {
+                wrap.innerHTML = '<p class="text-muted-foreground text-center py-8">Sem histórico disponível.</p>';
+                return;
+            }
+            
+            let html = '<div class="space-y-4">';
+            data.history.forEach(entry => {
+                html += `<div class="card">
+                    <div class="card-content">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-sm text-muted-foreground flex items-center gap-1">
+                                <i class="bi bi-clock"></i>${entry.history_date}
+                            </span>
+                            <div class="flex items-center gap-2">
+                                ${historyBadge(entry.history_type)}
+                                ${entry.history_user ? `<span class="text-xs text-muted-foreground flex items-center gap-1"><i class="bi bi-person"></i>${entry.history_user}</span>` : ''}
+                            </div>
+                        </div>`;
+                
+                if (entry.changes.length) {
+                    html += '<div class="space-y-2">';
+                    entry.changes.forEach(ch => {
+                        html += `<div class="flex items-center justify-between text-sm border rounded-md p-2 bg-muted/50">
+                            <strong class="text-foreground">${ch.field}</strong>
+                            <div class="flex items-center gap-2 text-xs">
+                                <code class="bg-red-500/10 text-red-700 dark:text-red-300 px-2 py-1 rounded">${ch.old === null ? '-' : ch.old}</code>
+                                <i class="bi bi-arrow-right text-muted-foreground"></i>
+                                <code class="bg-green-500/10 text-green-700 dark:text-green-300 px-2 py-1 rounded">${ch.new === null ? '-' : ch.new}</code>
+                            </div>
+                        </div>`;
+                    });
+                    html += '</div>';
+                } else {
+                    html += `<p class="text-muted-foreground text-sm">${entry.note || '(Sem diferenças registradas)'}</p>`;
+                }
+                html += '</div></div>';
+            });
+            html += '</div>';
+            wrap.innerHTML = html;
+        })
+        .catch(() => {
+            document.getElementById('historyLoading').classList.add('hidden');
+            document.getElementById('historyContent').innerHTML = '<p class="text-destructive text-center py-8">Erro ao carregar histórico.</p>';
+        });
+}
+
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.btn-history')) {
+        const id = e.target.closest('.btn-history').getAttribute('data-history-id');
+        loadHistory(id);
+    }
+});
+
+// Close modal on escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeHistoryModal();
+    }
+});
+
+// Close modal on backdrop click
+document.getElementById('historyModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeHistoryModal();
+    }
 });
 </script>
 {% endblock %}

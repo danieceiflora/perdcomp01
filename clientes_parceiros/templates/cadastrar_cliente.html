@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load form_tags %}
 
 {% block title %}Cadastrar Novo Cliente{% endblock %}
 
@@ -7,227 +8,236 @@
 <style>
     .required-field::after {
         content: " *";
-        color: #dc3545;
+        color: hsl(var(--destructive));
     }
 </style>
 {% endblock %}
+
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="page-header mb-4">
-                <h1 class="h3 mb-0">
-                    <i class="fas fa-user-plus"></i> {% if object %}Editar Cliente{% else %}Cadastrar Novo Cliente{% endif %}
-                </h1>
-                <p class="text-muted">{% if object %}Atualize os dados do cliente{% else %}Preencha os dados para cadastrar um novo cliente e estabelecer o vínculo com o parceiro{% endif %}</p>
+<div class="max-w-4xl mx-auto">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <h1 class="text-2xl font-bold text-foreground flex items-center gap-2">
+            <i class="bi bi-person-plus"></i>
+            {% if object %}Editar Cliente{% else %}Cadastrar Novo Cliente{% endif %}
+        </h1>
+        <p class="text-muted-foreground mt-1">
+            {% if object %}Atualize os dados do cliente{% else %}Preencha os dados para cadastrar um novo cliente e estabelecer o vínculo com o parceiro{% endif %}
+        </p>
+    </div>
+
+    <form method="post" id="clienteForm" class="space-y-6" enctype="multipart/form-data">
+        {% csrf_token %}
+        <!-- Partner Selection Section -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="text-lg font-semibold flex items-center gap-2">
+                    <i class="bi bi-handshake"></i>
+                    1. {% if object %}Parceiro Vinculado{% else %}Seleção do Parceiro{% endif %}
+                </h3>
             </div>
-            <form method="post" id="clienteForm" class="needs-validation" novalidate enctype="multipart/form-data">
-                {% csrf_token %}
+            <div class="card-content">
+                <div>
+                    <label for="{{ form.parceiro.id_for_label }}" class="block text-sm font-medium text-foreground mb-2 required-field">
+                        {{ form.parceiro.label }}
+                    </label>
+                    {{ form.parceiro|add_class:"input" }}
+                    {% if form.parceiro.help_text %}
+                        <p class="text-sm text-muted-foreground mt-1">{{ form.parceiro.help_text }}</p>
+                    {% endif %}
+                    {% if form.parceiro.errors %}
+                        <p class="text-sm text-destructive mt-1">{{ form.parceiro.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Company Data Section -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="text-lg font-semibold flex items-center gap-2">
+                    <i class="bi bi-building"></i>
+                    2. {% if object %}Dados da Empresa{% else %}Cadastro de Nova Empresa{% endif %}
+                </h3>
+            </div>
+            <div class="card-content">
+                {% if empresa_form.non_field_errors %}
+                    <div class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200 mb-4">
+                        {{ empresa_form.non_field_errors }}
+                    </div>
+                {% endif %}
                 
-                <!-- Seção 1: Seleção do Parceiro -->
-                <div class="card mb-4">
-                    <div class="card-header bg-primary text-white">
-                        <i class="fas fa-handshake"></i> 1. {% if object %}Parceiro Vinculado{% else %}Seleção do Parceiro{% endif %}
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="mb-3">
-                                    <label for="{{ form.parceiro.id_for_label }}" class="form-label required-field">
-                                        {{ form.parceiro.label }}
-                                    </label>
-                                    {{ form.parceiro }}
-                                    {% if form.parceiro.help_text %}
-                                        <div class="form-text">{{ form.parceiro.help_text }}</div>
-                                    {% endif %}
-                                    {% if form.parceiro.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.parceiro.errors }}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for field in empresa_form %}
+                        <div class="{% if field.name == 'razao_social' or field.name == 'nome_fantasia' %}md:col-span-2{% endif %}">
+                            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-foreground mb-2">
+                                {{ field.label }}
+                            </label>
+                            {% if field.name == 'logomarca' %}
+                                <input type="{{ field.field.widget.input_type }}" 
+                                       name="{{ field.name }}" 
+                                       id="{{ field.id_for_label }}"
+                                       class="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 border border-input rounded-md">
+                            {% else %}
+                                {{ field|add_class:"input" }}
+                            {% endif %}
+                            {% if field.help_text %}
+                                <p class="text-sm text-muted-foreground mt-1">{{ field.help_text }}</p>
+                            {% endif %}
+                            {% if field.errors %}
+                                <p class="text-sm text-destructive mt-1">{{ field.errors.0 }}</p>
+                            {% endif %}
                         </div>
-                    </div>
+                    {% endfor %}
                 </div>
+            </div>
+        </div>
 
-
-                <!-- Seção 2: Cadastro de Nova Empresa -->
-                <div class="card mb-4">
-                    <div class="card-header bg-primary text-white">
-                        <i class="fas fa-building"></i> 2. {% if object %}Dados da Empresa{% else %}Cadastro de Nova Empresa{% endif %}
+        <!-- Reference and Contact Data Section -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="text-lg font-semibold flex items-center gap-2">
+                    <i class="bi bi-person"></i>
+                    3. Dados de Referência e Contato
+                </h3>
+            </div>
+            <div class="card-content">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label for="{{ form.nome_referencia.id_for_label }}" class="block text-sm font-medium text-foreground mb-2 required-field">
+                            {{ form.nome_referencia.label }}
+                        </label>
+                        {{ form.nome_referencia|add_class:"input" }}
+                        {% if form.nome_referencia.help_text %}
+                            <p class="text-sm text-muted-foreground mt-1">{{ form.nome_referencia.help_text }}</p>
+                        {% endif %}
+                        {% if form.nome_referencia.errors %}
+                            <p class="text-sm text-destructive mt-1">{{ form.nome_referencia.errors.0 }}</p>
+                        {% endif %}
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-12">
-                                {% if empresa_form.non_field_errors %}
-                                    <div class="alert alert-danger">{{ empresa_form.non_field_errors }}</div>
-                                {% endif %}
-                                {% for field in empresa_form %}
-                                    <div class="mb-3">
-                                        <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-                                        {{ field }}
-                                        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-                                        {% if field.errors %}<div class="invalid-feedback d-block">{{ field.errors }}</div>{% endif %}
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Seção 3: Dados de Referência e Contato -->
-                <div class="card mb-4">
-                    <div class="card-header bg-primary text-white">
-                        <i class="fas fa-user"></i> 3. Dados de Referência e Contato
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.nome_referencia.id_for_label }}" class="form-label required-field">
-                                        {{ form.nome_referencia.label }}
-                                    </label>
-                                    {{ form.nome_referencia }}
-                                    {% if form.nome_referencia.help_text %}
-                                        <div class="form-text">{{ form.nome_referencia.help_text }}</div>
-                                    {% endif %}
-                                    {% if form.nome_referencia.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.nome_referencia.errors }}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.cargo_referencia.id_for_label }}" class="form-label">
-                                        {{ form.cargo_referencia.label }}
-                                    </label>
-                                    {{ form.cargo_referencia }}
-                                    {% if form.cargo_referencia.help_text %}
-                                        <div class="form-text">{{ form.cargo_referencia.help_text }}</div>
-                                    {% endif %}
-                                    {% if form.cargo_referencia.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.cargo_referencia.errors }}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Dados de Contato -->
-                        <h5 class="mt-4 mb-3">
-                            <i class="fas fa-phone"></i> Dados de Contato
-                            <button type="button" class="btn btn-success btn-sm ms-2" onclick="addContactForm()">
-                                <i class="fas fa-plus"></i> Adicionar Contato
-                            </button>
-                        </h5>
-                        <div id="contato-forms">
-                            {{ contato_formset.management_form }}
-                            {% for form_contato in contato_formset %}
-                                <div class="card mb-2 contact-form" data-form-index="{{ forloop.counter0 }}">
-                                    <div class="card-body p-3">
-                                        {% if not forloop.first %}
-                                            <button type="button" class="btn btn-danger btn-sm float-end btn-remove-contact" onclick="removeContactForm(this)">
-                                                <i class="fas fa-times"></i> Remover
-                                            </button>
-                                        {% endif %}
-                                        <div class="row">
-                                            <div class="col-md-3">
-                                                <div class="mb-3">
-                                                    <label class="form-label">Tipo de Contato</label>
-                                                    {{ form_contato.tipo_contato }}
-                                                </div>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <div class="mb-3">
-                                                    <label class="form-label">Telefone</label>
-                                                    {{ form_contato.telefone }}
-                                                </div>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <div class="mb-3">
-                                                    <label class="form-label">E-mail</label>
-                                                    {{ form_contato.email }}
-                                                </div>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <div class="mb-3">
-                                                    <label class="form-label">Site</label>
-                                                    {{ form_contato.site }}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {% if form_contato.non_field_errors %}
-                                            <div class="invalid-feedback d-block">
-                                                {{ form_contato.non_field_errors }}
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                        {% if contato_formset.non_form_errors %}
-                            <div class="invalid-feedback d-block">
-                                {{ contato_formset.non_form_errors }}
-                            </div>
+                    <div>
+                        <label for="{{ form.cargo_referencia.id_for_label }}" class="block text-sm font-medium text-foreground mb-2">
+                            {{ form.cargo_referencia.label }}
+                        </label>
+                        {{ form.cargo_referencia|add_class:"input" }}
+                        {% if form.cargo_referencia.help_text %}
+                            <p class="text-sm text-muted-foreground mt-1">{{ form.cargo_referencia.help_text }}</p>
+                        {% endif %}
+                        {% if form.cargo_referencia.errors %}
+                            <p class="text-sm text-destructive mt-1">{{ form.cargo_referencia.errors.0 }}</p>
                         {% endif %}
                     </div>
                 </div>
 
-                
-                <!-- Erros gerais do formulário -->
-                {% if form.non_field_errors %}
-                    <div class="alert alert-danger">
-                        {{ form.non_field_errors }}
+                <!-- Contact Data -->
+                <div class="border-t pt-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-lg font-medium text-foreground flex items-center gap-2">
+                            <i class="bi bi-telephone"></i>
+                            Dados de Contato
+                        </h4>
+                        <button type="button" class="btn-primary text-sm" onclick="addContactForm()">
+                            <i class="bi bi-plus-lg mr-2"></i>Adicionar Contato
+                        </button>
                     </div>
-                {% endif %}
-
-                <!-- Botões de Ação -->
-                <div class="row">
-                    <div class="col-12">
-                        <div class="d-flex justify-content-between">
-                            <a href="{% url 'lista_clientes' %}" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left"></i> Voltar
-                            </a>
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="fas fa-save"></i> Salvar
-                            </button>
-                        </div>
+                    
+                    <div id="contato-forms" class="space-y-4">
+                        {{ contato_formset.management_form }}
+                        {% for form_contato in contato_formset %}
+                            <div class="card contact-form bg-muted/50" data-form-index="{{ forloop.counter0 }}">
+                                <div class="card-content">
+                                    {% if not forloop.first %}
+                                        <button type="button" class="float-right inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-destructive hover:text-destructive-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring btn-remove-contact" onclick="removeContactForm(this)">
+                                            <i class="bi bi-x mr-1"></i>Remover
+                                        </button>
+                                    {% endif %}
+                                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-foreground mb-2">Tipo de Contato</label>
+                                            {{ form_contato.tipo_contato|add_class:"input" }}
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-foreground mb-2">Telefone</label>
+                                            {{ form_contato.telefone|add_class:"input" }}
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-foreground mb-2">E-mail</label>
+                                            {{ form_contato.email|add_class:"input" }}
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-foreground mb-2">Site</label>
+                                            {{ form_contato.site|add_class:"input" }}
+                                        </div>
+                                    </div>
+                                    {% if form_contato.non_field_errors %}
+                                        <p class="text-sm text-destructive mt-2">{{ form_contato.non_field_errors }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
                     </div>
+                    {% if contato_formset.non_form_errors %}
+                        <p class="text-sm text-destructive mt-2">{{ contato_formset.non_form_errors }}</p>
+                    {% endif %}
                 </div>
-            </form>
+            </div>
         </div>
-    </div>
+
+        <!-- Form Errors -->
+        {% if form.non_field_errors %}
+            <div class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <!-- Action Buttons -->
+        <div class="flex justify-between items-center">
+            <a href="{% url 'lista_clientes' %}" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <i class="bi bi-arrow-left mr-2"></i>Voltar
+            </a>
+            <button type="submit" class="btn-primary text-base px-8 py-3">
+                <i class="bi bi-check-lg mr-2"></i>Salvar
+            </button>
+        </div>
+    </form>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-// Inicializa índice de formulários de contato a partir do management form
+// Add class helper for Django forms with Tailwind
+document.addEventListener('DOMContentLoaded', function() {
+    // Add Tailwind classes to form fields
+    const inputs = document.querySelectorAll('input:not([type="hidden"]):not([type="file"]), select, textarea');
+    inputs.forEach(input => {
+        if (!input.classList.contains('input')) {
+            input.classList.add('input');
+        }
+    });
+});
+
+// Initialize contact form index from management form
 let contactFormIndex = parseInt('{{ contato_formset.total_form_count|default:0 }}', 10);
 
 function addContactForm() {
     const contactForms = document.getElementById('contato-forms');
     const managementForm = contactForms.querySelector('input[name$="TOTAL_FORMS"]');
     
-    // Clonar o primeiro formulário de contato
+    // Clone the first contact form
     const firstForm = contactForms.querySelector('.contact-form');
     if(!firstForm){
-        console.error('Nenhum formulário de contato base encontrado.');
+        console.error('No base contact form found.');
         return;
     }
     const newForm = firstForm.cloneNode(true);
     
-    // Limpar os valores dos campos
+    // Clear field values
     const inputs = newForm.querySelectorAll('input, select');
     inputs.forEach(input => {
         if (input.type !== 'hidden') {
             input.value = '';
         }
-        // Atualizar o name e id com o novo índice
+        // Update name and id with new index
         if (input.name) {
             input.name = input.name.replace(/form-\d+/, `form-${contactFormIndex}`);
         }
@@ -236,23 +246,23 @@ function addContactForm() {
         }
     });
     
-    // Atualizar o data-form-index
+    // Update data-form-index
     newForm.setAttribute('data-form-index', contactFormIndex);
     
-    // Adicionar botão de remover se não existir
+    // Add remove button if it doesn't exist
     if (!newForm.querySelector('.btn-remove-contact')) {
         const removeBtn = document.createElement('button');
         removeBtn.type = 'button';
-        removeBtn.className = 'btn-remove-contact';
+        removeBtn.className = 'float-right inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-destructive hover:text-destructive-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring btn-remove-contact';
         removeBtn.onclick = function() { removeContactForm(this); };
-        removeBtn.innerHTML = '<i class="fas fa-times"></i> Remover';
-        newForm.appendChild(removeBtn);
+        removeBtn.innerHTML = '<i class="bi bi-x mr-1"></i>Remover';
+        newForm.querySelector('.card-content').appendChild(removeBtn);
     }
     
-    // Adicionar o novo formulário
+    // Add new form
     contactForms.appendChild(newForm);
     
-    // Incrementar contadores
+    // Increment counters
     contactFormIndex++;
     managementForm.value = parseInt(managementForm.value) + 1;
 }
@@ -262,7 +272,7 @@ function removeContactForm(button) {
     const contactForms = document.getElementById('contato-forms');
     const managementForm = contactForms.querySelector('input[name$="TOTAL_FORMS"]');
     
-    // Não permitir remover se for o único formulário
+    // Don't allow removing if it's the only form
     if (contactForms.querySelectorAll('.contact-form').length <= 1) {
         alert('Pelo menos um contato é obrigatório.');
         return;
@@ -270,10 +280,10 @@ function removeContactForm(button) {
     
     contactForm.remove();
     
-    // Atualizar o contador
+    // Update counter
     managementForm.value = parseInt(managementForm.value) - 1;
     
-    // Renumerar os formulários restantes
+    // Renumber remaining forms
     renumberContactForms();
 }
 
@@ -293,7 +303,7 @@ function renumberContactForms() {
     });
 }
 
-// Validação do formulário
+// Form validation
 document.getElementById('clienteForm').addEventListener('submit', function(e) {
     const parceiro = document.getElementById('id_parceiro').value;
     if (!parceiro) {
@@ -301,7 +311,8 @@ document.getElementById('clienteForm').addEventListener('submit', function(e) {
         alert('Selecione o parceiro.');
         return false;
     }
-    // Validar se pelo menos um contato foi preenchido
+    
+    // Validate at least one contact is filled
     const contactForms = document.querySelectorAll('.contact-form');
     let hasValidContact = false;
     
