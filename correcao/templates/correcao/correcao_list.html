@@ -43,6 +43,9 @@
                                                 <a href="{% url 'correcao:update' correcao.pk %}" class="btn btn-sm btn-warning me-1">
                                                     <i class="fas fa-edit"></i> Editar
                                                 </a>
+                                                <button type="button" class="btn btn-sm btn-info me-1 btn-history" data-id="{{ correcao.id }}">
+                                                    <i class="fas fa-history"></i> Histórico
+                                                </button>
                                                 {% with total=correcao.teses_total|default:correcao.tesecredito_set.count %}
                                                     {% if total == 0 %}
                                                         <a href="{% url 'correcao:delete' correcao.pk %}" class="btn btn-sm btn-danger">
@@ -104,7 +107,72 @@
         var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl)
         });
+
+                // Handler para botões de histórico
+                document.querySelectorAll('.btn-history').forEach(function(btn){
+                        btn.addEventListener('click', function(){
+                                const id = this.getAttribute('data-id');
+                                const modalEl = document.getElementById('historyModal');
+                                const bodyEl = modalEl.querySelector('.history-body');
+                                bodyEl.innerHTML = '<div class="text-center py-4"><div class="spinner-border" role="status"></div></div>';
+                                const bsModal = new bootstrap.Modal(modalEl);
+                                bsModal.show();
+                                fetch(`historico/${id}/`)
+                                        .then(r => r.json())
+                                        .then(data => {
+                                                if(!data.history || data.history.length === 0){
+                                                        bodyEl.innerHTML = '<p class="text-muted mb-0">Sem histórico.</p>';
+                                                        return;
+                                                }
+                                                let html = '';
+                        const typeMeta = {
+                            '+': {label: 'Criação', cls: 'success', icon: 'fa-plus-circle'},
+                            '~': {label: 'Alteração', cls: 'info', icon: 'fa-pen'},
+                            '-': {label: 'Exclusão', cls: 'danger', icon: 'fa-trash'}
+                        };
+                        data.history.forEach((h) => {
+                            const meta = typeMeta[h.history_type] || {label: h.history_type, cls: 'secondary', icon: 'fa-circle'};
+                            html += `<div class="border rounded mb-2 p-2">
+                                <div class="d-flex justify-content-between small align-items-center">
+                                    <span><strong>${h.history_date}</strong></span>
+                                    <span class="d-flex align-items-center">${h.history_user || ''} <span class="badge bg-${meta.cls} ms-2"><i class="fas ${meta.icon} me-1"></i>${meta.label}</span></span>
+                                </div>`;
+                            if(h.changes && h.changes.length){
+                                html += '<ul class="mb-0 mt-2 small">';
+                                h.changes.forEach(c => {
+                                    html += `<li><strong>${c.field}</strong>: <code>${c.old ?? '—'}</code> → <code>${c.new ?? '—'}</code></li>`;
+                                });
+                                html += '</ul>';
+                            } else {
+                                html += '<div class="small text-muted mt-2">(Sem diferenças registradas)</div>';
+                            }
+                            html += '</div>';
+                        });
+                                                bodyEl.innerHTML = html;
+                                        })
+                                        .catch(() => {
+                                                bodyEl.innerHTML = '<div class="text-danger">Erro ao carregar histórico.</div>';
+                                        });
+                        });
+                });
     });
 </script>
+<!-- Modal de Histórico -->
+<div class="modal fade" id="historyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Histórico da Correção</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body history-body">
+                <!-- conteúdo dinâmico -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 {% endblock %}

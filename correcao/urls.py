@@ -9,6 +9,10 @@ urlpatterns = [
     path('novo/', views.CorrecaoCreateView.as_view(), name='create'),
     path('editar/<int:pk>/', views.CorrecaoUpdateView.as_view(), name='update'),
     path('excluir/<int:pk>/', views.CorrecaoDeleteView.as_view(), name='delete'),
+    # Histórico (padrão correto historico/<id>/)
+    path('historico/<int:pk>/', views.correcao_history_json, name='history_json'),
+    # Rota alternativa para chamadas já feitas no formato <id>/historico/ (fallback)
+    path('<int:pk>/historico/', views.correcao_history_json, name='history_json_alt'),
     
     # URLs para tipoTese
     path('tipo-tese/', views.tipoTeseListView.as_view(), name='tipo_tese_list'),

@@ -5,6 +5,12 @@ from django.contrib import messages
 from django.db.models import Count
 from django.db.models import ProtectedError
 from .models import Correcao, tipoTese, TeseCredito
+from django.http import JsonResponse, Http404
+from django.utils.dateformat import format as date_format
+from django.utils.timezone import localtime
+from django.views.decorators.http import require_GET
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
 from .forms import CorrecaoForm, tipoTeseForm, TeseCreditoForm
 from .permissions import AdminRequiredMixin
 
@@ -149,3 +155,59 @@ class TeseCreditoDeleteView(AdminRequiredMixin, DeleteView):
         except ProtectedError:
             messages.error(self.request, 'Não é possível excluir: há adesões vinculadas a esta tese de crédito.')
             return redirect(self.success_url)
+
+
+@login_required
+@require_GET
+def correcao_history_json(request, pk):
+    """Retorna histórico em JSON com diffs para a Correção indicada."""
+    try:
+        correcao = Correcao.objects.get(pk=pk)
+    except Correcao.DoesNotExist:
+        raise Http404
+
+    # Suporta tanto campo padrão 'history' quanto personalizado 'historico'
+    history_manager = getattr(correcao, 'history', None) or getattr(correcao, 'historico', None)
+    if history_manager is None:
+        return JsonResponse({'error': 'Histórico não configurado para este modelo.'}, status=400)
+    # Ordena ASC para comparar cada versão com a imediatamente anterior
+    history = list(history_manager.all().order_by('history_date'))
+    result = []
+    for idx, record in enumerate(history):
+        entry = {
+            'id': record.id,
+            'history_id': getattr(record, 'history_id', None),
+            'history_date': date_format(localtime(record.history_date), 'd/m/Y H:i:s'),
+            'history_user': getattr(record.history_user, 'username', None),
+            'history_type': record.history_type,
+            'changes': []
+        }
+        if idx == 0:
+            # Registro de criação: listar valores iniciais
+            for field in record._meta.fields:
+                fname = field.name
+                if fname in ('history_id','history_date','history_change_reason','history_type','history_user','id'):
+                    continue
+                try:
+                    val = getattr(record, fname)
+                except Exception:
+                    val = None
+                if val not in (None, ''):
+                    entry['changes'].append({'field': fname, 'old': None, 'new': val})
+        else:
+            prev = history[idx-1]
+            try:
+                diff = record.diff_against(prev)
+                for c in diff.changes:
+                    entry['changes'].append({
+                        'field': c.field,
+                        'old': c.old,
+                        'new': c.new
+                    })
+            except Exception:
+                pass
+        result.append(entry)
+
+    # Devolve em ordem decrescente (mais recente primeiro) para o modal
+    result.reverse()
+    return JsonResponse({'object_id': correcao.id, 'history': result})
