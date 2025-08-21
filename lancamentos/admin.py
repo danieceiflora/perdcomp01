@@ -1,4 +1,5 @@
 from django.contrib import admin
+from simple_history.admin import SimpleHistoryAdmin
 from django.contrib.admin.widgets import AdminDateWidget
 from .models import Lancamentos, Anexos
 
@@ -24,7 +25,7 @@ class LancamentoAdminForm(forms.ModelForm):
 
 # Versão simplificada do Admin para Lancamentos
 @admin.register(Lancamentos)
-class LancamentosAdmin(admin.ModelAdmin):
+class LancamentosAdmin(SimpleHistoryAdmin):
     form = LancamentoAdminForm
     list_display = ('id', 'id_adesao', 'data_lancamento', 'valor', 'sinal')
     list_filter = ('sinal',)
@@ -60,7 +61,7 @@ class LancamentosAdmin(admin.ModelAdmin):
 
 # Versão simplificada do Admin para Anexos
 @admin.register(Anexos)
-class AnexosAdmin(admin.ModelAdmin):
+class AnexosAdmin(SimpleHistoryAdmin):
     list_display = ('nome_anexo', 'id_lancamento', 'descricao', 'data_upload')
     list_filter = ('data_upload',)
     search_fields = ('nome_anexo', 'descricao')

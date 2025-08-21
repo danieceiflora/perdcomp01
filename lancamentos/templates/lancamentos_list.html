@@ -140,6 +140,7 @@
                                         <th>Anexos</th>
                                         <th>Status</th>
                                         <th>Ações</th>
+                                        <th>Histórico</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -156,6 +157,11 @@
                                             <a href="{% url 'lancamentos:detail' lancamento.pk %}" class="btn btn-outline-primary btn-sm">
                                                 <i class="bi bi-eye"></i> Ver Detalhes
                                             </a>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-outline-info btn-sm btn-history-lanc" data-id="{{ lancamento.id }}" title="Histórico">
+                                                <i class="bi bi-clock-history"></i>
+                                            </button>
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -189,6 +195,9 @@
                                             <a href="{% url 'lancamentos:detail' lancamento.pk %}" class="btn btn-outline-primary btn-sm w-100">
                                                 <i class="bi bi-eye"></i> Ver Detalhes
                                             </a>
+                                            <button class="btn btn-outline-info btn-sm w-100 btn-history-lanc" data-id="{{ lancamento.id }}">
+                                                <i class="bi bi-clock-history"></i> Histórico
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -228,4 +237,69 @@
         </div>
     </div>
 </div>
+{% endblock %}
+{% block extra_js %}
+<div class="modal fade" id="historyLancModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Histórico do Lançamento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="history-lanc-loading" class="text-center py-3 d-none">
+                        <div class="spinner-border" role="status"><span class="visually-hidden">Carregando...</span></div>
+                </div>
+                <div class="table-responsive">
+                        <table class="table table-sm table-striped align-middle">
+                                <thead class="table-light">
+                                        <tr>
+                                                <th>Data</th>
+                                                <th>Usuário</th>
+                                                <th>Tipo</th>
+                                                <th>Alterações</th>
+                                        </tr>
+                                </thead>
+                                <tbody id="history-lanc-body"></tbody>
+                        </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+document.addEventListener('click', async (e)=>{
+    const btn = e.target.closest('.btn-history-lanc');
+    if(!btn) return;
+    const id = btn.getAttribute('data-id');
+    const modalEl = document.getElementById('historyLancModal');
+    const tbody = modalEl.querySelector('#history-lanc-body');
+    tbody.innerHTML='';
+    modalEl.querySelector('#history-lanc-loading').classList.remove('d-none');
+    const modal = new bootstrap.Modal(modalEl); modal.show();
+    try {
+        const base = window.location.origin + window.location.pathname;
+        const resp = await fetch(base + 'historico/' + id + '/');
+        if(!resp.ok) throw new Error('Falha ao carregar histórico');
+        const data = await resp.json();
+        (data.history||[]).forEach(entry=>{
+            const tr = document.createElement('tr');
+            const tipoMap = { '+':'Criação','~':'Atualização','-':'Exclusão' };
+            const alterations = entry.changes.map(c=>`<div><span class='badge bg-secondary'>${c.field}</span> <strong>${c.old===null?'<em>(vazio)</em>':c.old}</strong> → <strong>${c.new===null?'<em>(vazio)</em>':c.new}</strong></div>`).join('');
+            const note = entry.note ? `<div class='text-muted small'>${entry.note}</div>` : '';
+            tr.innerHTML = `<td>${entry.history_date}</td><td>${entry.history_user||'-'}</td><td>${tipoMap[entry.history_type]||entry.history_type}</td><td>${alterations||note||'<span class="text-muted">Nenhuma alteração</span>'}</td>`;
+            tbody.appendChild(tr);
+        });
+    } catch(err){
+        const tr=document.createElement('tr');
+        tr.innerHTML = `<td colspan='4' class='text-danger'>${err.message}</td>`;
+        tbody.appendChild(tr);
+    } finally {
+        modalEl.querySelector('#history-lanc-loading').classList.add('d-none');
+    }
+});
+</script>
 {% endblock %}

@@ -1,4 +1,5 @@
 from django.contrib import admin
+from simple_history.admin import SimpleHistoryAdmin
 from django.utils.html import format_html
 from django import forms
 from .models import Adesao
@@ -30,7 +31,7 @@ class AdesaoAdminForm(forms.ModelForm):
                 self.fields['cliente'].queryset = ClientesParceiros.objects.none()
 
 @admin.register(Adesao)
-class AdesaoAdmin(admin.ModelAdmin):
+class AdesaoAdmin(SimpleHistoryAdmin):
 
     form = AdesaoAdminForm  # Usa o formulário personalizado
     list_display = ('perdcomp', 'cliente_info', 'tese_credito', 'metodo_credito', 'data_inicio', 'ano', 'periodo_apuracao_credito', 'codigo_receita', 'saldo_inicial', 'saldo_atual_display', 'ativo_display', 'lancamentos_count')

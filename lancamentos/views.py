@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages
@@ -16,8 +16,11 @@ from .permissions import LancamentoPermissionMixin, LancamentoClienteViewOnlyMix
 import openpyxl
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font
-from django.utils.timezone import now
+from django.utils.timezone import now, localtime
 from empresas.models import Empresa
+from django.utils.dateformat import format as date_format
+from django.views.decorators.http import require_GET
+from django.contrib.auth.decorators import login_required
 # --- Exportação de lançamentos para XLSX ---
 from django.contrib.auth.decorators import login_required
 @login_required
@@ -331,5 +334,120 @@ class AnexosUpdateView(AdminRequiredMixin, UpdateView):
             return self.render_to_response(
                 self.get_context_data(anexos_formset=anexos_formset)
             )
+
+
+@login_required
+@require_GET
+def lancamento_history_json(request, pk):
+    try:
+        lanc = Lancamentos.objects.get(pk=pk)
+    except Lancamentos.DoesNotExist:
+        raise Http404
+    manager = getattr(lanc, 'history', None) or getattr(lanc, 'historico', None)
+    if manager is None:
+        return JsonResponse({'error': 'Histórico não configurado.'}, status=400)
+
+    def serialize_value(val):
+        from django.db.models import Model
+        import datetime
+        if val is None:
+            return None
+        if isinstance(val, Model):
+            return str(val)
+        if isinstance(val, (datetime.datetime, datetime.date, datetime.time)):
+            try:
+                return val.isoformat()
+            except Exception:
+                return str(val)
+        return val
+
+    history = list(manager.all().order_by('history_date'))
+    result = []
+    for idx, record in enumerate(history):
+        entry = {
+            'id': record.id,
+            'history_id': getattr(record, 'history_id', None),
+            'history_date': date_format(localtime(record.history_date), 'd/m/Y H:i:s'),
+            'history_user': getattr(record.history_user, 'username', None),
+            'history_type': record.history_type,
+            'changes': [],
+            'note': ''
+        }
+        if idx == 0:
+            for field in record._meta.fields:
+                fname = field.name
+                if fname in ('history_id','history_date','history_change_reason','history_type','history_user','id'):
+                    continue
+                val = getattr(record, fname, None)
+                if val not in (None, ''):
+                    entry['changes'].append({'field': fname, 'old': None, 'new': serialize_value(val)})
+        else:
+            prev = history[idx-1]
+            try:
+                diff = record.diff_against(prev)
+                for c in diff.changes:
+                    entry['changes'].append({'field': c.field, 'old': serialize_value(c.old), 'new': serialize_value(c.new)})
+            except Exception:
+                pass
+            if not entry['changes']:
+                ignore = {'history_id','history_date','history_change_reason','history_type','history_user','id'}
+                manual = []
+                for field in record._meta.fields:
+                    fname = field.name
+                    if fname in ignore:
+                        continue
+                    curr_val = getattr(record, fname, None)
+                    prev_val = getattr(prev, fname, None)
+                    if curr_val != prev_val:
+                        manual.append({'field': fname, 'old': serialize_value(prev_val), 'new': serialize_value(curr_val)})
+                if manual:
+                    entry['changes'] = manual
+                else:
+                    entry['note'] = 'Alteração sem mudança perceptível.'
+        result.append(entry)
+    result.reverse()
+    return JsonResponse({'object_id': lanc.id, 'history': result})
+
+
+@login_required
+@require_GET
+def anexo_history_json(request, pk):
+    try:
+        anexo = Anexos.objects.get(pk=pk)
+    except Anexos.DoesNotExist:
+        raise Http404
+    manager = getattr(anexo, 'history', None) or getattr(anexo, 'historico', None)
+    if manager is None:
+        return JsonResponse({'error': 'Histórico não configurado.'}, status=400)
+    history = list(manager.all().order_by('history_date'))
+    result = []
+    for idx, record in enumerate(history):
+        entry = {
+            'id': record.id,
+            'history_id': getattr(record, 'history_id', None),
+            'history_date': date_format(localtime(record.history_date), 'd/m/Y H:i:s'),
+            'history_user': getattr(record.history_user, 'username', None),
+            'history_type': record.history_type,
+            'changes': []
+        }
+        if idx == 0:
+            for field in record._meta.fields:
+                fname = field.name
+                if fname in ('history_id','history_date','history_change_reason','history_type','history_user','id'):
+                    continue
+                val = getattr(record, fname, None)
+                if val not in (None, ''):
+                    entry['changes'].append({'field': fname, 'old': None, 'new': str(val)})
+        else:
+            prev = history[idx-1]
+            try:
+                diff = record.diff_against(prev)
+                for c in diff.changes:
+                    entry['changes'].append({'field': c.field, 'old': str(c.old), 'new': str(c.new)})
+            except Exception:
+                pass
+        result.append(entry)
+    result.reverse()
+    return JsonResponse({'object_id': anexo.id, 'history': result})
 
 

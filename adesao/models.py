@@ -1,6 +1,7 @@
 from django.db import models
 from clientes_parceiros.models import ClientesParceiros
 from correcao.models import TeseCredito
+from simple_history.models import HistoricalRecords
 
 class Adesao(models.Model):
    
@@ -131,6 +132,9 @@ class Adesao(models.Model):
         blank=True,
         null=True
     )
+
+    # Audit trail
+    historico = HistoricalRecords()
     
     def save(self, *args, **kwargs):
         """Sobrescreve o método save para garantir que o saldo_atual seja inicializado corretamente"""

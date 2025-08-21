@@ -98,6 +98,7 @@
                                         <th>Saldo Restante</th>
                                         
                                         <th>Ações</th>
+                                        <th>Histórico</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -116,6 +117,11 @@
                                             <a href="{% url 'lancamentos:list' %}?perdcomp={{ adesao.perdcomp }}" class="btn btn-sm btn-primary" title="Lançamentos">
                                                 <i class="bi bi-cash-stack"></i>
                                             </a>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-info btn-history-adesao" data-id="{{ adesao.id }}" title="Histórico">
+                                                <i class="bi bi-clock-history"></i>
+                                            </button>
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -143,6 +149,9 @@
                                             <a href="{% url 'lancamentos:list' %}?perdcomp={{ adesao.perdcomp }}" class="btn btn-sm btn-primary w-100">
                                                 <i class="bi bi-cash-stack"></i> Lançamentos
                                             </a>
+                                            <button class="btn btn-sm btn-outline-info w-100 btn-history-adesao" data-id="{{ adesao.id }}">
+                                                <i class="bi bi-clock-history"></i> Histórico
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -182,4 +191,70 @@
         </div>
     </div>
 </div>
+{% endblock %}
+{% block extra_js %}
+<div class="modal fade" id="historyAdesaoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Histórico da Adesão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="history-adesao-loading" class="text-center py-3 d-none">
+                        <div class="spinner-border" role="status"><span class="visually-hidden">Carregando...</span></div>
+                </div>
+                <div class="table-responsive">
+                        <table class="table table-sm table-striped align-middle" id="history-adesao-table">
+                                <thead class="table-light">
+                                        <tr>
+                                                <th>Data</th>
+                                                <th>Usuário</th>
+                                                <th>Tipo</th>
+                                                <th>Alterações</th>
+                                        </tr>
+                                </thead>
+                                <tbody></tbody>
+                        </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.btn-history-adesao');
+    if(!btn) return;
+    const id = btn.getAttribute('data-id');
+    const modalEl = document.getElementById('historyAdesaoModal');
+    const tbody = modalEl.querySelector('tbody');
+    tbody.innerHTML = '';
+    modalEl.querySelector('#history-adesao-loading').classList.remove('d-none');
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+    try {
+        const resp = await fetch(`${window.location.origin}${window.location.pathname}historico/${id}/`);
+        if(!resp.ok) throw new Error('Falha ao carregar histórico');
+        const data = await resp.json();
+        const hist = data.history || [];
+        hist.forEach(entry => {
+                const tr = document.createElement('tr');
+                const tipoMap = { '+': 'Criação', '~': 'Atualização', '-': 'Exclusão' };
+                const alteracoes = entry.changes.map(c => `<div><span class='badge bg-secondary'>${c.field}</span> <strong>${c.old===null?'<em>(vazio)</em>':c.old}</strong> → <strong>${c.new===null?'<em>(vazio)</em>':c.new}</strong></div>`).join('');
+                const note = entry.note ? `<div class='text-muted small'>${entry.note}</div>` : '';
+                tr.innerHTML = `<td>${entry.history_date}</td><td>${entry.history_user||'-'}</td><td>${tipoMap[entry.history_type]||entry.history_type}</td><td>${alteracoes||note||'<span class="text-muted">Nenhuma alteração</span>'}</td>`;
+                tbody.appendChild(tr);
+        });
+    } catch(err) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td colspan='4' class='text-danger'>${err.message}</td>`;
+        tbody.appendChild(tr);
+    } finally {
+        modalEl.querySelector('#history-adesao-loading').classList.add('d-none');
+    }
+});
+</script>
 {% endblock %}

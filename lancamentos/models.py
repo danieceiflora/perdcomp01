@@ -2,6 +2,7 @@ from django.db import models
 from adesao.models import Adesao
 from django.urls import reverse
 from datetime import datetime, timedelta
+from simple_history.models import HistoricalRecords
 
 class Lancamentos(models.Model):
     id_adesao = models.ForeignKey(
@@ -188,6 +189,9 @@ class Lancamentos(models.Model):
         # Salva a adesão com o novo saldo
         adesao.save(update_fields=['saldo_atual'])
 
+    # Audit trail
+    historico = HistoricalRecords()
+
 class Anexos(models.Model):
     id_lancamento = models.ForeignKey(
         Lancamentos,
@@ -219,6 +223,9 @@ class Anexos(models.Model):
         auto_now_add=True,
         verbose_name='Data de Upload'
     )
+
+    # Audit trail
+    historico = HistoricalRecords()
     
     def __str__(self):
         return self.nome_anexo or f"Anexo {self.id}" or "Anexo sem nome"
