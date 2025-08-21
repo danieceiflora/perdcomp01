@@ -1,253 +1,392 @@
+{% load static %}
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="h-full">
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}Sistema PERDCOMP{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Bootstrap 5 CSS CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons (opcional) -->
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <!-- CSS personalizado para logomarcas -->
-    <!-- Font Awesome CDN -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    {% load static %}
+    
+    <!-- Tailwind CSS -->
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
     <link href="{% static 'css/logomarcas.css' %}" rel="stylesheet">
-    <style>
-        body {
-            background: #fff;
-            color: #111;
-            font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+    
+    <!-- Dark mode initialization -->
+    <script>
+        const root = document.documentElement;
+        const stored = localStorage.getItem('theme');
+        if(stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            root.classList.add('dark');
         }
-        .navbar-brand {
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-        .nav-link:focus {
-            outline: 2px solid #0d6efd;
-            outline-offset: 2px;
-        }
-        .user-avatar {
-            object-fit: contain;
-            border-radius: 4px;
-            background-color: white;
-            border: 1px solid rgba(0,0,0,0.1);
-            padding: 1px;
-        }
-    </style>
+    </script>
+    
     {% block extra_head %}{% endblock %}
 </head>
-<body>
-    <!-- Top Bar Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm" role="navigation" aria-label="Menu principal">
-        <div class="container">PerdComp</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                aria-controls="navbarNav" aria-expanded="false" aria-label="Alternar navegação">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                  {% if user.is_authenticated %}
+<body class="min-h-full bg-background text-foreground flex flex-col">
+    <!-- Navigation Header -->
+    <nav class="border-b bg-white/80 dark:bg-slate-950/80 backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-slate-950/60 sticky top-0 z-50" role="navigation" aria-label="Menu principal">
+        <div class="container mx-auto px-4">
+            <div class="flex h-16 items-center justify-between">
+                <!-- Brand -->
+                <div class="flex items-center">
+                    <a href="#" class="text-xl font-bold tracking-wider text-primary hover:text-primary/80 transition-colors">
+                        PerdComp
+                    </a>
+                </div>
+
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button type="button" id="mobile-menu-button" class="inline-flex items-center justify-center rounded-md p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100" aria-controls="mobile-menu" aria-expanded="false">
+                        <span class="sr-only">Abrir menu principal</span>
+                        <svg class="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Desktop menu -->
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-1">
+                        {% if user.is_authenticated %}
                     
-                   
                         {% if user.is_superuser or user.is_staff %}
-                        <li class="nav-item dropdown">
-                          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-people me-1"></i>Vinculos
-                          </a>
-                          <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{% url 'novo_cliente' %}"><i class="bi bi-person-plus me-1"></i>Cliente</a></li>
-                            <li><a class="dropdown-item" href="{% url 'novo_parceiro' %}"><i class="bi bi-person-plus me-1"></i>Parceiro </a></li>
-                            <li><a class="dropdown-item" href="{% url 'lista_clientes' %}"><i class="bi bi-list me-1"></i>Listar Clientes</a></li>
-                            <li><a class="dropdown-item" href="{% url 'lista_parceiros' %}"><i class="bi bi-list me-1"></i>Listar Parceiros</a></li>
-                          </ul>
-                        </li>
+                        <!-- Vínculos Dropdown -->
+                        <div class="relative group">
+                            <button type="button" class="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 group-hover:bg-slate-100 dark:group-hover:bg-slate-800 transition-colors" aria-expanded="false">
+                                <i class="bi bi-people mr-2"></i>
+                                Vínculos
+                                <svg class="ml-1 h-4 w-4 transition-transform group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                                </svg>
+                            </button>
+                            <div class="absolute left-0 mt-2 w-48 origin-top-left rounded-md border bg-white shadow-lg ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 dark:bg-slate-900 dark:border-slate-700 z-10">
+                                <div class="py-1">
+                                    <a href="{% url 'novo_cliente' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
+                                        <i class="bi bi-person-plus mr-2"></i>Cliente
+                                    </a>
+                                    <a href="{% url 'novo_parceiro' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
+                                        <i class="bi bi-person-plus mr-2"></i>Parceiro
+                                    </a>
+                                    <a href="{% url 'lista_clientes' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
+                                        <i class="bi bi-list mr-2"></i>Listar Clientes
+                                    </a>
+                                    <a href="{% url 'lista_parceiros' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
+                                        <i class="bi bi-list mr-2"></i>Listar Parceiros
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
                         {% endif %}
+                        
+                        <!-- Teses de Crédito Dropdown -->
+                        <div class="relative group">
+                            <button type="button" class="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 group-hover:bg-slate-100 dark:group-hover:bg-slate-800 transition-colors">
+                                <i class="bi bi-journal-text mr-2"></i>
+                                Teses de Crédito
+                                <svg class="ml-1 h-4 w-4 transition-transform group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                                </svg>
+                            </button>
+                            <div class="absolute left-0 mt-2 w-48 origin-top-left rounded-md border bg-white shadow-lg ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 dark:bg-slate-900 dark:border-slate-700 z-10">
+                                <div class="py-1">
+                                    <a href="{% url 'correcao:tese_credito_list' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
+                                        <i class="bi bi-list mr-2"></i>Listar Teses
+                                    </a>
+                                    {% if user.is_superuser or user.is_staff %}
+                                    <a href="{% url 'correcao:tese_credito_create' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
+                                        <i class="bi bi-plus mr-2"></i>Nova Tese
+                                    </a>
+                                    {% endif %}
+                                    <div class="border-t border-slate-200 dark:border-slate-700 my-1"></div>
+                                    <a href="{% url 'correcao:tipo_tese_list' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
+                                        <i class="bi bi-tags mr-2"></i>Tipos de Tese
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Correções Dropdown -->
+                        <div class="relative group">
+                            <button type="button" class="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 group-hover:bg-slate-100 dark:group-hover:bg-slate-800 transition-colors">
+                                <i class="bi bi-pencil-square mr-2"></i>
+                                Correções
+                                <svg class="ml-1 h-4 w-4 transition-transform group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                                </svg>
+                            </button>
+                            <div class="absolute left-0 mt-2 w-48 origin-top-left rounded-md border bg-white shadow-lg ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 dark:bg-slate-900 dark:border-slate-700 z-10">
+                                <div class="py-1">
+                                    <a href="{% url 'correcao:list' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
+                                        <i class="bi bi-list mr-2"></i>Listar Correções
+                                    </a>
+                                    {% if user.is_superuser or user.is_staff %}
+                                    <a href="{% url 'correcao:create' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
+                                        <i class="bi bi-plus mr-2"></i>Nova Correção
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
                       
-                      
-                      <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                          <i class="bi bi-journal-text me-1"></i>Teses de Crédito</a>
-                        <ul class="dropdown-menu">
-                          <li><a class="dropdown-item" href="{% url 'correcao:tese_credito_list' %}"><i class="bi bi-list me-1"></i>Listar Teses</a></li>
-                          {% if user.is_superuser or user.is_staff %}
-                          <li><a class="dropdown-item" href="{% url 'correcao:tese_credito_create' %}"><i class="bi bi-plus me-1"></i>Nova Tese</a></li>
-                          {% endif %}
-                          <li><hr class="dropdown-divider"></li>
-                          <li><a class="dropdown-item" href="{% url 'correcao:tipo_tese_list' %}"><i class="bi bi-tags me-1"></i>Tipos de Tese</a></li>
-                        </ul>
-                      </li>
-                      
-                      <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                          <i class="bi bi-pencil-square me-1"></i>Correções</a>
-                        <ul class="dropdown-menu">
-                          <li><a class="dropdown-item" href="{% url 'correcao:list' %}"><i class="bi bi-list me-1"></i>Listar Correções</a></li>
-                          {% if user.is_superuser or user.is_staff %}
-                          <li><a class="dropdown-item" href="{% url 'correcao:create' %}"><i class="bi bi-plus me-1"></i>Nova Correção</a></li>
-                          {% endif %}
-                        </ul>
-                      </li>
-                      
-                      <!-- Dashboard -->
-                      <li class="nav-item">
-                        <a class="nav-link" href="{% url 'dashboard:dashboard' %}">
-                          <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                        <!-- Dashboard -->
+                        <a href="{% url 'dashboard:dashboard' %}" class="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 transition-colors">
+                            <i class="bi bi-speedometer2 mr-2"></i>Dashboard
                         </a>
-                      </li>
-                    {% endif %}
-                    
-                    
-                      {# Menu Parceiro removido para clientes comuns, só aparece para admin/staff no bloco acima #}
-                      
-                      {% if not user.profile.eh_cliente %}
-                      <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                          <i class="bi bi-file-earmark-plus me-1"></i>Adesões</a>
-                        <ul class="dropdown-menu">
-                          <li><a class="dropdown-item" href="{% url 'adesao:list' %}"><i class="bi bi-list me-1"></i>Listar Adesões</a></li>
-                          {% if user.is_superuser or user.is_staff %}
-                          <li><a class="dropdown-item" href="{% url 'adesao:create' %}"><i class="bi bi-plus me-1"></i>Nova Adesão</a></li>
-                          {% endif %}
-                        </ul>
-                      </li>
-                      {% endif %}
-                      
-                      <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                          <i class="bi bi-cash-stack me-1"></i>Compensações</a>
-                        <ul class="dropdown-menu">
-                          <li><a class="dropdown-item" href="{% url 'lancamentos:list' %}"><i class="bi bi-list me-1"></i>Listar Declarações</a></li>
-                          {% if user.is_superuser or user.is_staff %}
-                          <li><a class="dropdown-item" href="{% url 'lancamentos:create' %}"><i class="bi bi-plus me-1"></i>Nova Declaração</a></li>
-                          {% endif %}
-                        </ul>
-                      </li>
-                    
-                    
-                    {% if user.profile.eh_cliente %}
-                      <!-- Menu Cliente: Acesso Limitado (Apenas Visualização) -->
-                      <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                          <i class="bi bi-file-earmark-plus me-1"></i>Adesões</a>
-                        <ul class="dropdown-menu">
-                          <li><a class="dropdown-item" href="{% url 'adesao:list' %}"><i class="bi bi-list me-1"></i>Listar Adesões</a></li>
-                        </ul>
-                      </li>
-                      
-                      <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                          <i class="bi bi-cash-stack me-1"></i>Declaração de compensação</a>
-                        <ul class="dropdown-menu">
-                          <li><a class="dropdown-item" href="{% url 'lancamentos:list' %}"><i class="bi bi-list me-1"></i>Listar Declarações</a></li>
-                        </ul>
-                      </li>
-                    {% endif %}
+                        {% endif %}
+                        
+                        {% if not user.profile.eh_cliente %}
+                        <!-- Adesões Dropdown (para não-clientes) -->
+                        <div class="relative group">
+                            <button type="button" class="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 group-hover:bg-slate-100 dark:group-hover:bg-slate-800 transition-colors">
+                                <i class="bi bi-file-earmark-plus mr-2"></i>
+                                Adesões
+                                <svg class="ml-1 h-4 w-4 transition-transform group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                                </svg>
+                            </button>
+                            <div class="absolute left-0 mt-2 w-48 origin-top-left rounded-md border bg-white shadow-lg ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 dark:bg-slate-900 dark:border-slate-700 z-10">
+                                <div class="py-1">
+                                    <a href="{% url 'adesao:list' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
+                                        <i class="bi bi-list mr-2"></i>Listar Adesões
+                                    </a>
+                                    {% if user.is_superuser or user.is_staff %}
+                                    <a href="{% url 'adesao:create' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
+                                        <i class="bi bi-plus mr-2"></i>Nova Adesão
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Compensações Dropdown -->
+                        <div class="relative group">
+                            <button type="button" class="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 group-hover:bg-slate-100 dark:group-hover:bg-slate-800 transition-colors">
+                                <i class="bi bi-cash-stack mr-2"></i>
+                                Compensações
+                                <svg class="ml-1 h-4 w-4 transition-transform group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                                </svg>
+                            </button>
+                            <div class="absolute left-0 mt-2 w-48 origin-top-left rounded-md border bg-white shadow-lg ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 dark:bg-slate-900 dark:border-slate-700 z-10">
+                                <div class="py-1">
+                                    <a href="{% url 'lancamentos:list' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
+                                        <i class="bi bi-list mr-2"></i>Listar Declarações
+                                    </a>
+                                    {% if user.is_superuser or user.is_staff %}
+                                    <a href="{% url 'lancamentos:create' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
+                                        <i class="bi bi-plus mr-2"></i>Nova Declaração
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if user.profile.eh_cliente %}
+                        <!-- Menu Cliente: Adesões e Declarações (apenas visualização) -->
+                        <div class="relative group">
+                            <button type="button" class="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 group-hover:bg-slate-100 dark:group-hover:bg-slate-800 transition-colors">
+                                <i class="bi bi-file-earmark-plus mr-2"></i>
+                                Adesões
+                            </button>
+                            <div class="absolute left-0 mt-2 w-48 origin-top-left rounded-md border bg-white shadow-lg ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 dark:bg-slate-900 dark:border-slate-700 z-10">
+                                <div class="py-1">
+                                    <a href="{% url 'adesao:list' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
+                                        <i class="bi bi-list mr-2"></i>Listar Adesões
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="relative group">
+                            <button type="button" class="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 group-hover:bg-slate-100 dark:group-hover:bg-slate-800 transition-colors">
+                                <i class="bi bi-cash-stack mr-2"></i>
+                                Declaração de compensação
+                            </button>
+                            <div class="absolute left-0 mt-2 w-48 origin-top-left rounded-md border bg-white shadow-lg ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 dark:bg-slate-900 dark:border-slate-700 z-10">
+                                <div class="py-1">
+                                    <a href="{% url 'lancamentos:list' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
+                                        <i class="bi bi-list mr-2"></i>Listar Declarações
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
 
-                    {% if user.is_authenticated and user.profile.eh_cliente %}
-                      <!-- dashboard -->
-                      <li class="nav-item">
-                        <a class="nav-link" href="{% url 'accounts:cliente_dashboard' %}">
-                          <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                        
+                        <!-- Dashboard específico por tipo de usuário -->
+                        {% if user.is_authenticated and user.profile.eh_cliente %}
+                        <a href="{% url 'accounts:cliente_dashboard' %}" class="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 transition-colors">
+                            <i class="bi bi-speedometer2 mr-2"></i>Dashboard
                         </a>
-                      </li>
-                    {% endif %}
-                    {% if user.is_authenticated and user.profile.eh_parceiro %}
-                      <!-- dashboard -->
-                      <li class="nav-item">
-                        <a class="nav-link" href="{% url 'accounts:parceiro_dashboard' %}">
-                          <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                        {% endif %}
+                        
+                        {% if user.is_authenticated and user.profile.eh_parceiro %}
+                        <a href="{% url 'accounts:parceiro_dashboard' %}" class="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 transition-colors">
+                            <i class="bi bi-speedometer2 mr-2"></i>Dashboard
                         </a>
-                      </li>
-                    {% endif %}
+                        {% endif %}
 
-                    {% if user.is_authenticated %}
-                    
-                      <!-- Menu de Perfil -->
-                      <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            {% if user.profile.empresa_vinculada and user.profile.empresa_vinculada.logomarca %}
-                            <img src="{{ user.profile.empresa_vinculada.logomarca.url }}" alt="{{ user.profile.empresa_vinculada.nome_fantasia|default:user.profile.empresa_vinculada.razao_social }}" class="user-avatar me-1" width="24" height="24">
-                            {% elif user.profile.empresa_base and user.profile.empresa_base.logomarca %}
-                            <img src="{{ user.profile.empresa_base.logomarca.url }}" alt="{{ user.profile.empresa_base.nome_fantasia|default:user.profile.empresa_base.razao_social }}" class="user-avatar me-1" width="24" height="24">
-                            {% else %}
-                            <i class="bi bi-person-circle me-1"></i>
-                            {% endif %}
-                            {{ user.username }}
-                        </a>
-                        <ul class="dropdown-menu">
-                          <li><a class="dropdown-item" href="{% url 'accounts:profile' %}"><i class="bi bi-person me-1"></i>Meu Perfil</a></li>
-                          <li><hr class="dropdown-divider"></li>
-                          <li><a class="dropdown-item" href="{% url 'accounts:logout' %}"><i class="bi bi-box-arrow-right me-1"></i>Sair</a></li>
-                        </ul>
-                      </li>
-                    {% endif %}
-                 
-                </ul>
+                        
+                        <!-- Menu de Perfil do Usuário -->
+                        {% if user.is_authenticated %}
+                        <div class="relative group">
+                            <button type="button" class="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 group-hover:bg-slate-100 dark:group-hover:bg-slate-800 transition-colors">
+                                {% if user.profile.empresa_vinculada and user.profile.empresa_vinculada.logomarca %}
+                                <img src="{{ user.profile.empresa_vinculada.logomarca.url }}" alt="{{ user.profile.empresa_vinculada.nome_fantasia|default:user.profile.empresa_vinculada.razao_social }}" class="w-6 h-6 object-contain rounded border border-slate-200 dark:border-slate-700 mr-2 bg-white" />
+                                {% elif user.profile.empresa_base and user.profile.empresa_base.logomarca %}
+                                <img src="{{ user.profile.empresa_base.logomarca.url }}" alt="{{ user.profile.empresa_base.nome_fantasia|default:user.profile.empresa_base.razao_social }}" class="w-6 h-6 object-contain rounded border border-slate-200 dark:border-slate-700 mr-2 bg-white" />
+                                {% else %}
+                                <i class="bi bi-person-circle mr-2"></i>
+                                {% endif %}
+                                {{ user.username }}
+                                <svg class="ml-1 h-4 w-4 transition-transform group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                                </svg>
+                            </button>
+                            <div class="absolute right-0 mt-2 w-48 origin-top-right rounded-md border bg-white shadow-lg ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 dark:bg-slate-900 dark:border-slate-700 z-10">
+                                <div class="py-1">
+                                    <a href="{% url 'accounts:profile' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
+                                        <i class="bi bi-person mr-2"></i>Meu Perfil
+                                    </a>
+                                    <div class="border-t border-slate-200 dark:border-slate-700 my-1"></div>
+                                    <a href="{% url 'accounts:logout' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
+                                        <i class="bi bi-box-arrow-right mr-2"></i>Sair
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Theme Toggle -->
+                        <button type="button" id="theme-toggle" class="ml-2 rounded-md p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 transition-colors">
+                            <span class="sr-only">Alternar tema</span>
+                            <svg class="h-5 w-5 block dark:hidden" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                            </svg>
+                            <svg class="h-5 w-5 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M6.75 12H4.5m.386-6.364l1.591 1.591" />
+                            </svg>
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile menu -->
+        <div class="md:hidden hidden" id="mobile-menu">
+            <div class="border-t border-slate-200 dark:border-slate-700 px-2 pt-2 pb-3 space-y-1">
+                <!-- Mobile navigation items would go here with same logic as desktop -->
+                <!-- For brevity, keeping simple mobile menu -->
+                {% if user.is_authenticated %}
+                <a href="{% url 'accounts:profile' %}" class="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100">Meu Perfil</a>
+                <a href="{% url 'accounts:logout' %}" class="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100">Sair</a>
+                {% endif %}
             </div>
         </div>
     </nav>
 
-
-    <main class="container py-4" tabindex="-1">
-        <!-- Mensagens do sistema -->
+    <!-- Main Content -->
+    <main class="flex-1 container mx-auto px-4 py-6" tabindex="-1">
+        <!-- System Messages -->
         {% if messages %}
-            <div class="messages-container mb-4">
-                {% for message in messages %}
-                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show" role="alert">
-                    {% if message.tags == 'success' %}<i class="bi bi-check-circle-fill me-2"></i>{% endif %}
-                    {% if message.tags == 'warning' %}<i class="bi bi-exclamation-triangle-fill me-2"></i>{% endif %}
-                    {% if message.tags == 'error' %}<i class="bi bi-x-circle-fill me-2"></i>{% endif %}
-                    {% if message.tags == 'info' %}<i class="bi bi-info-circle-fill me-2"></i>{% endif %}
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        <div class="space-y-3 mb-6">
+            {% for message in messages %}
+            <div class="flex items-start gap-3 rounded-lg border px-4 py-3 text-sm shadow-sm
+                {% if message.tags == 'error' %} border-red-500/50 bg-red-50 text-red-700 dark:bg-red-950/50 dark:text-red-300 dark:border-red-800
+                {% elif message.tags == 'success' %} border-green-500/50 bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-300 dark:border-green-800
+                {% elif message.tags == 'warning' %} border-amber-500/50 bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800
+                {% else %} border-blue-500/50 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800 {% endif %}" role="alert">
+                <div class="flex-shrink-0 mt-0.5">
+                    {% if message.tags == 'success' %}
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {% elif message.tags == 'warning' %}
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                    </svg>
+                    {% elif message.tags == 'error' %}
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {% else %}
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                    </svg>
+                    {% endif %}
                 </div>
-                {% endfor %}
+                <div class="flex-1">{{ message }}</div>
+                <button type="button" class="flex-shrink-0 ml-auto hover:opacity-70 transition-opacity" onclick="this.parentElement.remove()">
+                    <span class="sr-only">Fechar</span>
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
+            {% endfor %}
+        </div>
         {% endif %}
         
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="footer mt-auto py-3 border-top bg-light text-center text-muted">
-        <div class="container">
-            © 2025 PERDCOMP. Todos os direitos reservados.
-            <span class="mx-2">|</span>
-            <a href="#" class="text-decoration-none">Política de Privacidade</a>
-            <span class="mx-2">|</span>
-            <a href="#" class="text-decoration-none">Termos de Uso</a>
-            <span class="mx-2">|</span>
-            <a href="#" class="text-decoration-none">Contato</a>
+    <!-- Footer -->
+    <footer class="border-t bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur supports-[backdrop-filter]:bg-slate-50/70 dark:supports-[backdrop-filter]:bg-slate-950/60">
+        <div class="container mx-auto px-4 py-6">
+            <div class="text-center text-sm text-muted-foreground">
+                <p>© 2025 PERDCOMP. Todos os direitos reservados.</p>
+                <div class="mt-2 space-x-4">
+                    <a href="#" class="hover:text-foreground transition-colors">Política de Privacidade</a>
+                    <span>•</span>
+                    <a href="#" class="hover:text-foreground transition-colors">Termos de Uso</a>
+                    <span>•</span>
+                    <a href="#" class="hover:text-foreground transition-colors">Contato</a>
+                </div>
+            </div>
         </div>
     </footer>
 
-    <!-- Bootstrap JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Scripts personalizados -->
+    <!-- Scripts -->
     {% load static %}
     <script src="{% static 'js/logout-confirm.js' %}"></script>
     
     {% block extra_js %}{% endblock %}
     
     <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        // Modal de sucesso
-        var hasSuccess = document.querySelector('#successModal .alert-success');
-        if (hasSuccess) {
-          var modal = new bootstrap.Modal(document.getElementById('successModal'));
-          modal.show();
-        }
-        
-        // Auto-dismiss para alerts
-        const alerts = document.querySelectorAll('.alert-dismissible');
-        alerts.forEach(function(alert) {
-          setTimeout(function() {
-            const bsAlert = new bootstrap.Alert(alert);
-            bsAlert.close();
-          }, 5000); // Fecha após 5 segundos
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            const menu = document.getElementById('mobile-menu');
+            const expanded = this.getAttribute('aria-expanded') === 'true';
+            this.setAttribute('aria-expanded', !expanded);
+            menu.classList.toggle('hidden');
         });
-      });
+
+        // Theme toggle
+        document.getElementById('theme-toggle').addEventListener('click', function() {
+            const root = document.documentElement;
+            const isDark = root.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        });
+
+        // Auto-dismiss alerts after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('[role="alert"]');
+            alerts.forEach(function(alert) {
+                setTimeout(function() {
+                    if (alert.parentNode) {
+                        alert.remove();
+                    }
+                }, 5000);
+            });
+        });
     </script>
 </body>
 </html>

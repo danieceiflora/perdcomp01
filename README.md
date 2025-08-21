@@ -20,7 +20,7 @@ O PERDCOMP é um sistema web desenvolvido em Django para gerenciar relacionament
 - Django REST Framework
 - SQLite (padrão, pode ser adaptado para outros bancos)
 - Jazzmin (admin customizado)
-- Bootstrap (frontend)
+- Tailwind CSS (frontend – migração em andamento a partir do Bootstrap)
 
 ## Estrutura de Pastas
 - `accounts/` - Usuários e perfis
@@ -34,11 +34,35 @@ O PERDCOMP é um sistema web desenvolvido em Django para gerenciar relacionament
 - `utils/` - Utilitários e filtros customizados
 
 ## Como rodar o projeto
-1. Instale as dependências: `pip install -r requirements.txt`
-2. Execute as migrações: `python manage.py migrate`
-3. Crie um superusuário: `python manage.py createsuperuser`
-4. Inicie o servidor: `python manage.py runserver`
-5. Acesse o sistema em `http://localhost:8000/`
+1. Instale as dependências Python: `pip install -r requirements.txt`
+2. (Opcional para desenvolvimento de frontend) Instale dependências Node: `npm install`
+3. Execute as migrações: `python manage.py migrate`
+4. Crie um superusuário: `python manage.py createsuperuser`
+5. Em ambiente de desenvolvimento, rode em paralelo:
+	- `python manage.py runserver`
+	- `npm run dev` (gera `perdcomp/static/css/app.css` via Tailwind)
+6. Produção: execute `npm run build` e colete estáticos: `python manage.py collectstatic`
+7. Acesse o sistema em `http://localhost:8000/`
+
+## Migração para Tailwind / Design System
+Arquivos criados:
+- `package.json` + `postcss.config.js` + `tailwind.config.js`
+- `perdcomp/static/src/input.css` => gera `perdcomp/static/css/app.css`
+- Template novo de exemplo: `accounts/templates/accounts/admin_login_tailwind.html`
+
+Padrões adotados (shadcn/ui inspired):
+- Tokens HSL via CSS variables (`:root` e `.dark`)
+- Componentes utilitários (`.btn-primary`, `.input`, `.card` etc.) via `@apply`
+- Suporte a dark mode (`dark` class no `<html>`)
+
+Próximos passos sugeridos:
+1. Converter navbar global e layout base para Tailwind.
+2. Criar partials de componentes (ex: `components/button.html`).
+3. Remover links CDN de Bootstrap após conversão total.
+4. Implementar toggle de tema global.
+5. Revisar acessibilidade (contraste / foco).
+
+Para usar o novo login (exemplo), a view pode temporariamente renderizar `admin_login_tailwind.html` até a substituição final.
 
 ## Observações
 - O sistema está preparado para customizações e integrações futuras.

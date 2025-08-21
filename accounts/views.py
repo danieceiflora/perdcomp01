@@ -11,7 +11,7 @@ class AdminLoginView(LoginView):
     """
     View de login para usuários administrativos (staff/superuser)
     """
-    template_name = 'accounts/admin_login.html'
+    template_name = 'accounts/admin_login_tailwind.html'
     
     def get_success_url(self):
         # Redireciona para o dashboard administrativo ou home
