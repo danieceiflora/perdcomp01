@@ -73,16 +73,15 @@ class LancamentosForm(forms.ModelForm):
 
     class Meta:
         model = Lancamentos
-        fields = ['id_adesao', 'metodo_escolhido', 'data_lancamento', 'valor', 'sinal', 'tipo', 'descricao',
+        fields = ['id_adesao', 'metodo_escolhido', 'data_lancamento', 'valor', 'tipo', 'descricao',
                   'lanc_total_credito_original_utilizado', 'lanc_debito', 'lanc_periodo_apuracao',
                   'lanc_debito_r', 'lanc_periodo_apuracao_r', 'lanc_total_r',
-                  'metodo', 'total', 'total_credito_original_utilizado', 'periodo_apuracao', 
+                  'metodo', 'total', 'total_credito_original_utilizado', 'periodo_apuracao',
                   'periodo_apuracao_r', 'debito', 'debito_r']
         widgets = {
             'id_adesao': forms.Select(attrs={'class': 'form-select'}),
             'data_lancamento': forms.DateInput(attrs={'class': 'form-control','type': 'date'}),
             'valor': forms.HiddenInput(),
-            'sinal': forms.Select(attrs={'class': 'form-select'}),
             'tipo': forms.Select(attrs={'class': 'form-select'}),
             'descricao': forms.Textarea(attrs={'class': 'form-control','placeholder': 'Observações adicionais','rows': 3}),
         }
@@ -104,7 +103,7 @@ class LancamentosForm(forms.ModelForm):
                 self.add_error('lanc_total_credito_original_utilizado', 'Informe o valor.')
             else:
                 cleaned['valor'] = float(total_cr)
-                cleaned['sinal'] = '-'  # DÉBITO - diminui o saldo
+                cleaned['sinal'] = '-'  # sempre débito
                 # Persistir dados originais
                 cleaned['total_credito_original_utilizado'] = float(total_cr)
                 cleaned['debito'] = cleaned.get('lanc_debito') or 0
@@ -117,7 +116,7 @@ class LancamentosForm(forms.ModelForm):
                 self.add_error('lanc_total_r', 'Informe o total.')
             else:
                 cleaned['valor'] = float(total_r)
-                cleaned['sinal'] = '-'  # DÉBITO - diminui o saldo (recurso usado)
+                cleaned['sinal'] = '-'  # sempre débito
                 # Persistir dados originais
                 cleaned['total'] = float(total_r)
                 cleaned['debito_r'] = cleaned.get('lanc_debito_r') or 0

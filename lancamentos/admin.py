@@ -27,8 +27,8 @@ class LancamentoAdminForm(forms.ModelForm):
 @admin.register(Lancamentos)
 class LancamentosAdmin(SimpleHistoryAdmin):
     form = LancamentoAdminForm
-    list_display = ('id', 'id_adesao', 'data_lancamento', 'valor', 'sinal')
-    list_filter = ('sinal',)
+    list_display = ('id', 'id_adesao', 'data_lancamento', 'valor')
+    list_filter = ()
     search_fields = ('id_adesao__perdcomp',)
     readonly_fields = ('data_criacao', 'saldo_restante')
     inlines = [AnexosInline]

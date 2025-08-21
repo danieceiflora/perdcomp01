@@ -35,8 +35,8 @@
                                     </tr>
                                     <tr>
                                         <th>Valor do Lançamento:</th>
-                                        <td class="{% if lancamento.sinal == '+' %}text-success{% else %}text-danger{% endif %}">
-                                            <strong>{{ lancamento.sinal }} R$ {{ lancamento.valor|floatformat:2 }}</strong>
+                                        <td class="text-danger">
+                                            <strong>- R$ {{ lancamento.valor|floatformat:2 }}</strong>
                                         </td>
                                     </tr>
                                     <tr>

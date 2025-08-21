@@ -30,7 +30,7 @@ class Lancamentos(models.Model):
             ('+', 'Crédito'),
             ('-', 'Débito'),
         ],
-        default='+',
+    default='-',
         verbose_name='Sinal do Lançamento',
         help_text='Indica se o lançamento é um crédito ou débito'
     )
