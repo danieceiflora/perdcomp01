@@ -220,15 +220,15 @@
 
 <!-- History Modal -->
 <div id="historyModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 hidden z-50">
-    <div class="bg-background rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
-        <div class="flex items-center justify-between p-6 border-b">
+    <div class="bg-background rounded-lg shadow-xl w-full max-w-md sm:max-w-xl md:max-w-2xl lg:max-w-3xl" style="height: 80vh; display: flex; flex-direction: column;">
+        <div class="flex items-center justify-between px-6 py-4 border-b" style="flex-shrink: 0;">
             <h3 class="text-lg font-semibold">Histórico de Alterações</h3>
             <button type="button" class="rounded-md p-2 hover:bg-accent transition-colors" onclick="closeHistoryModal()">
                 <i class="bi bi-x text-xl"></i>
             </button>
         </div>
         
-        <div class="max-h-96 overflow-y-auto">
+        <div class="px-6 py-4" style="flex: 1; overflow-y: auto; min-height: 0;">
             <div id="historyLoading" class="text-center py-8 hidden">
                 <div class="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                 <p class="text-muted-foreground">Carregando histórico...</p>
@@ -236,7 +236,7 @@
             <div id="historyContent"></div>
         </div>
         
-        <div class="flex justify-end p-6 border-t">
+        <div class="flex justify-end px-6 py-4 border-t" style="flex-shrink: 0;">
             <button type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground" onclick="closeHistoryModal()">
                 Fechar
             </button>

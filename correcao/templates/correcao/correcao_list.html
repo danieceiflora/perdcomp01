@@ -4,99 +4,138 @@
 {% block title %}Lista de Correções{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3 class="card-title">Lista de Correções</h3>
-                    <a href="{% url 'correcao:create' %}" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Nova Correção
-                    </a>
-                </div>
-                <div class="card-body">
-                    {% if correcoes %}
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Código Origem</th>
-                                        <th>Descrição</th>
-                                        <th>Fonte da Correção</th>
-                                        <th>Ações</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for correcao in correcoes %}
-                                    <tr>
-                                        <td>{{ correcao.id }}</td>
-                                        {% if correcao.cod_origem != None%}                             
-                                            <td>{{ correcao.cod_origem }}</td>                              
-                                        {% else %}
-                                            <td></td>
-                                        {% endif %}
-                                        <td>{{ correcao.descricao }}</td>
-                                        <td>{{ correcao.fonte_correcao }}</td>
-                                        <td>
-                                            <div class="d-flex">
-                                                <a href="{% url 'correcao:update' correcao.pk %}" class="btn btn-sm btn-warning me-1">
-                                                    <i class="fas fa-edit"></i> Editar
-                                                </a>
-                                                <button type="button" class="btn btn-sm btn-info me-1 btn-history" data-id="{{ correcao.id }}">
-                                                    <i class="fas fa-history"></i> Histórico
-                                                </button>
-                                                {% with total=correcao.teses_total|default:correcao.tesecredito_set.count %}
-                                                    {% if total == 0 %}
-                                                        <a href="{% url 'correcao:delete' correcao.pk %}" class="btn btn-sm btn-danger">
-                                                            <i class="fas fa-trash"></i> Excluir
-                                                        </a>
-                                                    {% else %}
-                                                        <button type="button" class="btn btn-sm btn-secondary" disabled data-bs-toggle="tooltip" title="Há {{ total }} tese(s) vinculada(s)">
-                                                            <i class="fas fa-lock"></i> Excluir
-                                                        </button>
-                                                    {% endif %}
-                                                {% endwith %}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        
-                        {% if is_paginated %}
-                        <nav aria-label="Page navigation">
-                            <ul class="pagination justify-content-center">
-                                {% if page_obj.has_previous %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
-                                    </li>
-                                {% endif %}
-                                
-                                <li class="page-item active">
-                                    <span class="page-link">
-                                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
-                                    </span>
-                                </li>
-                                
-                                {% if page_obj.has_next %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Próximo</a>
-                                    </li>
-                                {% endif %}
-                            </ul>
-                        </nav>
-                        {% endif %}
-                    {% else %}
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i> Nenhuma correção cadastrada.
-                        </div>
-                    {% endif %}
-                </div>
+<div class="max-w-7xl mx-auto">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-foreground flex items-center gap-2">
+                    <i class="bi bi-file-earmark-check"></i>
+                    Lista de Correções
+                </h1>
+                <p class="text-muted-foreground mt-1">Gerenciar correções e suas teses de crédito</p>
             </div>
+            <a href="{% url 'correcao:create' %}" class="btn-primary">
+                <i class="bi bi-plus-lg mr-2"></i>Nova Correção
+            </a>
         </div>
     </div>
+
+    {% if correcoes %}
+    <!-- Corrections Table -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="text-lg font-semibold">Correções ({{ correcoes|length }})</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="border-b">
+                    <tr class="text-left">
+                        <th class="px-6 py-4 text-sm font-medium text-muted-foreground">ID</th>
+                        <th class="px-6 py-4 text-sm font-medium text-muted-foreground">Código Origem</th>
+                        <th class="px-6 py-4 text-sm font-medium text-muted-foreground">Descrição</th>
+                        <th class="px-6 py-4 text-sm font-medium text-muted-foreground">Fonte da Correção</th>
+                        <th class="px-6 py-4 text-sm font-medium text-muted-foreground">Ações</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y">
+                    {% for correcao in correcoes %}
+                    <tr class="hover:bg-muted/50 transition-colors">
+                        <td class="px-6 py-4">
+                            <span class="font-medium text-foreground">{{ correcao.id }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if correcao.cod_origem != None %}
+                                <span class="text-foreground">{{ correcao.cod_origem }}</span>
+                            {% else %}
+                                <span class="text-muted-foreground">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="max-w-xs">
+                                <p class="text-foreground truncate" title="{{ correcao.descricao }}">{{ correcao.descricao }}</p>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-foreground">{{ correcao.fonte_correcao }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <a href="{% url 'correcao:update' correcao.pk %}" 
+                                   class="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                   title="Editar">
+                                    <i class="bi bi-pencil mr-1"></i>Editar
+                                </a>
+                                <button type="button" 
+                                        class="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring btn-history" 
+                                        data-id="{{ correcao.id }}"
+                                        title="Ver histórico">
+                                    <i class="bi bi-clock-history mr-1"></i>Histórico
+                                </button>
+                                {% with total=correcao.teses_total|default:correcao.tesecredito_set.count %}
+                                    {% if total == 0 %}
+                                        <a href="{% url 'correcao:delete' correcao.pk %}" 
+                                           class="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-xs font-medium transition-colors hover:bg-destructive hover:text-destructive-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                           title="Excluir">
+                                            <i class="bi bi-trash mr-1"></i>Excluir
+                                        </a>
+                                    {% else %}
+                                        <button type="button" 
+                                                class="inline-flex items-center justify-center rounded-md border border-input bg-muted px-3 py-2 text-xs font-medium text-muted-foreground cursor-not-allowed" 
+                                                disabled 
+                                                title="Há {{ total }} tese(s) vinculada(s)">
+                                            <i class="bi bi-lock mr-1"></i>Excluir
+                                        </button>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <div class="flex items-center justify-center mt-6">
+            <nav class="flex items-center gap-2">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}" 
+                       class="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                        Anterior
+                    </a>
+                {% endif %}
+                
+                <span class="inline-flex items-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground">
+                    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                </span>
+                
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}" 
+                       class="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                        Próximo
+                    </a>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="card">
+        <div class="card-content text-center py-12">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                <i class="bi bi-file-earmark-check text-2xl text-muted-foreground"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-foreground mb-2">Nenhuma correção cadastrada</h3>
+            <p class="text-muted-foreground mb-4">Comece criando sua primeira correção.</p>
+            <a href="{% url 'correcao:create' %}" class="btn-primary">
+                <i class="bi bi-plus-lg mr-2"></i>Nova Correção
+            </a>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 {% block scripts %}

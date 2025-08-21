@@ -4,193 +4,273 @@
 {% block title %}Lista de Teses de Crédito{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3 class="card-title">Lista de Teses de Crédito</h3>
-                    <a href="{% url 'correcao:tese_credito_create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus"></i> Nova Tese de Crédito
-                    </a>
+<div class="container mx-auto px-4 py-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-foreground flex items-center gap-2">
+                        <i class="bi bi-file-earmark-text"></i>
+                        Lista de Teses de Crédito
+                    </h1>
+                    <p class="text-muted-foreground mt-1">Gerenciar teses de crédito e suas correções</p>
                 </div>
-                <div class="card-body">
-                    {% if teses_credito %}
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Tipo de Tese</th>
-                                        <th>Código Origem</th>
-                                        <th>Descrição</th>
-                                        <th>Aplica Correção</th>
-                                        <th>Valor Correção</th>
-                                        <th>Ações</th>
-                                        <th>Histórico</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for tese in teses_credito %}
-                                    <tr>
-                                        <td>{{ tese.id }}</td>
-                                        <td>{{ tese.id_tipo_tese }}</td>
-                                        {% if tese.cod_origem != None %}
-                                            <td>{{ tese.cod_origem }}</td>
-                                        {% else %}
-                                            <td></td>
-                                        {% endif %}
-                                        <td>{{ tese.descricao }}</td>
-                                        <td>
-                                            {% if tese.corrige %}
-                                                <span class="badge bg-success">Sim</span>
-                                            {% else %}
-                                                <span class="badge bg-danger">Não</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>{{ tese.correcao|default_if_none:"--" }}</td>
-                                        <td>
-                                            <div class="d-flex">
-                                                <a href="{% url 'correcao:tese_credito_update' tese.pk %}" class="btn btn-sm btn-warning me-1">
-                                                    <i class="bi bi-pencil"></i> Editar
+                <a href="{% url 'correcao:tese_credito_create' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
+                    <i class="bi bi-plus-lg mr-2"></i>Nova Tese de Crédito
+                </a>
+            </div>
+        </div>
+
+        {% if teses_credito %}
+        <!-- Teses de Crédito Table -->
+        <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+            <div class="flex flex-col space-y-1.5 p-6 border-b">
+                <h3 class="text-lg font-semibold">Teses de Crédito ({{ teses_credito|length }})</h3>
+            </div>
+            <div class="p-6">
+                <div class="overflow-x-auto">
+                    <table class="w-full caption-bottom text-sm">
+                        <thead class="[&_tr]:border-b">
+                            <tr class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">ID</th>
+                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">Tipo de Tese</th>
+                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">Código Origem</th>
+                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">Descrição</th>
+                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">Aplica Correção</th>
+                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">Valor Correção</th>
+                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody class="[&_tr:last-child]:border-0">
+                            {% for tese in teses_credito %}
+                            <tr class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                                <td class="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                                    <span class="font-medium text-foreground">{{ tese.id }}</span>
+                                </td>
+                                <td class="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                                    <span class="text-foreground">{{ tese.id_tipo_tese }}</span>
+                                </td>
+                                <td class="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                                    {% if tese.cod_origem != None %}
+                                        <span class="text-foreground">{{ tese.cod_origem }}</span>
+                                    {% else %}
+                                        <span class="text-muted-foreground">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                                    <div class="max-w-xs">
+                                        <p class="text-foreground truncate" title="{{ tese.descricao }}">{{ tese.descricao }}</p>
+                                    </div>
+                                </td>
+                                <td class="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                                    {% if tese.corrige %}
+                                        <span class="inline-flex items-center rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:text-green-300">
+                                            <i class="bi bi-check-circle mr-1"></i>Sim
+                                        </span>
+                                    {% else %}
+                                        <span class="inline-flex items-center rounded-full bg-red-500/10 px-2.5 py-0.5 text-xs font-medium text-red-700 dark:text-red-300">
+                                            <i class="bi bi-x-circle mr-1"></i>Não
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                                    <span class="text-foreground">{{ tese.correcao|default_if_none:"--" }}</span>
+                                </td>
+                                <td class="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                                    <div class="flex items-center gap-2">
+                                        <a href="{% url 'correcao:tese_credito_update' tese.pk %}" 
+                                           class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3"
+                                           title="Editar">
+                                            <i class="bi bi-pencil mr-1"></i>Editar
+                                        </a>
+                                        <button type="button" 
+                                                class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3 btn-history" 
+                                                data-history-id="{{ tese.pk }}"
+                                                title="Ver histórico">
+                                            <i class="bi bi-clock-history mr-1"></i>Histórico
+                                        </button>
+                                        {% with total=tese.adesoes_total|default:tese.adesoes.count %}
+                                            {% if total == 0 %}
+                                                <a href="{% url 'correcao:tese_credito_delete' tese.pk %}" 
+                                                   class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-destructive text-destructive-foreground hover:bg-destructive/90 h-8 px-3"
+                                                   title="Excluir">
+                                                    <i class="bi bi-trash mr-1"></i>Excluir
                                                 </a>
-                                                {% with total=tese.adesoes_total|default:tese.adesoes.count %}
-                                                    {% if total == 0 %}
-                                                        <a href="{% url 'correcao:tese_credito_delete' tese.pk %}" class="btn btn-sm btn-danger">
-                                                            <i class="bi bi-trash"></i> Excluir
-                                                        </a>
-                                                    {% else %}
-                                                        <button type="button" class="btn btn-sm btn-secondary" disabled data-bs-toggle="tooltip" title="Há {{ total }} adesão(ões) vinculada(s)">
-                                                            <i class="bi bi-lock"></i> Excluir
-                                                        </button>
-                                                    {% endif %}
-                                                {% endwith %}
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <button type="button" class="btn btn-sm btn-outline-secondary btn-history" data-history-id="{{ tese.pk }}" title="Histórico">
-                                                <i class="bi bi-clock-history"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        
-                        {% if is_paginated %}
-                        <nav aria-label="Page navigation">
-                            <ul class="pagination justify-content-center">
-                                {% if page_obj.has_previous %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
-                                    </li>
-                                {% endif %}
-                                
-                                <li class="page-item active">
-                                    <span class="page-link">
-                                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
-                                    </span>
-                                </li>
-                                
-                                {% if page_obj.has_next %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Próximo</a>
-                                    </li>
-                                {% endif %}
-                            </ul>
-                        </nav>
-                        {% endif %}
-                    {% else %}
-                        <div class="alert alert-info">
-                            <i class="bi bi-info-circle"></i> Nenhuma tese de crédito cadastrada.
-                        </div>
+                                            {% else %}
+                                                <button type="button" 
+                                                        class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-muted text-muted-foreground cursor-not-allowed h-8 px-3" 
+                                                        disabled 
+                                                        title="Há {{ total }} adesão(ões) vinculada(s)">
+                                                    <i class="bi bi-lock mr-1"></i>Excluir
+                                                </button>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                            
+                {% if is_paginated %}
+                <div class="flex items-center justify-center space-x-2 mt-6 pt-4 border-t">
+                    {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}" 
+                           class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
+                            <i class="bi bi-chevron-left mr-1"></i>Anterior
+                        </a>
                     {% endif %}
+                    
+                    <span class="px-3 py-2 text-sm text-muted-foreground">
+                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                    </span>
+                    
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}" 
+                           class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
+                            Próximo<i class="bi bi-chevron-right ml-1"></i>
+                        </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+            <div class="flex items-center justify-center p-12">
+                <div class="text-center">
+                    <i class="bi bi-info-circle text-4xl text-muted-foreground mb-4"></i>
+                    <p class="text-muted-foreground">Nenhuma tese de crédito cadastrada.</p>
+                    <a href="{% url 'correcao:tese_credito_create' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 mt-4">
+                        <i class="bi bi-plus mr-2"></i>Nova Tese de Crédito
+                    </a>
                 </div>
             </div>
         </div>
+        {% endif %}
     </div>
 </div>
+{% endblock %}
 
-<!-- Modal Histórico Tese -->
-<div class="modal fade" id="historyModal" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-clock-history"></i> Histórico da Tese de Crédito</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<!-- History Modal (Tailwind overlay style) -->
+<div id="historyModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 hidden z-50" role="dialog" aria-modal="true" aria-labelledby="historyModalTitle">
+    <div class="bg-background rounded-lg shadow-xl w-full max-w-md sm:max-w-xl md:max-w-2xl lg:max-w-3xl" style="height: 80vh; display: flex; flex-direction: column;">
+        <div class="flex items-center justify-between px-6 py-4 border-b" style="flex-shrink: 0;">
+            <h3 id="historyModalTitle" class="text-lg font-semibold flex items-center gap-2"><i class="bi bi-clock-history"></i>Histórico da Tese de Crédito</h3>
+            <button type="button" class="rounded-md p-2 hover:bg-accent transition-colors" onclick="closeHistoryModal()" aria-label="Fechar modal">
+                <i class="bi bi-x text-xl"></i>
+            </button>
+        </div>
+        <div class="px-6 py-4" style="flex: 1; overflow-y: auto; min-height: 0;" id="historyScrollArea">
+            <div id="historyLoading" class="text-center py-12 hidden">
+                <div class="w-10 h-10 border-2 border-primary/40 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
+                <p class="text-muted-foreground">Carregando histórico...</p>
             </div>
-            <div class="modal-body">
-                <div id="historyLoading" class="text-center py-4 d-none">
-                    <div class="spinner-border text-primary" role="status"></div>
-                    <p class="mt-2 text-muted">Carregando histórico...</p>
-                </div>
-                <div id="historyContent"></div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-            </div>
+            <div id="historyContent" class="space-y-4"></div>
+        </div>
+        <div class="flex justify-end px-6 py-4 border-t bg-muted/30" style="flex-shrink: 0;">
+            <button type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground" onclick="closeHistoryModal()">Fechar</button>
         </div>
     </div>
 </div>
 
 {% block scripts %}
 <script>
-function historyBadge(t){
-    if(t==='+') return '<span class="badge bg-success"><i class="bi bi-plus"></i> Criação</span>';
-    if(t==='~') return '<span class="badge bg-warning text-dark"><i class="bi bi-pencil"></i> Alteração</span>';
-    if(t==='-') return '<span class="badge bg-danger"><i class="bi bi-trash"></i> Exclusão</span>';
-    return '<span class="badge bg-secondary">?</span>';
+// Badge do tipo de alteração
+function historyBadge(type){
+    if(type === '+') return '<span class="inline-flex items-center rounded-full bg-green-500/10 px-2 py-1 text-xs font-medium text-green-700 dark:text-green-300"><i class="bi bi-plus mr-1"></i> Criação</span>';
+    if(type === '~') return '<span class="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-700 dark:text-amber-300"><i class="bi bi-pencil mr-1"></i> Alteração</span>';
+    if(type === '-') return '<span class="inline-flex items-center rounded-full bg-red-500/10 px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300"><i class="bi bi-trash mr-1"></i> Exclusão</span>';
+    return '<span class="inline-flex items-center rounded-full bg-slate-500/10 px-2 py-1 text-xs font-medium text-slate-700 dark:text-slate-300">?</span>';
 }
+
+function openHistoryModal(){
+    document.getElementById('historyModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+function closeHistoryModal(){
+    document.getElementById('historyModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+// Garante que o modal exista (fallback caso template parcial falhe ou cache antigo)
+function ensureHistoryModal(){
+    let modal = document.getElementById('historyModal');
+    if(!modal){
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = `\n<div id=\"historyModal\" class=\"fixed inset-0 bg-black/50 flex items-center justify-center p-4 hidden z-50\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"historyModalTitle\">\n  <div class=\"bg-background rounded-lg shadow-xl w-full max-w-md sm:max-w-xl md:max-w-2xl lg:max-w-3xl\" style=\"height: 80vh; display: flex; flex-direction: column;\">\n    <div class=\"flex items-center justify-between px-6 py-4 border-b\" style=\"flex-shrink: 0;\">\n      <h3 id=\"historyModalTitle\" class=\"text-lg font-semibold flex items-center gap-2\"><i class=\"bi bi-clock-history\"></i>Histórico da Tese de Crédito</h3>\n      <button type=\"button\" class=\"rounded-md p-2 hover:bg-accent transition-colors\" onclick=\"closeHistoryModal()\" aria-label=\"Fechar modal\"><i class=\"bi bi-x text-xl\"></i></button>\n    </div>\n    <div class=\"px-6 py-4\" style=\"flex: 1; overflow-y: auto; min-height: 0;\">\n      <div id=\"historyLoading\" class=\"text-center py-12 hidden\">\n        <div class=\"w-10 h-10 border-2 border-primary/40 border-t-primary rounded-full animate-spin mx-auto mb-4\"></div>\n        <p class=\"text-muted-foreground\">Carregando histórico...</p>\n      </div>\n      <div id=\"historyContent\" class=\"space-y-4\"></div>\n    </div>\n    <div class=\"flex justify-end px-6 py-4 border-t bg-muted/30\" style=\"flex-shrink: 0;\">\n      <button type=\"button\" class=\"inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground\" onclick=\"closeHistoryModal()\">Fechar</button>\n    </div>\n  </div>\n</div>`;
+        document.body.appendChild(wrapper.firstElementChild);
+        modal = document.getElementById('historyModal');
+    }
+    return modal;
+}
+
 function loadHistory(id){
-    const modal = new bootstrap.Modal(document.getElementById('historyModal'));
-    document.getElementById('historyContent').innerHTML='';
-    document.getElementById('historyLoading').classList.remove('d-none');
-    modal.show();
+    ensureHistoryModal();
+    const content = document.getElementById('historyContent');
+    const loading = document.getElementById('historyLoading');
+    if(!content || !loading){
+        console.error('Elementos de histórico não encontrados após ensureHistoryModal');
+        return;
+    }
+    content.innerHTML = '';
+    loading.classList.remove('hidden');
+    openHistoryModal();
     fetch(`/correcoes/tese-credito/historico/${id}/`)
-        .then(r=>r.json())
-        .then(data=>{
-            const wrap = document.getElementById('historyContent');
-            document.getElementById('historyLoading').classList.add('d-none');
+        .then(r => r.json())
+        .then(data => {
+            if(!content){ return; }
+            loading.classList.add('hidden');
             if(!data.history || !data.history.length){
-                wrap.innerHTML = '<p class="text-muted">Sem histórico.</p>';return;
+                content.innerHTML = '<p class="text-muted-foreground text-center py-8">Sem histórico disponível.</p>';
+                return;
             }
-            let html='';
-            data.history.forEach(entry=>{
-                html += `<div class=\"border rounded p-2 mb-2\">`+
-                    `<div class=\"d-flex justify-content-between small mb-2\">`+
-                    `<span><i class=\"bi bi-clock\" ></i> ${entry.history_date}</span>`+
-                    `<span>${historyBadge(entry.history_type)} ${entry.history_user? ' - <i class=\\"bi bi-person\\"></i> '+entry.history_user:''}</span>`+
+            let html = '<div class="space-y-4">';
+            data.history.forEach(entry => {
+                html += `<div class="card">\n<div class=\"card-content\">`+
+                    `<div class=\"flex items-center justify-between mb-3\">`+
+                    `<span class=\"text-sm text-muted-foreground flex items-center gap-1\"><i class=\"bi bi-clock\"></i>${entry.history_date}</span>`+
+                    `<div class=\"flex items-center gap-2\">${historyBadge(entry.history_type)} ${entry.history_user? `<span class=\"text-xs text-muted-foreground flex items-center gap-1\"><i class=\"bi bi-person\"></i>${entry.history_user}</span>`:''}</div>`+
                     `</div>`;
-                if(entry.changes.length){
-                    html += '<ul class="mb-0 small">';
-                    entry.changes.forEach(ch=>{
-                        html += `<li><strong>${ch.field}</strong>: <code>${ch.old===null?'-':ch.old}</code> &rarr; <code>${ch.new===null?'-':ch.new}</code></li>`;
+                if(entry.changes && entry.changes.length){
+                    html += '<div class="space-y-2">';
+                    entry.changes.forEach(ch => {
+                        html += `<div class=\"flex items-center justify-between text-sm border rounded-md p-2 bg-muted/50\">`+
+                                `<strong class=\"text-foreground\">${ch.field}</strong>`+
+                                `<div class=\"flex items-center gap-2 text-xs\">`+
+                                `<code class=\"bg-red-500/10 text-red-700 dark:text-red-300 px-2 py-1 rounded\">${ch.old===null?'-':ch.old}</code>`+
+                                `<i class=\"bi bi-arrow-right text-muted-foreground\"></i>`+
+                                `<code class=\"bg-green-500/10 text-green-700 dark:text-green-300 px-2 py-1 rounded\">${ch.new===null?'-':ch.new}</code>`+
+                                `</div></div>`;
                     });
-                    html += '</ul>';
+                    html += '</div>';
                 } else {
-                    html += `<p class=\"text-muted mb-0 small\">${entry.note || '(Sem diferenças registradas)'}</p>`;
+                    html += `<p class=\"text-muted-foreground text-sm\">${entry.note || '(Sem diferenças registradas)'}</p>`;
                 }
-                html += '</div>';
+                html += '</div></div>';
             });
-            wrap.innerHTML = html;
+            html += '</div>';
+            content.innerHTML = html;
         })
-        .catch(()=>{
-            document.getElementById('historyLoading').classList.add('d-none');
-            document.getElementById('historyContent').innerHTML = '<p class="text-danger">Erro ao carregar histórico.</p>';
+        .catch(() => {
+            if(loading) loading.classList.add('hidden');
+            if(content) content.innerHTML = '<p class="text-destructive text-center py-8">Erro ao carregar histórico.</p>';
         });
 }
-document.addEventListener('click', e=>{
+
+// Delegação de evento para botões de histórico
+document.addEventListener('click', function(e){
     const btn = e.target.closest('.btn-history');
     if(btn){
-        loadHistory(btn.getAttribute('data-history-id'));
+        const id = btn.getAttribute('data-history-id');
+        if(id) loadHistory(id);
     }
 });
-// tooltips existentes
-document.addEventListener('DOMContentLoaded', function() {
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (el) { return new bootstrap.Tooltip(el); });
-});
+// Fechar com ESC
+document.addEventListener('keydown', function(e){ if(e.key==='Escape'){ closeHistoryModal(); }});
+// Fechar ao clicar no backdrop
+document.getElementById('historyModal').addEventListener('click', function(e){ if(e.target === this){ closeHistoryModal(); }});
 </script>
-{% endblock %}
 {% endblock %}

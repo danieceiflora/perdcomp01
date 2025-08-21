@@ -1,77 +1,92 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load form_tags %}
 
 {% block title %}
     {% if object %}Editar Correção{% else %}Nova Correção{% endif %}
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        {% if object %}
-                            <i class="fas fa-edit"></i> Editar Correção
-                        {% else %}
-                            <i class="fas fa-plus"></i> Nova Correção
+<div class="max-w-4xl mx-auto">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <h1 class="text-2xl font-bold text-foreground flex items-center gap-2">
+            {% if object %}
+                <i class="bi bi-pencil"></i>
+                Editar Correção
+            {% else %}
+                <i class="bi bi-plus-lg"></i>
+                Nova Correção
+            {% endif %}
+        </h1>
+        <p class="text-muted-foreground mt-1">
+            {% if object %}Atualize os dados da correção{% else %}Preencha os dados para criar uma nova correção{% endif %}
+        </p>
+    </div>
+
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+        
+        <!-- Form Fields -->
+        <div class="card">
+            <div class="card-content">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="{{ form.cod_origem.id_for_label }}" class="block text-sm font-medium text-foreground mb-2">
+                            {{ form.cod_origem.label }}
+                        </label>
+                        {{ form.cod_origem|add_class:"input" }}
+                        {% if form.cod_origem.errors %}
+                            <p class="text-sm text-destructive mt-1">{{ form.cod_origem.errors.0 }}</p>
                         {% endif %}
-                    </h3>
+                    </div>
+                    <div>
+                        <label for="{{ form.descricao.id_for_label }}" class="block text-sm font-medium text-foreground mb-2">
+                            {{ form.descricao.label }}
+                        </label>
+                        {{ form.descricao|add_class:"input" }}
+                        {% if form.descricao.errors %}
+                            <p class="text-sm text-destructive mt-1">{{ form.descricao.errors.0 }}</p>
+                        {% endif %}
+                    </div>
                 </div>
-                <form method="post" class="card-body">
-                    {% csrf_token %}
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                {{ form.cod_origem.label_tag }}
-                                {{ form.cod_origem }}
-                                {% if form.cod_origem.errors %}
-                                    <div class="text-danger">
-                                        {{ form.cod_origem.errors }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                {{ form.descricao.label_tag }}
-                                {{ form.descricao }}
-                                {% if form.descricao.errors %}
-                                    <div class="text-danger">
-                                        {{ form.descricao.errors }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-12">
-                            <div class="form-group">
-                                {{ form.fonte_correcao.label_tag }}
-                                {{ form.fonte_correcao }}
-                                {% if form.fonte_correcao.errors %}
-                                    <div class="text-danger">
-                                        {{ form.fonte_correcao.errors }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="card-footer">
-                        <button type="submit" class="btn btn-success">
-                            <i class="fas fa-save"></i> Salvar
-                        </button>
-                        <a href="{% url 'correcao:list' %}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Voltar
-                        </a>
-                    </div>
-                </form>
+                
+                <div class="mt-6">
+                    <label for="{{ form.fonte_correcao.id_for_label }}" class="block text-sm font-medium text-foreground mb-2">
+                        {{ form.fonte_correcao.label }}
+                    </label>
+                    {{ form.fonte_correcao|add_class:"input" }}
+                    {% if form.fonte_correcao.errors %}
+                        <p class="text-sm text-destructive mt-1">{{ form.fonte_correcao.errors.0 }}</p>
+                    {% endif %}
+                </div>
             </div>
         </div>
-    </div>
+        
+        <!-- Action Buttons -->
+        <div class="flex justify-between items-center">
+            <a href="{% url 'correcao:list' %}" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <i class="bi bi-arrow-left mr-2"></i>Voltar
+            </a>
+            <button type="submit" class="btn-primary">
+                <i class="bi bi-check-lg mr-2"></i>Salvar
+            </button>
+        </div>
+    </form>
 </div>
+
+{% block extra_js %}
+<script>
+// Add class helper for Django forms with Tailwind
+document.addEventListener('DOMContentLoaded', function() {
+    // Add Tailwind classes to form fields
+    const inputs = document.querySelectorAll('input:not([type="hidden"]):not([type="file"]), select, textarea');
+    inputs.forEach(input => {
+        if (!input.classList.contains('input')) {
+            input.classList.add('input');
+        }
+    });
+});
+</script>
+{% endblock %}
 {% endblock %}

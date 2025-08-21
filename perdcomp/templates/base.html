@@ -356,9 +356,14 @@
 
     <!-- Scripts -->
     {% load static %}
+    <!-- Bootstrap JS (necessário para modais / tooltips usados atualmente) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{% static 'js/logout-confirm.js' %}"></script>
     
+    {# Bloco existente para páginas que já usam 'extra_js' #}
     {% block extra_js %}{% endblock %}
+    {# Novo bloco para compatibilidade com templates que usam 'scripts' #}
+    {% block scripts %}{% endblock %}
     
     <script>
         // Mobile menu toggle

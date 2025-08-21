@@ -4,158 +4,177 @@
 {% block title %}Lista de Tipos de Tese{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3 class="card-title">Lista de Tipos de Tese</h3>
-                    <a href="{% url 'correcao:tipo_tese_create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus"></i> Novo Tipo de Tese
-                    </a>
-                </div>
-                <div class="card-body">
-                    {% if tipos_tese %}
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Descrição</th>
-                                        <th>Periodicidade</th>
-                                        <th>Ações</th>
-                                        <th>Histórico</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for tipo in tipos_tese %}
-                                    <tr>
-                                        <td>{{ tipo.id }}</td>
-                                        <td>{{ tipo.descricao }}</td>
-                                        <td>{{ tipo.periodicidade }}</td>
-                                        <td>
-                                            <a href="{% url 'correcao:tipo_tese_update' tipo.pk %}" class="btn btn-sm btn-warning me-1">
-                                                <i class="bi bi-pencil"></i> Editar
+<div class="container mx-auto px-4 py-6">
+    <div class="max-w-7xl mx-auto">
+        <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+            <div class="flex flex-col space-y-1.5 p-6 border-b sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+                <h3 class="text-2xl font-semibold leading-none tracking-tight">Lista de Tipos de Tese</h3>
+                <a href="{% url 'correcao:tipo_tese_create' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
+                    <i class="bi bi-plus mr-2"></i>Novo Tipo de Tese
+                </a>
+            </div>
+            <div class="p-6">
+                {% if tipos_tese %}
+                    <div class="overflow-x-auto">
+                        <table class="w-full caption-bottom text-sm">
+                            <thead class="[&_tr]:border-b">
+                                <tr class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">ID</th>
+                                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">Descrição</th>
+                                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">Periodicidade</th>
+                                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">Ações</th>
+                                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">Histórico</th>
+                                </tr>
+                            </thead>
+                            <tbody class="[&_tr:last-child]:border-0">
+                                {% for tipo in tipos_tese %}
+                                <tr class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                                    <td class="p-4 align-middle [&:has([role=checkbox])]:pr-0">{{ tipo.id }}</td>
+                                    <td class="p-4 align-middle [&:has([role=checkbox])]:pr-0 font-medium">{{ tipo.descricao }}</td>
+                                    <td class="p-4 align-middle [&:has([role=checkbox])]:pr-0">{{ tipo.periodicidade }}</td>
+                                    <td class="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                                        <div class="flex items-center gap-2">
+                                            <a href="{% url 'correcao:tipo_tese_update' tipo.pk %}" 
+                                               class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3">
+                                                <i class="bi bi-pencil mr-1"></i>Editar
                                             </a>
                                             {% with total=tipo.tesecredito_set.count %}
                                                 {% if total == 0 %}
-                                                    <a href="{% url 'correcao:tipo_tese_delete' tipo.pk %}" class="btn btn-sm btn-danger">
-                                                        <i class="bi bi-trash"></i> Excluir
+                                                    <a href="{% url 'correcao:tipo_tese_delete' tipo.pk %}" 
+                                                       class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-destructive text-destructive-foreground hover:bg-destructive/90 h-8 px-3">
+                                                        <i class="bi bi-trash mr-1"></i>Excluir
                                                     </a>
                                                 {% else %}
-                                                    <button type="button" class="btn btn-sm btn-secondary" disabled data-bs-toggle="tooltip" title="Há {{ total }} tese(s) vinculada(s)">
-                                                        <i class="bi bi-lock"></i> Excluir
+                                                    <button type="button" 
+                                                            class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-muted text-muted-foreground cursor-not-allowed h-8 px-3" 
+                                                            disabled 
+                                                            data-bs-toggle="tooltip" 
+                                                            title="Há {{ total }} tese(s) vinculada(s)">
+                                                        <i class="bi bi-lock mr-1"></i>Excluir
                                                     </button>
                                                 {% endif %}
                                             {% endwith %}
-                                        </td>
-                                        <td>
-                                            <button type="button" class="btn btn-sm btn-outline-secondary btn-history" data-history-id="{{ tipo.pk }}" title="Histórico"><i class="bi bi-clock-history"></i></button>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        
-                        {% if is_paginated %}
-                        <nav aria-label="Page navigation">
-                            <ul class="pagination justify-content-center">
-                                {% if page_obj.has_previous %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
-                                    </li>
-                                {% endif %}
-                                
-                                <li class="page-item active">
-                                    <span class="page-link">
-                                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
-                                    </span>
-                                </li>
-                                
-                                {% if page_obj.has_next %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Próximo</a>
-                                    </li>
-                                {% endif %}
-                            </ul>
-                        </nav>
+                                        </div>
+                                    </td>
+                                    <td class="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                                        <button type="button" 
+                                                class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 w-8 btn-history" 
+                                                data-history-id="{{ tipo.pk }}" 
+                                                title="Histórico">
+                                            <i class="bi bi-clock-history"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {% if is_paginated %}
+                    <div class="flex items-center justify-center space-x-2 mt-6 pt-4 border-t">
+                        {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}" 
+                               class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
+                                <i class="bi bi-chevron-left mr-1"></i>Anterior
+                            </a>
                         {% endif %}
-                    {% else %}
-                        <div class="alert alert-info">
-                            <i class="bi bi-info-circle"></i> Nenhum tipo de tese cadastrado.
-                        </div>
+                        
+                        <span class="px-3 py-2 text-sm text-muted-foreground">
+                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                        </span>
+                        
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}" 
+                               class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
+                                Próximo<i class="bi bi-chevron-right ml-1"></i>
+                            </a>
+                        {% endif %}
+                    </div>
                     {% endif %}
-                </div>
+                {% else %}
+                    <div class="flex items-center justify-center p-12">
+                        <div class="text-center">
+                            <i class="bi bi-info-circle text-4xl text-muted-foreground mb-4"></i>
+                            <p class="text-muted-foreground">Nenhum tipo de tese cadastrado.</p>
+                            <a href="{% url 'correcao:tipo_tese_create' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 mt-4">
+                                <i class="bi bi-plus mr-2"></i>Novo Tipo de Tese
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
+</div>
+
 <!-- Modal Histórico Tipo Tese -->
 <div class="modal fade" id="historyModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-clock-history"></i> Histórico do Tipo de Tese</h5>
+        <div class="modal-content rounded-lg border shadow-lg">
+            <div class="modal-header border-b bg-muted/40 rounded-t-lg">
+                <h5 class="modal-title font-semibold text-lg"><i class="bi bi-clock-history mr-2"></i>Histórico do Tipo de Tese</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                <div id="historyLoading" class="text-center py-4 d-none">
-                    <div class="spinner-border text-primary" role="status"></div>
-                    <p class="mt-2 text-muted">Carregando histórico...</p>
+            <div class="modal-body bg-background">
+                <div id="historyLoading" class="hidden text-center py-8">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <p class="mt-2 text-muted-foreground">Carregando histórico...</p>
                 </div>
                 <div id="historyContent"></div>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            <div class="modal-footer border-t bg-muted/40 rounded-b-lg">
+                <button class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2" data-bs-dismiss="modal">
+                    Fechar
+                </button>
             </div>
         </div>
     </div>
 </div>
-</div>
+
 {% block scripts %}
 <script>
 function historyBadge(t){
-    if(t==='+') return '<span class="badge bg-success"><i class="bi bi-plus"></i> Criação</span>';
-    if(t==='~') return '<span class="badge bg-warning text-dark"><i class="bi bi-pencil"></i> Alteração</span>';
-    if(t==='-') return '<span class="badge bg-danger"><i class="bi bi-trash"></i> Exclusão</span>';
-    return '<span class="badge bg-secondary">?</span>';
+    if(t==='+') return '<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"><i class="bi bi-plus mr-1"></i> Criação</span>';
+    if(t==='~') return '<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"><i class="bi bi-pencil mr-1"></i> Alteração</span>';
+    if(t==='-') return '<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"><i class="bi bi-trash mr-1"></i> Exclusão</span>';
+    return '<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300">?</span>';
 }
 function loadHistory(id){
     const modal = new bootstrap.Modal(document.getElementById('historyModal'));
     document.getElementById('historyContent').innerHTML='';
-    document.getElementById('historyLoading').classList.remove('d-none');
+    document.getElementById('historyLoading').classList.remove('hidden');
     modal.show();
     fetch(`/correcoes/tipo-tese/historico/${id}/`)
         .then(r=>r.json())
         .then(data=>{
             const wrap = document.getElementById('historyContent');
-            document.getElementById('historyLoading').classList.add('d-none');
+            document.getElementById('historyLoading').classList.add('hidden');
             if(!data.history || !data.history.length){
-                wrap.innerHTML = '<p class="text-muted">Sem histórico.</p>';return;
+                wrap.innerHTML = '<p class="text-muted-foreground">Sem histórico.</p>';return;
             }
             let html='';
             data.history.forEach(entry=>{
-                html += `<div class=\"border rounded p-2 mb-2\">`+
-                    `<div class=\"d-flex justify-content-between small mb-2\">`+
-                    `<span><i class=\"bi bi-clock\"></i> ${entry.history_date}</span>`+
-                    `<span>${historyBadge(entry.history_type)} ${entry.history_user? ' - <i class=\\"bi bi-person\\"></i> '+entry.history_user:''}</span>`+
+                html += `<div class=\"rounded-lg border p-4 mb-4 bg-card\">`+
+                    `<div class=\"flex justify-between items-start text-sm mb-3\">`+
+                    `<span class=\"text-muted-foreground\"><i class=\"bi bi-clock mr-1\"></i> ${entry.history_date}</span>`+
+                    `<span class=\"flex items-center gap-2\">${historyBadge(entry.history_type)} ${entry.history_user? '<span class=\"text-muted-foreground\"><i class=\"bi bi-person mr-1\"></i>'+entry.history_user+'</span>':''}</span>`+
                     `</div>`;
                 if(entry.changes.length){
-                    html += '<ul class="mb-0 small">';
+                    html += '<ul class="space-y-1 text-sm">';
                     entry.changes.forEach(ch=>{
-                        html += `<li><strong>${ch.field}</strong>: <code>${ch.old===null?'-':ch.old}</code> &rarr; <code>${ch.new===null?'-':ch.new}</code></li>`;
+                        html += `<li class="flex items-center gap-2"><strong class="text-foreground">${ch.field}</strong>: <code class="px-1.5 py-0.5 rounded bg-muted text-muted-foreground text-xs">${ch.old===null?'-':ch.old}</code> <i class="bi bi-arrow-right text-muted-foreground"></i> <code class="px-1.5 py-0.5 rounded bg-muted text-muted-foreground text-xs">${ch.new===null?'-':ch.new}</code></li>`;
                     });
                     html += '</ul>';
                 } else {
-                    html += `<p class=\"text-muted mb-0 small\">${entry.note || '(Sem diferenças registradas)'}</p>`;
+                    html += `<p class=\"text-muted-foreground text-sm\">${entry.note || '(Sem diferenças registradas)'}</p>`;
                 }
                 html += '</div>';
             });
             wrap.innerHTML = html;
         })
         .catch(()=>{
-            document.getElementById('historyLoading').classList.add('d-none');
-            document.getElementById('historyContent').innerHTML = '<p class="text-danger">Erro ao carregar histórico.</p>';
+            document.getElementById('historyLoading').classList.add('hidden');
+            document.getElementById('historyContent').innerHTML = '<p class="text-destructive">Erro ao carregar histórico.</p>';
         });
 }
 document.addEventListener('click', e=>{
@@ -163,6 +182,11 @@ document.addEventListener('click', e=>{
     if(btn){
         loadHistory(btn.getAttribute('data-history-id'));
     }
+});
+// tooltips existentes
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (el) { return new bootstrap.Tooltip(el); });
 });
 </script>
 {% endblock %}
