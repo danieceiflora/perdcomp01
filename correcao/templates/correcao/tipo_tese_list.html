@@ -34,12 +34,20 @@
                                         <td>{{ tipo.descricao }}</td>
                                         <td>{{ tipo.periodicidade }}</td>
                                         <td>
-                                            <a href="{% url 'correcao:tipo_tese_update' tipo.pk %}" class="btn btn-sm btn-warning">
+                                            <a href="{% url 'correcao:tipo_tese_update' tipo.pk %}" class="btn btn-sm btn-warning me-1">
                                                 <i class="bi bi-pencil"></i> Editar
                                             </a>
-                                            <a href="{% url 'correcao:tipo_tese_delete' tipo.pk %}" class="btn btn-sm btn-danger">
-                                                <i class="bi bi-trash"></i> Excluir
-                                            </a>
+                                            {% with total=tipo.tesecredito_set.count %}
+                                                {% if total == 0 %}
+                                                    <a href="{% url 'correcao:tipo_tese_delete' tipo.pk %}" class="btn btn-sm btn-danger">
+                                                        <i class="bi bi-trash"></i> Excluir
+                                                    </a>
+                                                {% else %}
+                                                    <button type="button" class="btn btn-sm btn-secondary" disabled data-bs-toggle="tooltip" title="Há {{ total }} tese(s) vinculada(s)">
+                                                        <i class="bi bi-lock"></i> Excluir
+                                                    </button>
+                                                {% endif %}
+                                            {% endwith %}
                                         </td>
                                         <td>
                                             <button type="button" class="btn btn-sm btn-outline-secondary btn-history" data-history-id="{{ tipo.pk }}" title="Histórico"><i class="bi bi-clock-history"></i></button>
@@ -117,7 +125,7 @@ function loadHistory(id){
     document.getElementById('historyContent').innerHTML='';
     document.getElementById('historyLoading').classList.remove('d-none');
     modal.show();
-    fetch(`/correcao/tipo-tese/historico/${id}/`)
+    fetch(`/correcoes/tipo-tese/historico/${id}/`)
         .then(r=>r.json())
         .then(data=>{
             const wrap = document.getElementById('historyContent');

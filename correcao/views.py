@@ -99,6 +99,10 @@ class tipoTeseDeleteView(AdminRequiredMixin, DeleteView):
     success_url = reverse_lazy('correcao:tipo_tese_list')
     
     def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if self.object.tesecredito_set.exists():
+            messages.error(self.request, 'Não é possível excluir: existem teses de crédito vinculadas.')
+            return redirect(self.success_url)
         messages.success(self.request, 'Tipo de tese excluído com sucesso!')
         return super().delete(request, *args, **kwargs)
 
