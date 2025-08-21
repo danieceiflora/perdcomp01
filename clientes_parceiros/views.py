@@ -8,7 +8,7 @@ from django.views.generic import CreateView, ListView, UpdateView
 from django.urls import reverse_lazy
 from django.db import transaction
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views import View
@@ -16,6 +16,9 @@ import json
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django import forms
 from django.db.models import Q
+from django.utils.timezone import localtime
+from django.utils.dateformat import format as date_format
+from django.contrib.auth.decorators import login_required
 
 from .models import ClientesParceiros
 from .forms import NovoClienteForm, ContatoFormSet, NovoParceiroForm
@@ -310,6 +313,102 @@ class ListParceirosView(LoginRequiredMixin, ListView):
         context['total_empresas_unicas'] = len(set(p.id_company_vinculada_id for p in parceiros))
         context['q'] = self.request.GET.get('q', '')
         return context
+
+
+# ============ HISTÓRICO (JSON) ============
+@login_required
+@require_GET
+def clientes_parceiros_history_json(request, pk):
+    """Retorna histórico JSON (cliente ou parceiro) com diffs campo a campo."""
+    try:
+        obj = ClientesParceiros.objects.get(pk=pk)
+    except ClientesParceiros.DoesNotExist:
+        raise Http404
+    manager = getattr(obj, 'history', None) or getattr(obj, 'historico', None)
+    if manager is None:
+        return JsonResponse({'error': 'Histórico não configurado.'}, status=400)
+    history = list(manager.all().order_by('history_date'))
+    result = []
+    def serialize_value(val):
+        from django.db.models import Model
+        import datetime
+        if val is None:
+            return None
+        if isinstance(val, Model):
+            # Prefer nome_fantasia/razao_social when Empresa
+            if hasattr(val, 'nome_fantasia') or hasattr(val, 'razao_social'):
+                try:
+                    return getattr(val, 'nome_fantasia') or getattr(val, 'razao_social') or str(val.pk)
+                except Exception:
+                    return str(val)
+            return str(val)
+        if isinstance(val, (datetime.datetime, datetime.date, datetime.time)):
+            try:
+                return val.isoformat()
+            except Exception:
+                return str(val)
+        if isinstance(val, (list, tuple, set)):
+            return [serialize_value(v) for v in val]
+        return val
+
+    for idx, record in enumerate(history):
+        entry = {
+            'id': record.id,
+            'history_id': getattr(record, 'history_id', None),
+            'history_date': date_format(localtime(record.history_date), 'd/m/Y H:i:s'),
+            'history_user': getattr(record.history_user, 'username', None),
+            'history_type': record.history_type,
+            'changes': [],
+            'note': ''
+        }
+        if idx == 0:
+            # registro inicial -> listar valores
+            if entry['history_type'] not in ('+','~','-'):
+                entry['history_type'] = '+'
+            for field in record._meta.fields:
+                fname = field.name
+                if fname in ('history_id','history_date','history_change_reason','history_type','history_user','id'):
+                    continue
+                try:
+                    val = getattr(record, fname)
+                except Exception:
+                    val = None
+                if val not in (None, ''):
+                    entry['changes'].append({'field': fname, 'old': None, 'new': serialize_value(val)})
+        else:
+            prev = history[idx-1]
+            try:
+                diff = record.diff_against(prev)
+                for c in diff.changes:
+                    entry['changes'].append({'field': c.field, 'old': serialize_value(c.old), 'new': serialize_value(c.new)})
+            except Exception:
+                pass
+            # Fallback manual diff if diff_against returned nothing
+            if not entry['changes']:
+                ignore = {'history_id','history_date','history_change_reason','history_type','history_user','id'}
+                manual_changes = []
+                for field in record._meta.fields:
+                    fname = field.name
+                    if fname in ignore:
+                        continue
+                    try:
+                        curr_val = getattr(record, fname)
+                        prev_val = getattr(prev, fname)
+                    except Exception:
+                        continue
+                    if curr_val != prev_val:
+                        manual_changes.append({
+                            'field': fname,
+                            'old': serialize_value(prev_val),
+                            'new': serialize_value(curr_val)
+                        })
+                if manual_changes:
+                    entry['changes'] = manual_changes
+                else:
+                    entry['note'] = 'Alteração sem mudança nos campos deste vínculo (possível alteração em dados da empresa relacionada).'
+        result.append(entry)
+    result.reverse()
+    return JsonResponse({'object_id': obj.id, 'history': result})
 
 class ClienteParceiroUpdateView(LoginRequiredMixin, UpdateView):
     """

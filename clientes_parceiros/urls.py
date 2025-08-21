@@ -3,7 +3,7 @@ from clientes_parceiros import views
 from .views import (
     NovoClienteView, NewClienteParceiroView, ListClienteParceiroView, EmpresasAjaxView,
     NovoParceiroView, ParceiroDetailView, EditarParceiroView, ListParceirosView,
-    ClienteDetailView
+    ClienteDetailView, clientes_parceiros_history_json
 )
 
 urlpatterns = [
@@ -25,6 +25,8 @@ urlpatterns = [
     path('parceiros/', ListParceirosView.as_view(), name='lista_parceiros'),
     path('parceiro/<int:pk>/', ParceiroDetailView.as_view(), name='detalhe_parceiro'),
     path('parceiro/<int:pk>/editar/', EditarParceiroView.as_view(), name='editar_parceiro'),
+    # Histórico JSON (cliente ou parceiro)
+    path('historico/<int:pk>/', clientes_parceiros_history_json, name='clientes_parceiros_history_json'),
     
     # Cliente - Detalhe
     path('cliente/<int:pk>/', ClienteDetailView.as_view(), name='detalhe_cliente'),

@@ -73,6 +73,7 @@
                     <th>Contatos</th>
                     <th>Desde</th>
                     <th>Status</th>
+                    <th>Histórico</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -119,6 +120,9 @@
                         {% else %}
                           <span class="badge bg-danger px-3 py-2">Inativo</span>
                         {% endif %}
+                      </td>
+                      <td>
+                        <button type="button" class="btn btn-sm btn-outline-secondary btn-history" data-history-id="{{ p.pk }}" title="Histórico"><i class="fas fa-history"></i></button>
                       </td>
                     </tr>
                   {% endfor %}
@@ -173,6 +177,9 @@
                         <span class="badge bg-danger px-3 py-2">Inativo</span>
                       {% endif %}
                     </div>
+                    <div class="mt-2">
+                      <button type="button" class="btn btn-sm btn-outline-secondary btn-history" data-history-id="{{ p.pk }}"><i class="fas fa-history"></i> Histórico</button>
+                    </div>
                   </div>
                 </div>
               {% endfor %}
@@ -208,4 +215,83 @@
     </div>
   </div>
 </div>
+
+<!-- Modal Histórico -->
+<div class="modal fade" id="historyModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-history"></i> Histórico do Parceiro</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="historyLoading" class="text-center py-4 d-none">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="mt-2 text-muted">Carregando histórico...</p>
+        </div>
+        <div id="historyContent"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function historyBadge(type){
+  if(type === '+' ) return '<span class="badge bg-success"><i class="fas fa-plus"></i> Criação</span>';
+  if(type === '~' ) return '<span class="badge bg-warning text-dark"><i class="fas fa-edit"></i> Alteração</span>';
+  if(type === '-' ) return '<span class="badge bg-danger"><i class="fas fa-trash"></i> Exclusão</span>';
+  return '<span class="badge bg-secondary">?</span>';
+}
+function loadHistory(id){
+  const modalEl = document.getElementById('historyModal');
+  const modal = new bootstrap.Modal(modalEl);
+  document.getElementById('historyContent').innerHTML='';
+  document.getElementById('historyLoading').classList.remove('d-none');
+  modal.show();
+  fetch(`/clientes-parceiros/historico/${id}/`)
+    .then(r=>r.json())
+    .then(data=>{
+      const wrap = document.getElementById('historyContent');
+      document.getElementById('historyLoading').classList.add('d-none');
+      if(!data.history || !data.history.length){
+        wrap.innerHTML = '<p class="text-muted">Sem histórico.</p>';return;
+      }
+      let html='';
+      data.history.forEach(entry=>{
+        html += `<div class="border rounded p-2 mb-2">`+
+          `<div class="d-flex justify-content-between small mb-2">`+
+          `<span><i class="far fa-clock me-1"></i>${entry.history_date}</span>`+
+          `<span>${historyBadge(entry.history_type)} ${entry.history_user? ' - <i class=\"fas fa-user\"></i> '+entry.history_user:''}</span>`+
+          `</div>`;
+        if(entry.changes.length){
+          html += '<ul class="mb-0 small">';
+          entry.changes.forEach(ch=>{
+            html += `<li><strong>${ch.field}</strong>: <code>${ch.old===null?'-':ch.old}</code> &rarr; <code>${ch.new===null?'-':ch.new}</code></li>`;
+          });
+          html += '</ul>';
+        } else {
+          html += `<p class="text-muted mb-0 small">${entry.note || '(Sem diferenças registradas)'}</p>`;
+        }
+        html += '</div>';
+      });
+      wrap.innerHTML = html;
+    }).catch(()=>{
+      document.getElementById('historyLoading').classList.add('d-none');
+      document.getElementById('historyContent').innerHTML = '<p class="text-danger">Erro ao carregar histórico.</p>';
+    });
+}
+// Delegação de eventos (fora da função para não registrar múltiplas vezes)
+document.addEventListener('click', function(e){
+  const btn = e.target.closest('.btn-history');
+  if(btn){
+    const id = btn.getAttribute('data-history-id');
+    loadHistory(id);
+  }
+});
+</script>
 {% endblock %}

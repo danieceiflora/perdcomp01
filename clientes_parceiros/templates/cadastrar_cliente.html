@@ -21,7 +21,7 @@
                 </h1>
                 <p class="text-muted">{% if object %}Atualize os dados do cliente{% else %}Preencha os dados para cadastrar um novo cliente e estabelecer o vínculo com o parceiro{% endif %}</p>
             </div>
-            <form method="post" id="clienteForm" class="needs-validation" novalidate>
+            <form method="post" id="clienteForm" class="needs-validation" novalidate enctype="multipart/form-data">
                 {% csrf_token %}
                 
                 <!-- Seção 1: Seleção do Parceiro -->
@@ -206,7 +206,8 @@
 
 {% block extra_js %}
 <script>
-let contactFormIndex = {{ contato_formset.total_form_count }};
+// Inicializa índice de formulários de contato a partir do management form
+let contactFormIndex = parseInt('{{ contato_formset.total_form_count|default:0 }}', 10);
 
 function addContactForm() {
     const contactForms = document.getElementById('contato-forms');

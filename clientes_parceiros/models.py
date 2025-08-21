@@ -1,5 +1,6 @@
 from django.db import models
 from empresas.models import Empresa
+from simple_history.models import HistoricalRecords
 
 class ClientesParceiros(models.Model):
 
@@ -31,6 +32,8 @@ class ClientesParceiros(models.Model):
     # Alterando de DateTimeField para DateField
     data_inicio_parceria = models.DateField(auto_now_add=True, verbose_name="Data de Início da Parceria")
     ativo = models.BooleanField(default=True)
+    # Histórico (auditoria)
+    historico = HistoricalRecords()
 
     class Meta:
         # Garante a unicidade da combinação entre empresa base, empresa vinculada e tipo de relacionamento

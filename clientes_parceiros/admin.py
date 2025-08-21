@@ -1,6 +1,7 @@
 from django import forms
 from clientes_parceiros.models import ClientesParceiros
 from django.contrib import admin
+from simple_history.admin import SimpleHistoryAdmin
 from django.utils.html import format_html
 from .models import ClientesParceiros
 from django.core.exceptions import ValidationError
@@ -33,7 +34,7 @@ class ClientesParceirosInline(admin.TabularInline):
 
 
 @admin.register(ClientesParceiros)
-class ClientesParceirosAdmin(admin.ModelAdmin):
+class ClientesParceirosAdmin(SimpleHistoryAdmin):
     form = ClientesParceirosAdminForm
     class Media:
         js = ('filter_empresas.js',)
@@ -80,4 +81,10 @@ class ClientesParceirosAdmin(admin.ModelAdmin):
         ).exclude(pk=obj.pk).exists():
             raise ValidationError("Esta empresa já está vinculada como cliente ou parceiro para este tipo de relacionamento.")
         super().save_model(request, obj, form, change)
+
+    # Opcional: remover rotas de revert se quisermos somente leitura
+    def get_urls(self):  # pragma: no cover - comportamento simples
+        urls = super().get_urls()
+        # SimpleHistoryAdmin já não mostra revert se não houver permissão; manter padrão
+        return urls
 

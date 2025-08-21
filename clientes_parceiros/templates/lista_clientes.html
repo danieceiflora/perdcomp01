@@ -30,15 +30,7 @@
 
             
 
-            <!-- Mensagens -->
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
+            
 
             <!-- Resumo -->
             {% if clientes_parceiros %}
@@ -97,6 +89,7 @@
                                         <th>Cliente</th>
                                         <th>Contatos</th>
                                         <th>Status</th>
+                                        <th>Histórico</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -141,6 +134,9 @@
                                             {% else %}
                                                 <span class="badge bg-danger px-3 py-2" title="Empresa inativa">Inativo</span>
                                             {% endif %}
+                                        </td>
+                                        <td>
+                                          <button type="button" class="btn btn-sm btn-outline-secondary btn-history" data-history-id="{{ cliente_parceiro.pk }}" title="Histórico"><i class="fas fa-history"></i></button>
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -193,6 +189,9 @@
                                             {% else %}
                                                 <span class="badge bg-danger px-3 py-2" title="Empresa inativa">Inativo</span>
                                             {% endif %}
+                                        </div>
+                                        <div class="mt-2">
+                                          <button type="button" class="btn btn-sm btn-outline-secondary btn-history" data-history-id="{{ cliente_parceiro.pk }}"><i class="fas fa-history"></i> Histórico</button>
                                         </div>
                                     </div>
                                 </div>
@@ -247,19 +246,23 @@
     </div>
 </div>
 
-<!-- Modal para detalhes -->
-<div class="modal fade" id="detailsModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+<!-- Modal Histórico -->
+<div class="modal fade" id="historyModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Detalhes do Relacionamento</h5>
+                <h5 class="modal-title"><i class="fas fa-history"></i> Histórico</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" id="modalContent">
-                <!-- Conteúdo será carregado dinamicamente -->
+            <div class="modal-body">
+                <div id="historyLoading" class="text-center py-4 d-none">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 text-muted">Carregando histórico...</p>
+                </div>
+                <div id="historyContent"></div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
             </div>
         </div>
     </div>
@@ -268,57 +271,55 @@
 
 {% block extra_js %}
 <script>
-function showDetails(clienteParceiroId) {
-    // Aqui você pode fazer uma requisição AJAX para buscar mais detalhes
-    // Por enquanto, vamos mostrar uma mensagem simples
-    document.getElementById('modalContent').innerHTML = `
-        <p>Carregando detalhes do relacionamento ID: ${clienteParceiroId}</p>
-        <p>Esta funcionalidade pode ser expandida para mostrar:</p>
-        <ul>
-            <li>Histórico de relacionamento</li>
-            <li>Documentos relacionados</li>
-            <li>Logs de atividades</li>
-            <li>Estatísticas de interação</li>
-        </ul>
-    `;
-    
-    const modal = new bootstrap.Modal(document.getElementById('detailsModal'));
+function historyBadge(type){
+    if(type === '+' ) return '<span class="badge bg-success"><i class="fas fa-plus"></i> Criação</span>';
+    if(type === '~' ) return '<span class="badge bg-warning text-dark"><i class="fas fa-edit"></i> Alteração</span>';
+    if(type === '-' ) return '<span class="badge bg-danger"><i class="fas fa-trash"></i> Exclusão</span>';
+    return '<span class="badge bg-secondary">?</span>';
+}
+function loadHistory(id){
+    const modalEl = document.getElementById('historyModal');
+    const modal = new bootstrap.Modal(modalEl);
+    document.getElementById('historyContent').innerHTML='';
+    document.getElementById('historyLoading').classList.remove('d-none');
     modal.show();
-}
-
-function toggleStatus(clienteParceiroId, newStatus) {
-    const action = newStatus ? 'ativar' : 'desativar';
-    if (confirm(`Tem certeza que deseja ${action} este relacionamento?`)) {
-        // Aqui você pode fazer uma requisição AJAX para alterar o status
-        // Por enquanto, vamos apenas mostrar uma mensagem
-        alert(`Funcionalidade para ${action} será implementada via AJAX`);
-        
-        // Exemplo de como seria a requisição:
-        /*
-        fetch(`/clientes-parceiros/toggle-status/${clienteParceiroId}/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ 'ativo': newStatus })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload(); // Recarregar a página para ver as mudanças
-            } else {
-                alert('Erro ao alterar status');
+    fetch(`/clientes-parceiros/historico/${id}/`)
+        .then(r=>r.json())
+        .then(data=>{
+            const wrap = document.getElementById('historyContent');
+            document.getElementById('historyLoading').classList.add('d-none');
+            if(!data.history || !data.history.length){
+                wrap.innerHTML = '<p class="text-muted">Sem histórico.</p>';return;
             }
+            let html='';
+            data.history.forEach(entry=>{
+                html += `<div class="border rounded p-2 mb-2">`+
+                    `<div class="d-flex justify-content-between small mb-2">`+
+                    `<span><i class="far fa-clock me-1"></i>${entry.history_date}</span>`+
+                    `<span>${historyBadge(entry.history_type)} ${entry.history_user? ' - <i class=\"fas fa-user\"></i> '+entry.history_user:''}</span>`+
+                    `</div>`;
+                        if(entry.changes.length){
+                    html += '<ul class="mb-0 small">';
+                    entry.changes.forEach(ch=>{
+                        html += `<li><strong>${ch.field}</strong>: <code>${ch.old===null?'-':ch.old}</code> &rarr; <code>${ch.new===null?'-':ch.new}</code></li>`;
+                    });
+                    html += '</ul>';
+                } else {
+                            html += `<p class="text-muted mb-0 small">${entry.note || '(Sem diferenças registradas)'}</p>`;
+                }
+                html += '</div>';
+            });
+            wrap.innerHTML = html;
+        }).catch(()=>{
+            document.getElementById('historyLoading').classList.add('d-none');
+            document.getElementById('historyContent').innerHTML = '<p class="text-danger">Erro ao carregar histórico.</p>';
         });
-        */
-    }
 }
-
-// Adicionar filtros e busca (opcional)
-document.addEventListener('DOMContentLoaded', function() {
-    // Aqui você pode adicionar funcionalidades de filtro e busca
-    console.log('Lista de clientes carregada');
+document.addEventListener('click', function(e){
+    if(e.target.closest('.btn-history')){
+        const id = e.target.closest('.btn-history').getAttribute('data-history-id');
+        loadHistory(id);
+    }
 });
 </script>
 {% endblock %}
