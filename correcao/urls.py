@@ -25,4 +25,6 @@ urlpatterns = [
     path('tese-credito/novo/', views.TeseCreditoCreateView.as_view(), name='tese_credito_create'),
     path('tese-credito/editar/<int:pk>/', views.TeseCreditoUpdateView.as_view(), name='tese_credito_update'),
     path('tese-credito/excluir/<int:pk>/', views.TeseCreditoDeleteView.as_view(), name='tese_credito_delete'),
+    # Histórico Tese de Crédito
+    path('tese-credito/historico/<int:pk>/', views.tese_credito_history_json, name='tese_credito_history_json'),
 ]
