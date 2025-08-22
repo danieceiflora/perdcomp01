@@ -5,24 +5,21 @@
 
 {% block extra_css %}
 <style>
-    .dashboard-header {
-        background: linear-gradient(135deg, {% block header_gradient %}#3b82f6 0%, #8b5cf6 100%{% endblock %});
-    }
     {% block role_specific_css %}{% endblock %}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="dashboard-header text-white py-8">
+<div class="bg-card border-b py-8">
     <div class="container mx-auto px-4">
         <div class="flex items-center">
             <div class="flex-grow">
-                <h1 class="text-2xl font-bold mb-2">Bem-vindo, {{ user.get_full_name|default:user.username }}!</h1>
+                <h1 class="text-2xl font-bold mb-2 text-foreground">Bem-vindo, {{ user.get_full_name|default:user.username }}!</h1>
                 <div class="flex flex-wrap gap-2">
-                    <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-white/20 text-white">
+                    <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-primary/10 text-primary">
                         {{ tipo_acesso }}
                     </span>
-                    <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-white/20 text-white">
+                    <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-muted text-muted-foreground">
                         {{ empresa.nome_fantasia|default:empresa.razao_social }}
                     </span>
                 </div>

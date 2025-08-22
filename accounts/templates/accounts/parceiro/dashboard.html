@@ -3,22 +3,20 @@
 
 {% block dashboard_type %}Parceiro{% endblock %}
 
-{% block header_gradient %}#3b82f6 0%, #1d4ed8 100%{% endblock %}
-
 {% block stat_cards %}
 <div class="mb-6">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-1">
-            <div class="rounded-lg border bg-blue-600 dark:bg-blue-700 text-white shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+            <div class="rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                 <div class="p-6">
                     <div class="flex items-center">
-                        <div class="flex items-center justify-center w-16 h-16 bg-white/20 dark:bg-white/30 rounded-full mr-4">
-                            <i class="bi bi-people text-2xl text-white"></i>
+                        <div class="flex items-center justify-center w-16 h-16 bg-blue-500/10 rounded-full mr-4">
+                            <i class="bi bi-people text-2xl text-blue-600 dark:text-blue-500"></i>
                         </div>
                         <div>
-                            <h3 class="text-sm font-medium text-white/90 dark:text-white/95">Clientes Vinculados</h3>
-                            <p class="text-2xl font-bold mt-1 text-white">{{ total_clientes }}</p>
-                            <p class="text-xs text-white/80 dark:text-white/85 mt-1">Cliente{{ total_clientes|pluralize }} Ativo{{ total_clientes|pluralize:",s" }}</p>
+                            <h3 class="text-sm font-medium text-muted-foreground">Clientes Vinculados</h3>
+                            <p class="text-3xl font-bold mt-1 text-foreground">{{ total_clientes }}</p>
+                            <p class="text-xs text-muted-foreground mt-1">Cliente{{ total_clientes|pluralize }} Ativo{{ total_clientes|pluralize:",s" }}</p>
                         </div>
                     </div>
                 </div>

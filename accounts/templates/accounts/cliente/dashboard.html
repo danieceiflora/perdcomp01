@@ -3,31 +3,20 @@
 
 {% block dashboard_type %}Cliente{% endblock %}
 
-{% block header_gradient %}#10b981 0%, #059669 100%{% endblock %}
-
-{% block role_specific_css %}
-.stat-card {
-    transition: all 0.3s ease;
-}
-.stat-card:hover {
-    transform: translateY(-2px);
-}
-{% endblock %}
-
 {% block stat_cards %}
 <div class="mb-6">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-1">
-            <div class="stat-card rounded-lg border bg-green-600 dark:bg-green-700 text-white shadow-sm hover:shadow-lg transition-all">
+            <div class="stat-card rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-lg transition-all">
                 <div class="p-6">
                     <div class="flex items-center">
-                        <div class="flex items-center justify-center w-16 h-16 bg-white/20 dark:bg-white/30 rounded-full mr-4">
-                            <i class="bi bi-cash-stack text-2xl text-white"></i>
+                        <div class="flex items-center justify-center w-16 h-16 bg-green-500/10 rounded-full mr-4">
+                            <i class="bi bi-cash-stack text-2xl text-green-600 dark:text-green-500"></i>
                         </div>
                         <div>
-                            <h3 class="text-sm font-medium text-white/90 dark:text-white/95">Crédito Recuperado</h3>
-                            <p class="text-2xl font-bold mt-1 text-white">R$ {{ credito_recuperado|floatformat:2 }}</p>
-                            <p class="text-xs text-white/80 dark:text-white/85 mt-1">Últimos 12 meses</p>
+                            <h3 class="text-sm font-medium text-muted-foreground">Crédito Recuperado</h3>
+                            <p class="text-3xl font-bold mt-1 text-foreground">R$ {{ credito_recuperado|floatformat:2 }}</p>
+                            <p class="text-xs text-muted-foreground mt-1">Últimos 12 meses</p>
                         </div>
                     </div>
                 </div>
