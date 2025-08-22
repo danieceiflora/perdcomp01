@@ -5,7 +5,27 @@
     {% if object %}Editar Lançamento{% else %}Novo Lançamento{% endif %}
 {% endblock %}
 
-{% block extra_head %}{% endblock %}
+{% block extra_head %}
+<style>
+    .delete-form {
+        opacity: 0.5;
+        position: relative;
+    }
+    .delete-form::after {
+        content: "Será removido após salvar";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(239, 68, 68, 0.2);
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: rgb(185, 28, 28);
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 py-6">
@@ -127,22 +147,28 @@
                     
                     <div id="anexos-container">
                         {% for anexo_form in anexos_formset.forms %}
-                            <div class="anexo-form {% if anexo_form.instance.pk and anexo_form.DELETE.value %}delete-form{% endif %} bg-muted/30 border rounded-md p-4 mb-4">
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    {% if anexo_form.instance.pk %}
-                                    <div class="md:col-span-3 text-sm mb-2">
-                                        <strong class="font-medium">Anexo atual:</strong> 
-                                        {% if anexo_form.instance.arquivo %}
-                                            <a href="{{ anexo_form.instance.arquivo.url }}" target="_blank">{{ anexo_form.instance.nome_anexo }}</a>
-                                        {% else %}
-                                            {{ anexo_form.instance.nome_anexo }}
-                                        {% endif %}
-                                        
-                                       
-                                    </div>
-                                    {% endif %}
-                                
-                                    <!-- Campos ocultos -->
+                <div class="anexo-form {% if anexo_form.instance.pk and anexo_form.DELETE.value %}delete-form{% endif %} bg-muted/30 border rounded-md p-4 mb-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <h5 class="font-medium text-sm">Anexo {% if forloop.counter > 1 %}#{{ forloop.counter }}{% endif %}</h5>
+                        {% if forloop.counter > 1 %}
+                        <button type="button" class="remove-anexo inline-flex items-center justify-center rounded-md border border-destructive bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive hover:bg-destructive/20 transition-colors">
+                            <i class="bi bi-trash mr-1"></i>Remover
+                        </button>
+                        {% endif %}
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {% if anexo_form.instance.pk %}
+                        <div class="md:col-span-3 text-sm mb-2">
+                            <strong class="font-medium">Anexo atual:</strong> 
+                            {% if anexo_form.instance.arquivo %}
+                                <a href="{{ anexo_form.instance.arquivo.url }}" target="_blank">{{ anexo_form.instance.nome_anexo }}</a>
+                            {% else %}
+                                {{ anexo_form.instance.nome_anexo }}
+                            {% endif %}
+                            
+                           
+                        </div>
+                        {% endif %}                                    <!-- Campos ocultos -->
                                     {% for hidden in anexo_form.hidden_fields %}
                                         {{ hidden }}
                                     {% endfor %}
@@ -392,7 +418,7 @@
             const newForm = formTemplate.cloneNode(true);
             
             // Remover informações de anexo existente
-            const anexoAtualDiv = newForm.querySelector('.col-12.mb-2');
+            const anexoAtualDiv = newForm.querySelector('.md-col-span-3.mb-2');
             if (anexoAtualDiv) {
                 anexoAtualDiv.remove();
             }
@@ -418,6 +444,25 @@
             // Remover classe delete-form se existir
             newForm.classList.remove('delete-form');
             
+            // Garantir que o novo anexo tenha um botão de remover
+            const headerDiv = newForm.querySelector('.flex.items-center.justify-between.mb-2');
+            const titulo = headerDiv.querySelector('h5');
+            
+            // Verificar se o título já existe e atualizá-lo para o novo índice
+            if (titulo) {
+                titulo.textContent = `Anexo #${currentFormCount + 1}`;
+            }
+            
+            // Garantir que o botão de remover exista
+            let removeButton = headerDiv.querySelector('.remove-anexo');
+            if (!removeButton) {
+                removeButton = document.createElement('button');
+                removeButton.type = 'button';
+                removeButton.className = 'remove-anexo inline-flex items-center justify-center rounded-md border border-destructive bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive hover:bg-destructive/20 transition-colors';
+                removeButton.innerHTML = '<i class="bi bi-trash mr-1"></i>Remover';
+                headerDiv.appendChild(removeButton);
+            }
+            
             // Atualizando os índices
             updateElementIndex(newForm, prefix, currentFormCount);
             
@@ -426,7 +471,68 @@
             
             // Adicionando o novo form ao container
             anexosContainer.appendChild(newForm);
+            
+            // Atualizar a numeração dos anexos (incluindo o novo)
+            updateAnexoNumbers();
+            
+            // Garantir que o botão de remover esteja presente e ativo
+            setupRemoveButtons();
         });
+        
+        // Função para remover anexo
+        function setupRemoveButtons() {
+            document.querySelectorAll('.remove-anexo').forEach(button => {
+                // Remover event listeners antigos para evitar duplicação
+                const newButton = button.cloneNode(true);
+                button.parentNode.replaceChild(newButton, button);
+                
+                newButton.addEventListener('click', function() {
+                    // Encontrar o form pai
+                    const anexoForm = this.closest('.anexo-form');
+                    
+                    // Verificar se é um anexo existente com campo DELETE
+                    const deleteField = anexoForm.querySelector('input[name$="-DELETE"]');
+                    if (deleteField) {
+                        // Marcar para exclusão e ocultar visualmente
+                        deleteField.value = 'on';
+                        anexoForm.classList.add('delete-form');
+                        anexoForm.style.display = 'none';
+                    } else {
+                        // Se for um novo anexo, remover completamente do DOM
+                        anexoForm.remove();
+                        
+                        // Atualizar os índices dos formsets
+                        const forms = document.querySelectorAll('.anexo-form');
+                        const totalForms = document.getElementById('id_' + prefix + '-TOTAL_FORMS');
+                        totalForms.value = forms.length;
+                        
+                        // Atualizar os índices de cada formset
+                        forms.forEach((form, idx) => {
+                            updateElementIndex(form, prefix, idx);
+                        });
+                        
+                        // Atualizar a numeração dos anexos
+                        updateAnexoNumbers();
+                    }
+                });
+            });
+        }
+        
+        // Função para atualizar a numeração dos anexos
+        function updateAnexoNumbers() {
+            const anexoForms = document.querySelectorAll('.anexo-form');
+            anexoForms.forEach((form, index) => {
+                if (index > 0) { // O primeiro anexo é fixo, sem numeração
+                    const heading = form.querySelector('h5');
+                    if (heading) {
+                        heading.textContent = `Anexo #${index + 1}`;
+                    }
+                }
+            });
+        }
+        
+        // Configurar botões de remoção ao carregar a página
+        setupRemoveButtons();
     });
 
         // Tailwind Error Modal (light replacement for bootstrap)
