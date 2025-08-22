@@ -4,100 +4,428 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PERDCOMP - Login Parceiro</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #3b82f6;
+            --secondary-color: #1d4ed8;
+            --accent-color: #2563eb;
+            --success-color: #27ae60;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+        }
+
         body {
-            background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
             min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
-        .card {
+
+        .login-container {
+            max-width: 450px;
+            width: 100%;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
             border: none;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .login-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-header {
+            background: var(--primary-color);
+            color: white;
+            text-align: center;
+            padding: 2.5rem 2rem 2rem;
+            border: none;
+            position: relative;
+        }
+
+        .partner-badge {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: var(--warning-color);
+            color: white;
+            padding: 0.25rem 0.75rem;
             border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-        .btn-login {
-            background: linear-gradient(45deg, #007bff, #6610f2);
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
+            font-size: 0.75rem;
             font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-        .btn-login:hover {
-            background: linear-gradient(45deg, #0056b3, #520dc2);
+
+        .logo-section {
+            margin-bottom: 1rem;
         }
+
+        .logo-icon {
+            background: white;
+            color: var(--primary-color);
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            border: 3px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .system-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: 2px;
+        }
+
+        .system-subtitle {
+            opacity: 0.9;
+            margin-top: 0.5rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .partner-subtitle {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.75rem 1.5rem;
+            margin: 1rem -2rem -2rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .card-body {
+            padding: 2.5rem 2rem;
+        }
+
+        .form-floating {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 1.25rem 1rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(248, 249, 250, 0.8);
+            height: auto;
+        }
+
         .form-control:focus {
-            border-color: #007bff;
-            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+            background: white;
+        }
+
+        .form-label {
+            color: #6c757d;
+            font-weight: 500;
+            padding-left: 0.75rem;
+        }
+
+        .btn-login {
+            background: var(--primary-color);
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            font-weight: 600;
+            width: 100%;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-login:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+            color: white;
+        }
+
+        .btn-login:focus {
+            outline: 3px solid rgba(59, 130, 246, 0.5);
+            outline-offset: 2px;
+        }
+
+        .alert {
+            border-radius: 12px;
+            border: none;
+            margin-bottom: 1.5rem;
+            padding: 1rem 1.25rem;
+        }
+
+        .alert-danger {
+            background: rgba(231, 76, 60, 0.1);
+            color: var(--danger-color);
+            border: 1px solid rgba(231, 76, 60, 0.2);
+        }
+
+        .login-footer {
+            background: rgba(248, 249, 250, 0.8);
+            padding: 1.5rem 2rem;
+            text-align: center;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .access-links {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .access-link {
+            flex: 1;
+            padding: 0.75rem;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #6c757d;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .access-link:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            background: rgba(59, 130, 246, 0.05);
+            text-decoration: none;
+        }
+
+        .security-note {
+            color: #6c757d;
+            font-size: 0.8rem;
+        }
+
+        .security-note i {
+            color: var(--success-color);
+            margin-right: 0.5rem;
+        }
+
+        .loading-spinner {
+            display: none;
+            margin-left: 0.5rem;
+        }
+
+        .btn-login.loading .loading-spinner {
+            display: inline-block;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .card-header {
+                padding: 2rem 1.5rem 1.5rem;
+            }
+            
+            .card-body {
+                padding: 2rem 1.5rem;
+            }
+            
+            .login-footer {
+                padding: 1.5rem;
+            }
+            
+            .system-title {
+                font-size: 1.75rem;
+            }
+            
+            .logo-icon {
+                width: 70px;
+                height: 70px;
+                font-size: 2rem;
+            }
+            
+            .access-links {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+        }
+
+        @keyframes fadeIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(20px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+
+        .login-card {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .form-control:focus,
+        .btn-login:focus,
+        .access-link:focus {
+            outline: 3px solid rgba(59, 130, 246, 0.5);
+            outline-offset: 2px;
         }
     </style>
 </head>
-<body class="d-flex align-items-center">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-5 col-lg-4">
-                <div class="card">
-                    <div class="card-body p-5">
-                        <div class="text-center mb-4">
-                            <i class="bi bi-briefcase text-primary" style="font-size: 3rem;"></i>
-                            <h2 class="h4 mt-2">Login Parceiro</h2>
-                            <p class="text-muted small">Gerencie seus clientes.</p>
-                        </div>
-                        
-                        {% if messages %}
-                            {% for message in messages %}
-                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert" 
-                                     style="background-color: #ffebee; border-left: 4px solid #f44336; font-weight: 500;">
-                                    {{ message }}
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                                </div>
-                            {% endfor %}
-                        {% endif %}
-                        
-                        <form method="post">
-                            {% csrf_token %}
-                            
-                            <div class="mb-3">
-                                <label for="id_username" class="form-label">
-                                    <i class="bi bi-person me-1"></i>Usuário
-                                </label>
-                                <input type="text" class="form-control" id="id_username" name="username" required>
-                            </div>
-                            
-                            <div class="mb-4">
-                                <label for="id_password" class="form-label">
-                                    <i class="bi bi-lock me-1"></i>Senha
-                                </label>
-                                <input type="password" class="form-control" id="id_password" name="password" required>
-                            </div>
-                            
-                            <div class="d-grid">
-                                <button type="submit" class="btn btn-primary btn-login">
-                                    <i class="bi bi-box-arrow-in-right me-2"></i>Entrar
-                                </button>
-                            </div>
-                        </form>
-                        
-                        <hr class="my-4">
-                        
-                        <div class="text-center">
-                            <a href="{% url 'accounts:login_selector' %}" class="btn btn-outline-secondary btn-sm">
-                                <i class="bi bi-arrow-left me-1"></i>Voltar
-                            </a>
-                        </div>
-                        
-                        <div class="text-center mt-3">
-                            <small class="text-muted">
-                                <i class="bi bi-shield-check me-1"></i>
-                                Área restrita para parceiros
-                            </small>
-                            <small class="text-muted">
-                                Recuperação de créditos tributários
-                            </small>
-                        </div>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="card-header">
+                <div class="partner-badge">
+                    <i class="bi bi-handshake"></i> Parceiro
+                </div>
+                
+                <div class="logo-section">
+                    <div class="logo-icon">
+                        <i class="bi bi-briefcase"></i>
                     </div>
+                    <h1 class="system-title">PERDCOMP</h1>
+                    <p class="system-subtitle">Sistema de Gestão de Créditos</p>
+                </div>
+                
+                <div class="partner-subtitle">
+                    <i class="bi bi-people me-2"></i>
+                    Acesso Parceiro
                 </div>
             </div>
+
+            <div class="card-body">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-danger" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="form-floating">
+                        <input type="text" 
+                               class="form-control" 
+                               id="username" 
+                               name="username" 
+                               placeholder="Usuário" 
+                               required 
+                               autocomplete="username">
+                        <label for="username">
+                            <i class="bi bi-person me-2"></i>Usuário
+                        </label>
+                    </div>
+
+                    <div class="form-floating">
+                        <input type="password" 
+                               class="form-control" 
+                               id="password" 
+                               name="password" 
+                               placeholder="Senha" 
+                               required 
+                               autocomplete="current-password">
+                        <label for="password">
+                            <i class="bi bi-lock me-2"></i>Senha
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-login">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>
+                        Entrar no Sistema
+                        <div class="spinner-border spinner-border-sm loading-spinner" role="status" aria-hidden="true"></div>
+                    </button>
+                </form>
+            </div>
+
+            <div class="login-footer">
+                <div class="access-links">
+                    <a href="{% url 'accounts:cliente_login' %}" class="access-link">
+                        <i class="bi bi-person-circle me-1"></i>
+                        <small>Cliente</small>
+                    </a>
+                    <a href="{% url 'accounts:admin_login' %}" class="access-link">
+                        <i class="bi bi-gear me-1"></i>
+                        <small>Admin</small>
+                    </a>
+                </div>
+                
+                <div class="security-note">
+                    <i class="bi bi-shield-check"></i>
+                    Gerencie seus clientes vinculados ao sistema
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            const submitButton = document.querySelector('.btn-login');
+            const inputs = document.querySelectorAll('.form-control');
+
+            form.addEventListener('submit', function() {
+                submitButton.classList.add('loading');
+                submitButton.disabled = true;
+            });
+
+            inputs.forEach(input => {
+                input.addEventListener('blur', function() {
+                    if (this.value.trim() === '' && this.hasAttribute('required')) {
+                        this.classList.add('is-invalid');
+                    } else {
+                        this.classList.remove('is-invalid');
+                        this.classList.add('is-valid');
+                    }
+                });
+
+                input.addEventListener('input', function() {
+                    if (this.classList.contains('is-invalid') && this.value.trim() !== '') {
+                        this.classList.remove('is-invalid');
+                        this.classList.add('is-valid');
+                    }
+                });
+            });
+
+            const firstInput = document.getElementById('username');
+            if (firstInput && firstInput.value === '') {
+                firstInput.focus();
+            }
+
+            inputs.forEach((input, index) => {
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && index < inputs.length - 1) {
+                        e.preventDefault();
+                        inputs[index + 1].focus();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
         </div>
     </div>
     

@@ -3,169 +3,121 @@
 
 {% block title %}Meu Perfil - PERDCOMP{% endblock %}
 
-{% block extra_css %}
-<style>
-    .profile-header {
-        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-        color: white;
-        padding: 2rem 0;
-    }
-    .profile-card {
-        border: none;
-        border-radius: 15px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-    .empresa-logo {
-        width: 48px;
-        height: 48px;
-        object-fit: contain;
-        border-radius: 8px;
-        border: 2px solid rgba(255,255,255,0.2);
-        background: white;
-        padding: 2px;
-    }
-    .logo-placeholder {
-        width: 48px;
-        height: 48px;
-        background: rgba(255,255,255,0.9);
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .info-label {
-        font-weight: 600;
-        color: #6c757d;
-        font-size: 0.9rem;
-    }
-    .info-value {
-        font-size: 1.1rem;
-        color: #212529;
-    }
-    
-    @media (max-width: 768px) {
-        .profile-header {
-            padding: 1.5rem 0;
-        }
-        .empresa-logo, .logo-placeholder {
-            width: 40px;
-            height: 40px;
-        }
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="profile-header">
-    <div class="container">
-        <div class="row align-items-center">
-            <div class="col-md-8">
-                <div class="d-flex align-items-center">
-                    
-                    <div>
-                        <h1 class="h2 mb-1">{{ user.get_full_name|default:user.username }}</h1>
-                        <p class="mb-0 opacity-75">
-                            {% if profile.eh_cliente %}
-                                <i class="bi bi-person me-1"></i>Cliente
-                            {% elif profile.eh_parceiro %}
-                                <i class="bi bi-briefcase me-1"></i>Parceiro
-                            {% else %}
-                                <i class="bi bi-question-circle me-1"></i>Usuário
-                            {% endif %}
-                        </p>
-                    </div>
+<div class="bg-card border-b py-8">
+    <div class="container mx-auto px-4">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center mb-4 md:mb-0">
+                <div>
+                    <h1 class="text-2xl font-bold text-foreground mb-1">{{ user.get_full_name|default:user.username }}</h1>
+                    <p class="text-muted-foreground">
+                        {% if profile.eh_cliente %}
+                            <i class="bi bi-person mr-1"></i>Cliente
+                        {% elif profile.eh_parceiro %}
+                            <i class="bi bi-briefcase mr-1"></i>Parceiro
+                        {% else %}
+                            <i class="bi bi-question-circle mr-1"></i>Usuário
+                        {% endif %}
+                    </p>
                 </div>
             </div>
-            <div class="col-md-4 text-md-end">
-                <a href="{% if profile.eh_cliente %}{% url 'accounts:cliente_dashboard' %}{% elif profile.eh_parceiro %}{% url 'accounts:parceiro_dashboard' %}{% else %}#{% endif %}" class="btn btn-light">
-                    <i class="bi bi-arrow-left me-1"></i>Voltar ao Dashboard
+            <div>
+                <a href="{% if profile.eh_cliente %}{% url 'accounts:cliente_dashboard' %}{% elif profile.eh_parceiro %}{% url 'accounts:parceiro_dashboard' %}{% else %}#{% endif %}" 
+                   class="inline-flex items-center px-4 py-2 bg-background hover:bg-accent text-foreground border border-input rounded-md transition-colors">
+                    <i class="bi bi-arrow-left mr-2"></i>Voltar ao Dashboard
                 </a>
             </div>
         </div>
     </div>
 </div>
 
-<div class="container mt-4">
-    <div class="row">
+<div class="container mx-auto px-4 py-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Informações Pessoais -->
-        <div class="col-md-6 mb-4">
-            <div class="card profile-card">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="bi bi-person me-2"></i>Informações Pessoais
-                    </h5>
+        <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+            <div class="border-b p-6">
+                <h3 class="text-lg font-semibold flex items-center">
+                    <i class="bi bi-person mr-2"></i>Informações Pessoais
+                </h3>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <p class="text-sm font-medium text-muted-foreground mb-1">Nome de Usuário</p>
+                    <p class="text-foreground">{{ user.username }}</p>
                 </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <div class="info-label"><strong>Nome de Usuário</strong></div>
-                        <div class="info-value">{{ user.username }}</div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="info-label"><strong>Nome Completo</strong></div>
-                        <div class="info-value">{{ user.get_full_name|default:"Não informado" }}</div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="info-label"><strong>Email</strong></div>
-                        <div class="info-value">{{ user.email|default:"Não informado" }}</div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="info-label"><strong>Telefone</strong></div>
-                        <div class="info-value">{{ profile.telefone|default:"Não informado" }}</div>
-                    </div>
-                    <div class="mb-0">
-                        <div class="info-label"><strong>Membro desde</strong></div>
-                        <div class="info-value">{{ user.date_joined|date:"d/m/Y" }}</div>
-                    </div>
+                <div>
+                    <p class="text-sm font-medium text-muted-foreground mb-1">Nome Completo</p>
+                    <p class="text-foreground">{{ user.get_full_name|default:"Não informado" }}</p>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-muted-foreground mb-1">Email</p>
+                    <p class="text-foreground">{{ user.email|default:"Não informado" }}</p>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-muted-foreground mb-1">Telefone</p>
+                    <p class="text-foreground">{{ profile.telefone|default:"Não informado" }}</p>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-muted-foreground mb-1">Membro desde</p>
+                    <p class="text-foreground">{{ user.date_joined|date:"d/m/Y" }}</p>
                 </div>
             </div>
         </div>
 
         <!-- Informações Empresariais -->
-        <div class="col-md-6 mb-4">
-            <div class="card profile-card">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="bi bi-building me-2"></i>Informações Empresariais
-                    </h5>
+        <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+            <div class="border-b p-6">
+                <h3 class="text-lg font-semibold flex items-center">
+                    <i class="bi bi-building mr-2"></i>Informações Empresariais
+                </h3>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <p class="text-sm font-medium text-muted-foreground mb-1">Tipo de Acesso</p>
+                    <div>
+                        {% if profile.eh_cliente %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+                                👤 Cliente
+                            </span>
+                        {% elif profile.eh_parceiro %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
+                                🤝 Parceiro
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100">
+                                ❓ Indefinido
+                            </span>
+                        {% endif %}
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <div class="info-label"><strong>Tipo de Acesso</strong></div>
-                        <div class="info-value">
-                            {% if profile.eh_cliente %}
-                                <span class="badge bg-success">👤 Cliente</span>
-                            {% elif profile.eh_parceiro %}
-                                <span class="badge bg-primary">🤝 Parceiro</span>
-                            {% else %}
-                                <span class="badge bg-secondary">❓ Indefinido</span>
-                            {% endif %}
-                        </div>
+                <div>
+                    <p class="text-sm font-medium text-muted-foreground mb-1">Consultoria</p>
+                    <div class="text-foreground">
+                        {{ profile.empresa_base.nome_fantasia|default:profile.empresa_base.razao_social }}
+                        <br><small class="text-muted-foreground">{{ profile.empresa_base.cnpj }}</small>
                     </div>
-                    <div class="mb-3">
-                        <div class="info-label"><strong>Consultoria</strong></div>
-                        <div class="info-value">
-                            {{ profile.empresa_base.nome_fantasia|default:profile.empresa_base.razao_social }}
-                            <br><small class="text-muted">{{ profile.empresa_base.cnpj }}</small>
-                        </div>
+                </div>
+                {% if profile.empresa_vinculada %}
+                <div>
+                    <p class="text-sm font-medium text-muted-foreground mb-1">Cliente</p>
+                    <div class="text-foreground">
+                        {{ profile.empresa_vinculada.nome_fantasia|default:profile.empresa_vinculada.razao_social }}
+                        <br><small class="text-muted-foreground">{{ profile.empresa_vinculada.cnpj }}</small>
                     </div>
-                    {% if profile.empresa_vinculada %}
-                    <div class="mb-3">
-                        <div class="info-label"><strong>Cliente</strong></div>
-                        <div class="info-value">
-                            {{ profile.empresa_vinculada.nome_fantasia|default:profile.empresa_vinculada.razao_social }}
-                            <br><small class="text-muted">{{ profile.empresa_vinculada.cnpj }}</small>
-                        </div>
-                    </div>
-                    {% endif %}
-                    <div class="mb-0">
-                        <div class="info-label"><strong>Status</strong></div>
-                        <div class="info-value">
-                            {% if profile.ativo %}
-                                <span class="badge bg-success">Ativo</span>
-                            {% else %}
-                                <span class="badge bg-danger">Inativo</span>
-                            {% endif %}
-                        </div>
+                </div>
+                {% endif %}
+                <div>
+                    <p class="text-sm font-medium text-muted-foreground mb-1">Status</p>
+                    <div>
+                        {% if profile.ativo %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+                                Ativo
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100">
+                                Inativo
+                            </span>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -174,34 +126,34 @@
 
     <!-- Empresas Acessíveis -->
     {% if profile.get_empresas_acessiveis %}
-    <div class="row">
-        <div class="col-12">
-            <div class="card profile-card">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="bi bi-buildings me-2"></i>Empresa:({{ profile.get_empresas_acessiveis|length }})
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        {% for empresa in profile.get_empresas_acessiveis %}
-                        <div class="col-md-6 col-lg-4 mb-3">
-                            <div class="d-flex align-items-center p-2 border rounded">
-                                {% if empresa.logomarca %}
-                                    <img src="{{ empresa.logomarca.url }}" alt="{{ empresa.razao_social }}" class="me-3" style="width: 32px; height: 32px; object-fit: contain; border-radius: 4px; border: 1px solid #dee2e6; background: white; padding: 1px;">
-                                {% else %}
-                                    <div class="me-3 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px;">
-                                        <i class="bi bi-building text-muted"></i>
-                                    </div>
-                                {% endif %}
-                                <div class="flex-grow-1">
-                                    <div class="fw-bold">{{ empresa.nome_fantasia|default:empresa.razao_social }}</div>
-                                    <small class="text-muted">{{ empresa.cnpj }}</small>
-                                </div>
+    <div class="mt-6">
+        <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+            <div class="border-b p-6">
+                <h3 class="text-lg font-semibold flex items-center">
+                    <i class="bi bi-buildings mr-2"></i>Empresas ({{ profile.get_empresas_acessiveis|length }})
+                </h3>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for empresa in profile.get_empresas_acessiveis %}
+                    <div class="flex items-center p-3 border border-input rounded-lg bg-background">
+                        {% if empresa.logomarca %}
+                            <img src="{{ empresa.logomarca.url }}" 
+                                 alt="{{ empresa.razao_social }}" 
+                                 class="w-8 h-8 mr-3 object-contain rounded border bg-white p-0.5">
+                        {% else %}
+                            <div class="w-8 h-8 mr-3 flex items-center justify-center bg-muted border rounded">
+                                <i class="bi bi-building text-muted-foreground text-sm"></i>
                             </div>
+                        {% endif %}
+                        <div class="flex-1 min-w-0">
+                            <p class="font-semibold text-foreground text-sm truncate">
+                                {{ empresa.nome_fantasia|default:empresa.razao_social }}
+                            </p>
+                            <p class="text-muted-foreground text-xs">{{ empresa.cnpj }}</p>
                         </div>
-                        {% endfor %}
                     </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
