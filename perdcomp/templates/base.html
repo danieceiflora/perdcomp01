@@ -85,6 +85,7 @@
                         </div>
                         {% endif %}
                         
+                        {% if user.is_superuser or user.is_staff %}
                         <!-- Teses de Crédito Dropdown -->
                         <div class="relative group">
                             <button type="button" class="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 group-hover:bg-slate-100 dark:group-hover:bg-slate-800 transition-colors">
@@ -99,11 +100,9 @@
                                     <a href="{% url 'correcao:tese_credito_list' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
                                         <i class="bi bi-list mr-2"></i>Listar Teses
                                     </a>
-                                    {% if user.is_superuser or user.is_staff %}
                                     <a href="{% url 'correcao:tese_credito_create' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
                                         <i class="bi bi-plus mr-2"></i>Nova Tese
                                     </a>
-                                    {% endif %}
                                     <div class="border-t border-slate-200 dark:border-slate-700 my-1"></div>
                                     <a href="{% url 'correcao:tipo_tese_list' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
                                         <i class="bi bi-tags mr-2"></i>Tipos de Tese
@@ -126,11 +125,9 @@
                                     <a href="{% url 'correcao:list' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
                                         <i class="bi bi-list mr-2"></i>Listar Correções
                                     </a>
-                                    {% if user.is_superuser or user.is_staff %}
                                     <a href="{% url 'correcao:create' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
                                         <i class="bi bi-plus mr-2"></i>Nova Correção
                                     </a>
-                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -139,6 +136,7 @@
                         <a href="{% url 'dashboard:dashboard' %}" class="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 transition-colors">
                             <i class="bi bi-speedometer2 mr-2"></i>Dashboard
                         </a>
+                        {% endif %}
                         {% endif %}
                         
                         {% if not user.profile.eh_cliente %}
@@ -166,10 +164,10 @@
                         </div>
                         {% endif %}
                         
-                        <!-- Compensações Dropdown -->
+                        <!-- Compensações Dropdown (único) -->
                         <div class="relative group">
                             <button type="button" class="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 group-hover:bg-slate-100 dark:group-hover:bg-slate-800 transition-colors">
-                                <i class="bi bi-cash-stack mr-2"></i>
+                                <i class="bi bi-arrow-left-right mr-2"></i>
                                 Compensações
                                 <svg class="ml-1 h-4 w-4 transition-transform group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
@@ -205,19 +203,7 @@
                             </div>
                         </div>
                         
-                        <div class="relative group">
-                            <button type="button" class="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 group-hover:bg-slate-100 dark:group-hover:bg-slate-800 transition-colors">
-                                <i class="bi bi-cash-stack mr-2"></i>
-                                Declaração de compensação
-                            </button>
-                            <div class="absolute left-0 mt-2 w-48 origin-top-left rounded-md border bg-white shadow-lg ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 dark:bg-slate-900 dark:border-slate-700 z-10">
-                                <div class="py-1">
-                                    <a href="{% url 'lancamentos:list' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
-                                        <i class="bi bi-list mr-2"></i>Listar Declarações
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
+                        {# Removido menu duplicado "Declaração de compensação" - unificado em Compensações #}
                         {% endif %}
 
                         
@@ -309,6 +295,7 @@
                 </div>
                 {% endif %}
 
+                {% if user.is_superuser or user.is_staff %}
                 <div class="border border-slate-200 dark:border-slate-700 rounded-md">
                     <button type="button" class="w-full flex items-center justify-between px-3 py-2 rounded-md font-medium text-left text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800" data-mobile-toggle="teses" aria-expanded="false">
                         <span class="flex items-center gap-2"><i class="bi bi-journal-text"></i> Teses de Crédito</span>
@@ -316,9 +303,7 @@
                     </button>
                     <div class="hidden flex-col gap-1 px-2 pb-2" data-mobile-submenu="teses">
                         <a href="{% url 'correcao:tese_credito_list' %}" class="flex items-center gap-2 px-2 py-2 rounded text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-list"></i> Listar Teses</a>
-                        {% if user.is_superuser or user.is_staff %}
                         <a href="{% url 'correcao:tese_credito_create' %}" class="flex items-center gap-2 px-2 py-2 rounded text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-plus"></i> Nova Tese</a>
-                        {% endif %}
                         <a href="{% url 'correcao:tipo_tese_list' %}" class="flex items-center gap-2 px-2 py-2 rounded text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-tags"></i> Tipos de Tese</a>
                     </div>
                 </div>
@@ -330,11 +315,10 @@
                     </button>
                     <div class="hidden flex-col gap-1 px-2 pb-2" data-mobile-submenu="correcoes">
                         <a href="{% url 'correcao:list' %}" class="flex items-center gap-2 px-2 py-2 rounded text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-list"></i> Listar Correções</a>
-                        {% if user.is_superuser or user.is_staff %}
                         <a href="{% url 'correcao:create' %}" class="flex items-center gap-2 px-2 py-2 rounded text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-plus"></i> Nova Correção</a>
-                        {% endif %}
                     </div>
                 </div>
+                {% endif %}
 
                 {% if not user.profile.eh_cliente %}
                 <div class="border border-slate-200 dark:border-slate-700 rounded-md">
@@ -353,7 +337,7 @@
 
                 <div class="border border-slate-200 dark:border-slate-700 rounded-md">
                     <button type="button" class="w-full flex items-center justify-between px-3 py-2 rounded-md font-medium text-left text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800" data-mobile-toggle="compensacoes" aria-expanded="false">
-                        <span class="flex items-center gap-2"><i class="bi bi-cash-stack"></i> Compensações</span>
+                        <span class="flex items-center gap-2"><i class="bi bi-arrow-left-right"></i> Compensações</span>
                         <i class="bi bi-chevron-down transition-transform" data-chevron></i>
                     </button>
                     <div class="hidden flex-col gap-1 px-2 pb-2" data-mobile-submenu="compensacoes">
