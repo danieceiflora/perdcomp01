@@ -35,44 +35,43 @@
                 <div class="hidden">
                     <label class="form-label visually-hidden" for="{{ form.valor.id_for_label }}">{{ form.valor.label }}</label>
                     {{ form.valor }}
-                    <!-- Erros serão exibidos no modal -->
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="space-y-5">
-                        <div>
-                            <label for="{{ form.id_adesao.id_for_label }}" class="block text-sm font-medium mb-1">{{ form.id_adesao.label }}</label>
-                            {{ form.id_adesao }}
-                            {% if form.id_adesao.errors %}<div class="text-sm text-destructive mt-1">{{ form.id_adesao.errors }}</div>{% endif %}
-                        </div>
+                                                <div>
+                                                        <label for="{{ form.id_adesao.id_for_label }}" class="block text-sm font-medium mb-1">{{ form.id_adesao.label }}</label>
+                                                        {{ form.id_adesao }}
+                                                        {% if form.id_adesao.errors %}<div class="text-sm text-destructive mt-1">{{ form.id_adesao.errors }}</div>{% endif %}
+                                                </div>
                         <div>
                             <label for="{{ form.saldo_atual_adesao.id_for_label }}" class="block text-sm font-medium mb-1">{{ form.saldo_atual_adesao.label }}</label>
                             {{ form.saldo_atual_adesao }}
                             <p class="text-xs text-muted-foreground mt-1">Saldo disponível na adesão selecionada.</p>
                         </div>
-                        <div>
-                            <label for="{{ form.metodo_escolhido.id_for_label }}" class="block text-sm font-medium mb-1">Método</label>
-                            {{ form.metodo_escolhido }}
-                            {% if form.metodo_escolhido.errors %}<div class="text-sm text-destructive mt-1">{{ form.metodo_escolhido.errors }}</div>{% endif %}
-                            <p class="text-xs text-muted-foreground mt-1">Selecione o método para exibir os campos específicos.</p>
-                        </div>
-                        <div>
-                            <label for="{{ form.data_lancamento.id_for_label }}" class="block text-sm font-medium mb-1">{{ form.data_lancamento.label }}</label>
-                            {{ form.data_lancamento }}
-                            {% if form.data_lancamento.errors %}<div class="text-sm text-destructive mt-1">{{ form.data_lancamento.errors }}</div>{% endif %}
-                            <p class="text-xs text-muted-foreground mt-1">{{ form.data_lancamento.help_text }}</p>
-                        </div>
+                                                <div>
+                                                        <label for="{{ form.metodo_escolhido.id_for_label }}" class="block text-sm font-medium mb-1">Método</label>
+                                                        {{ form.metodo_escolhido }}
+                                                        {% if form.metodo_escolhido.errors %}<div class="text-sm text-destructive mt-1">{{ form.metodo_escolhido.errors }}</div>{% endif %}
+                                                        <p class="text-xs text-muted-foreground mt-1">Selecione o método para exibir os campos específicos.</p>
+                                                </div>
+                                                <div>
+                                                        <label for="{{ form.data_lancamento.id_for_label }}" class="block text-sm font-medium mb-1">{{ form.data_lancamento.label }}</label>
+                                                        {{ form.data_lancamento }}
+                                                        {% if form.data_lancamento.errors %}<div class="text-sm text-destructive mt-1">{{ form.data_lancamento.errors }}</div>{% endif %}
+                                                        <p class="text-xs text-muted-foreground mt-1">{{ form.data_lancamento.help_text }}</p>
+                                                </div>
                     </div>
                     <div class="space-y-5">
-                        <div>
-                            <label for="{{ form.tipo.id_for_label }}" class="block text-sm font-medium mb-1">{{ form.tipo.label }}</label>
-                            {{ form.tipo }}
-                            {% if form.tipo.errors %}<div class="text-sm text-destructive mt-1">{{ form.tipo.errors }}</div>{% endif %}
-                        </div>
-                        <div class="md:w-1/3">
-                            <label for="{{ form.sinal.id_for_label }}" class="block text-sm font-medium mb-1">{{ form.sinal.label }}</label>
-                            {{ form.sinal }}
-                            {% if form.sinal.errors %}<div class="text-sm text-destructive mt-1">{{ form.sinal.errors }}</div>{% endif %}
-                        </div>
+                                                <div>
+                                                        <label for="{{ form.tipo.id_for_label }}" class="block text-sm font-medium mb-1">{{ form.tipo.label }}</label>
+                                                        {{ form.tipo }}
+                                                        {% if form.tipo.errors %}<div class="text-sm text-destructive mt-1">{{ form.tipo.errors }}</div>{% endif %}
+                                                </div>
+                                                <div class="md:w-1/3">
+                                                        <label for="{{ form.sinal.id_for_label }}" class="block text-sm font-medium mb-1">{{ form.sinal.label }}</label>
+                                                        {{ form.sinal }}
+                                                        {% if form.sinal.errors %}<div class="text-sm text-destructive mt-1">{{ form.sinal.errors }}</div>{% endif %}
+                                                </div>
                     </div>
                 </div>
                 
@@ -81,45 +80,45 @@
                     <h3 class="text-sm font-semibold mb-4 tracking-wide text-muted-foreground">Detalhes do método</h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <!-- Pedido de restituição -->
-                            <div id="lanc-group-total_credito_original_utilizado" class="hidden">
-                                <label for="{{ form.lanc_total_credito_original_utilizado.id_for_label }}" class="block text-sm font-medium mb-1">Total Crédito Original Utilizado</label>
-                                {{ form.lanc_total_credito_original_utilizado }}
-                                {% if form.lanc_total_credito_original_utilizado.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_total_credito_original_utilizado.errors }}</div>{% endif %}
-                            </div>
-                            <div id="lanc-group-debito" class="hidden">
-                                <label for="{{ form.lanc_debito.id_for_label }}" class="block text-sm font-medium mb-1">Débito</label>
-                                {{ form.lanc_debito }}
-                                {% if form.lanc_debito.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_debito.errors }}</div>{% endif %}
-                            </div>
-                            <div id="lanc-group-periodo_apuracao" class="hidden">
-                                <label for="{{ form.lanc_periodo_apuracao.id_for_label }}" class="block text-sm font-medium mb-1">Período de Apuração</label>
-                                {{ form.lanc_periodo_apuracao }}
-                                {% if form.lanc_periodo_apuracao.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_periodo_apuracao.errors }}</div>{% endif %}
-                            </div>
+                                                        <div id="lanc-group-total_credito_original_utilizado" class="hidden">
+                                                                <label for="{{ form.lanc_total_credito_original_utilizado.id_for_label }}" class="block text-sm font-medium mb-1">Total Crédito Original Utilizado</label>
+                                                                {{ form.lanc_total_credito_original_utilizado }}
+                                                                {% if form.lanc_total_credito_original_utilizado.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_total_credito_original_utilizado.errors }}</div>{% endif %}
+                                                        </div>
+                                                        <div id="lanc-group-debito" class="hidden">
+                                                                <label for="{{ form.lanc_debito.id_for_label }}" class="block text-sm font-medium mb-1">Débito</label>
+                                                                {{ form.lanc_debito }}
+                                                                {% if form.lanc_debito.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_debito.errors }}</div>{% endif %}
+                                                        </div>
+                                                        <div id="lanc-group-periodo_apuracao" class="hidden">
+                                                                <label for="{{ form.lanc_periodo_apuracao.id_for_label }}" class="block text-sm font-medium mb-1">Período de Apuração</label>
+                                                                {{ form.lanc_periodo_apuracao }}
+                                                                {% if form.lanc_periodo_apuracao.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_periodo_apuracao.errors }}</div>{% endif %}
+                                                        </div>
                             <!-- Pedido de ressarcimento -->
-                            <div id="lanc-group-debito_r" class="hidden">
-                                <label for="{{ form.lanc_debito_r.id_for_label }}" class="block text-sm font-medium mb-1">Débito</label>
-                                {{ form.lanc_debito_r }}
-                                {% if form.lanc_debito_r.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_debito_r.errors }}</div>{% endif %}
-                            </div>
-                            <div id="lanc-group-periodo_apuracao_r" class="hidden">
-                                <label for="{{ form.lanc_periodo_apuracao_r.id_for_label }}" class="block text-sm font-medium mb-1">Período de Apuração</label>
-                                {{ form.lanc_periodo_apuracao_r }}
-                                {% if form.lanc_periodo_apuracao_r.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_periodo_apuracao_r.errors }}</div>{% endif %}
-                            </div>
-                            <div id="lanc-group-total_r" class="hidden">
-                                <label for="{{ form.lanc_total_r.id_for_label }}" class="block text-sm font-medium mb-1">Total</label>
-                                {{ form.lanc_total_r }}
-                                {% if form.lanc_total_r.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_total_r.errors }}</div>{% endif %}
-                            </div>
+                                                        <div id="lanc-group-debito_r" class="hidden">
+                                                                <label for="{{ form.lanc_debito_r.id_for_label }}" class="block text-sm font-medium mb-1">Débito</label>
+                                                                {{ form.lanc_debito_r }}
+                                                                {% if form.lanc_debito_r.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_debito_r.errors }}</div>{% endif %}
+                                                        </div>
+                                                        <div id="lanc-group-periodo_apuracao_r" class="hidden">
+                                                                <label for="{{ form.lanc_periodo_apuracao_r.id_for_label }}" class="block text-sm font-medium mb-1">Período de Apuração</label>
+                                                                {{ form.lanc_periodo_apuracao_r }}
+                                                                {% if form.lanc_periodo_apuracao_r.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_periodo_apuracao_r.errors }}</div>{% endif %}
+                                                        </div>
+                                                        <div id="lanc-group-total_r" class="hidden">
+                                                                <label for="{{ form.lanc_total_r.id_for_label }}" class="block text-sm font-medium mb-1">Total</label>
+                                                                {{ form.lanc_total_r }}
+                                                                {% if form.lanc_total_r.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_total_r.errors }}</div>{% endif %}
+                                                        </div>
                     </div>
                 </div>
 
-                <div>
-                    <label for="{{ form.descricao.id_for_label }}" class="block text-sm font-medium mb-1">{{ form.descricao.label }}</label>
-                    {{ form.descricao }}
-                    {% if form.descricao.errors %}<div class="text-sm text-destructive mt-1">{{ form.descricao.errors }}</div>{% endif %}
-                </div>
+                                <div>
+                                        <label for="{{ form.descricao.id_for_label }}" class="block text-sm font-medium mb-1">{{ form.descricao.label }}</label>
+                                        {{ form.descricao }}
+                                        {% if form.descricao.errors %}<div class="text-sm text-destructive mt-1">{{ form.descricao.errors }}</div>{% endif %}
+                                </div>
                     
                                        
                     <h4 class="text-lg font-semibold border-b pb-2 mb-4 flex items-center gap-2"><i class="bi bi-paperclip"></i> Anexos</h4>
@@ -148,21 +147,21 @@
                                         {{ hidden }}
                                     {% endfor %}
                                 
-                                    <div>
-                                        <label for="{{ anexo_form.arquivo.id_for_label }}" class="block text-sm font-medium mb-1">Arquivo</label>
-                                        {{ anexo_form.arquivo }}
-                                        {% if anexo_form.arquivo.errors %}<div class="text-sm text-destructive mt-1">{{ anexo_form.arquivo.errors }}</div>{% endif %}
-                                    </div>
-                                    <div>
-                                        <label for="{{ anexo_form.nome_anexo.id_for_label }}" class="block text-sm font-medium mb-1">Nome</label>
-                                        {{ anexo_form.nome_anexo }}
-                                        {% if anexo_form.nome_anexo.errors %}<div class="text-sm text-destructive mt-1">{{ anexo_form.nome_anexo.errors }}</div>{% endif %}
-                                    </div>
-                                    <div>
-                                        <label for="{{ anexo_form.descricao.id_for_label }}" class="block text-sm font-medium mb-1">Descrição</label>
-                                        {{ anexo_form.descricao }}
-                                        {% if anexo_form.descricao.errors %}<div class="text-sm text-destructive mt-1">{{ anexo_form.descricao.errors }}</div>{% endif %}
-                                    </div>
+                                                                        <div>
+                                                                                <label for="{{ anexo_form.arquivo.id_for_label }}" class="block text-sm font-medium mb-1">Arquivo</label>
+                                                                                {{ anexo_form.arquivo }}
+                                                                                {% if anexo_form.arquivo.errors %}<div class="text-sm text-destructive mt-1">{{ anexo_form.arquivo.errors }}</div>{% endif %}
+                                                                        </div>
+                                                                        <div>
+                                                                                <label for="{{ anexo_form.nome_anexo.id_for_label }}" class="block text-sm font-medium mb-1">Nome</label>
+                                                                                {{ anexo_form.nome_anexo }}
+                                                                                {% if anexo_form.nome_anexo.errors %}<div class="text-sm text-destructive mt-1">{{ anexo_form.nome_anexo.errors }}</div>{% endif %}
+                                                                        </div>
+                                                                        <div>
+                                                                                <label for="{{ anexo_form.descricao.id_for_label }}" class="block text-sm font-medium mb-1">Descrição</label>
+                                                                                {{ anexo_form.descricao }}
+                                                                                {% if anexo_form.descricao.errors %}<div class="text-sm text-destructive mt-1">{{ anexo_form.descricao.errors }}</div>{% endif %}
+                                                                        </div>
                                 </div>
                             </div>
                         {% endfor %}
@@ -172,11 +171,11 @@
                         <i class="bi bi-plus-circle mr-2"></i> Adicionar Anexo
                     </button>
                     
-                    <div class="flex items-center gap-3 pt-4 border-t">
-                        <button type="submit" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-5 py-2.5 text-sm font-medium hover:bg-primary/90 transition-colors">
+                    <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 pt-6 mt-6 border-t w-full">
+                        <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-6 py-3 text-sm font-medium hover:bg-primary/90 transition-colors min-w-[140px]">
                             <i class="bi bi-check-lg mr-2"></i>Salvar
                         </button>
-                        <a href="{% url 'lancamentos:list' %}" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-5 py-2.5 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">
+                        <a href="{% url 'lancamentos:list' %}" class="w-full sm:w-auto inline-flex items-center justify-center rounded-md border border-input bg-background px-6 py-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors min-w-[140px]">
                             <i class="bi bi-arrow-left mr-2"></i>Cancelar
                         </a>
                     </div>
@@ -192,32 +191,9 @@
     const hasFormErrors = JSON.parse('{% if form.errors or form.non_field_errors or anexos_formset.errors or anexos_formset.non_form_errors %}true{% else %}false{% endif %}');
         
         if (hasFormErrors) {
-            // Coletar todos os erros para exibir no modal
-            const errorMessages = [];
-            
-            // Erros gerais do formulário
-            {% if form.non_field_errors %}
-                {% for error in form.non_field_errors %}
-                    errorMessages.push("{{ error|escapejs }}");
-                {% endfor %}
-            {% endif %}
-            
-            // Erros específicos de campos
-            {% for field in form %}
-                {% if field.errors %}
-                    {% for error in field.errors %}
-                        errorMessages.push("<strong>{{ field.label|escapejs }}</strong>: {{ error|escapejs }}");
-                    {% endfor %}
-                {% endif %}
-            {% endfor %}
-            
-            // Erros do formset
-            {% if anexos_formset.non_form_errors %}
-                {% for error in anexos_formset.non_form_errors %}
-                    errorMessages.push("<strong>Anexos</strong>: {{ error|escapejs }}");
-                {% endfor %}
-            {% endif %}
-            
+            // String única com separador para evitar conflitos de lint/JS
+            const errorMessagesRaw = "{% for error in form.non_field_errors %}{{ error|escapejs }}||{% endfor %}{% for field in form %}{% for error in field.errors %}<strong>{{ field.label|escapejs }}</strong>: {{ error|escapejs }}||{% endfor %}{% endfor %}{% for error in anexos_formset.non_form_errors %}<strong>Anexos</strong>: {{ error|escapejs }}||{% endfor %}";
+            const errorMessages = errorMessagesRaw.split('||').filter(Boolean);
             // Inserir erros no modal
             const errorContentEl = document.getElementById('modalErrorContent');
             if (errorContentEl) {
@@ -325,8 +301,8 @@
             'pedido de restituicao': ['lanc-group-total_credito_original_utilizado','lanc-group-debito','lanc-group-periodo_apuracao']
         };
         function norm(v){return (v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();}
-    function hideAll(){document.querySelectorAll('[id^="lanc-group-"]').forEach(el=>{el.classList.add('hidden');});}
-    function update(){hideAll(); const sel = norm(metodoField.value); const groups = mapGroups[sel]||[]; groups.forEach(id=>{const el=document.getElementById(id); if(el) el.classList.remove('hidden');});}
+        function hideAll(){document.querySelectorAll('[id^="lanc-group-"]').forEach(el=>el.classList.add('hidden'));}
+        function update(){hideAll(); const sel = norm(metodoField.value); const groups = mapGroups[sel]||[]; groups.forEach(id=>{const el=document.getElementById(id); if(el) el.classList.remove('hidden');});}
         if(metodoField){metodoField.addEventListener('change',update); update();}
         
         // Atualizar saldo quando adesão for selecionada
@@ -359,7 +335,7 @@
             dataField.value = today;
         }
         
-        // Função para gerenciar o formset de anexos
+    // Função para gerenciar o formset de anexos
         const anexosContainer = document.getElementById('anexos-container');
         const addAnexoBtn = document.getElementById('add-anexo');
         
@@ -375,9 +351,7 @@
             el.querySelectorAll('input, select, textarea').forEach((element) => {
                 ['id', 'name'].forEach((attr) => {
                     if (element.getAttribute(attr)) {
-                        element.setAttribute(attr, 
-                            element.getAttribute(attr).replace(id_regex, replacement)
-                        );
+                        element.setAttribute(attr, element.getAttribute(attr).replace(id_regex, replacement));
                     }
                 });
             });
@@ -453,8 +427,7 @@
             // Adicionando o novo form ao container
             anexosContainer.appendChild(newForm);
         });
-                });
-        });
+    });
 
         // Tailwind Error Modal (light replacement for bootstrap)
         function openErrorModal(){
