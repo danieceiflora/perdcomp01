@@ -108,25 +108,23 @@
 </div>
 
 <!-- Modal Histórico Tipo Tese -->
-<div class="modal fade" id="historyModal" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content rounded-lg border shadow-lg">
-            <div class="modal-header border-b bg-muted/40 rounded-t-lg">
-                <h5 class="modal-title font-semibold text-lg"><i class="bi bi-clock-history mr-2"></i>Histórico do Tipo de Tese</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<div id="historyModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 hidden z-50" role="dialog" aria-modal="true" aria-labelledby="historyModalTitle">
+    <div class="bg-background rounded-lg shadow-xl w-full max-w-md sm:max-w-xl md:max-w-2xl lg:max-w-3xl" style="height: 80vh; display: flex; flex-direction: column;">
+        <div class="flex items-center justify-between px-6 py-4 border-b" style="flex-shrink: 0;">
+            <h3 id="historyModalTitle" class="text-lg font-semibold flex items-center gap-2"><i class="bi bi-clock-history"></i>Histórico do Tipo de Tese</h3>
+            <button type="button" class="rounded-md p-2 hover:bg-accent transition-colors" onclick="closeHistoryModal()" aria-label="Fechar modal">
+                <i class="bi bi-x text-xl"></i>
+            </button>
+        </div>
+        <div class="px-6 py-4" style="flex: 1; overflow-y: auto; min-height: 0;" id="historyScrollArea">
+            <div id="historyLoading" class="text-center py-12 hidden">
+                <div class="w-10 h-10 border-2 border-primary/40 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
+                <p class="text-muted-foreground">Carregando histórico...</p>
             </div>
-            <div class="modal-body bg-background">
-                <div id="historyLoading" class="hidden text-center py-8">
-                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    <p class="mt-2 text-muted-foreground">Carregando histórico...</p>
-                </div>
-                <div id="historyContent"></div>
-            </div>
-            <div class="modal-footer border-t bg-muted/40 rounded-b-lg">
-                <button class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2" data-bs-dismiss="modal">
-                    Fechar
-                </button>
-            </div>
+            <div id="historyContent" class="space-y-4"></div>
+        </div>
+        <div class="flex justify-end px-6 py-4 border-t bg-muted/30" style="flex-shrink: 0;">
+            <button type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground" onclick="closeHistoryModal()">Fechar</button>
         </div>
     </div>
 </div>
@@ -139,18 +137,72 @@ function historyBadge(t){
     if(t==='-') return '<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"><i class="bi bi-trash mr-1"></i> Exclusão</span>';
     return '<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300">?</span>';
 }
+
+function showHistoryModal() {
+    const modal = document.getElementById('historyModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeHistoryModal() {
+    const modal = document.getElementById('historyModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+}
+
+function ensureHistoryModal() {
+    if (!document.getElementById('historyModal')) {
+        const modalHtml = `
+        <div id="historyModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 hidden z-50" role="dialog" aria-modal="true" aria-labelledby="historyModalTitle">
+            <div class="bg-background rounded-lg shadow-xl w-full max-w-md sm:max-w-xl md:max-w-2xl lg:max-w-3xl" style="height: 80vh; display: flex; flex-direction: column;">
+                <div class="flex items-center justify-between px-6 py-4 border-b" style="flex-shrink: 0;">
+                    <h3 id="historyModalTitle" class="text-lg font-semibold flex items-center gap-2"><i class="bi bi-clock-history"></i>Histórico do Tipo de Tese</h3>
+                    <button type="button" class="rounded-md p-2 hover:bg-accent transition-colors" onclick="closeHistoryModal()" aria-label="Fechar modal">
+                        <i class="bi bi-x text-xl"></i>
+                    </button>
+                </div>
+                <div class="px-6 py-4" style="flex: 1; overflow-y: auto; min-height: 0;" id="historyScrollArea">
+                    <div id="historyLoading" class="text-center py-12 hidden">
+                        <div class="w-10 h-10 border-2 border-primary/40 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
+                        <p class="text-muted-foreground">Carregando histórico...</p>
+                    </div>
+                    <div id="historyContent" class="space-y-4"></div>
+                </div>
+                <div class="flex justify-end px-6 py-4 border-t bg-muted/30" style="flex-shrink: 0;">
+                    <button type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground" onclick="closeHistoryModal()">Fechar</button>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+}
+
 function loadHistory(id){
-    const modal = new bootstrap.Modal(document.getElementById('historyModal'));
-    document.getElementById('historyContent').innerHTML='';
-    document.getElementById('historyLoading').classList.remove('hidden');
-    modal.show();
+    ensureHistoryModal();
+    const contentEl = document.getElementById('historyContent');
+    const loadingEl = document.getElementById('historyLoading');
+    
+    if (contentEl) contentEl.innerHTML = '';
+    if (loadingEl) loadingEl.classList.remove('hidden');
+    
+    showHistoryModal();
+    
     fetch(`/correcoes/tipo-tese/historico/${id}/`)
         .then(r=>r.json())
         .then(data=>{
             const wrap = document.getElementById('historyContent');
-            document.getElementById('historyLoading').classList.add('hidden');
+            const loading = document.getElementById('historyLoading');
+            if (loading) loading.classList.add('hidden');
+            
+            if(!wrap) return;
+            
             if(!data.history || !data.history.length){
-                wrap.innerHTML = '<p class="text-muted-foreground">Sem histórico.</p>';return;
+                wrap.innerHTML = '<p class="text-muted-foreground">Sem histórico.</p>';
+                return;
             }
             let html='';
             data.history.forEach(entry=>{
@@ -173,16 +225,25 @@ function loadHistory(id){
             wrap.innerHTML = html;
         })
         .catch(()=>{
-            document.getElementById('historyLoading').classList.add('hidden');
-            document.getElementById('historyContent').innerHTML = '<p class="text-destructive">Erro ao carregar histórico.</p>';
+            const loading = document.getElementById('historyLoading');
+            const content = document.getElementById('historyContent');
+            if (loading) loading.classList.add('hidden');
+            if (content) content.innerHTML = '<p class="text-destructive">Erro ao carregar histórico.</p>';
         });
 }
+
 document.addEventListener('click', e=>{
     const btn = e.target.closest('.btn-history');
     if(btn){
         loadHistory(btn.getAttribute('data-history-id'));
     }
+    
+    // Fechar modal ao clicar fora
+    if (e.target.id === 'historyModal') {
+        closeHistoryModal();
+    }
 });
+
 // tooltips existentes
 document.addEventListener('DOMContentLoaded', function() {
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
