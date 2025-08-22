@@ -19,9 +19,8 @@ class Adesao(models.Model):
     )
 
     metodo_credito_options = [
-        ('Pedido de compensação', 'Pedido de compensação'),
+        ('Pedido de ressarcimento', 'Pedido de ressarcimento'),
         ('Pedido de restituição', 'Pedido de restituição'),
-        ('Declaração de compensação', 'Declaração de compensação'),
         ('Declaração de compensação pagamento indevido', 'Declaração de compensação pagamento indevido'),
     ]
 
