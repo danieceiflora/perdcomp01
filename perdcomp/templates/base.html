@@ -282,12 +282,94 @@
 
         <!-- Mobile menu -->
         <div class="md:hidden hidden" id="mobile-menu">
-            <div class="border-t border-slate-200 dark:border-slate-700 px-2 pt-2 pb-3 space-y-1">
-                <!-- Mobile navigation items would go here with same logic as desktop -->
-                <!-- For brevity, keeping simple mobile menu -->
+            <div class="border-t border-slate-200 dark:border-slate-700 px-2 pt-3 pb-4 space-y-2 text-sm" aria-label="Menu mobile">
                 {% if user.is_authenticated %}
-                <a href="{% url 'accounts:profile' %}" class="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100">Meu Perfil</a>
-                <a href="{% url 'accounts:logout' %}" class="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100">Sair</a>
+                <!-- Dashboard (varia por tipo) -->
+                {% if user.is_authenticated and user.profile.eh_cliente %}
+                <a href="{% url 'accounts:cliente_dashboard' %}" class="flex items-center gap-2 px-3 py-2 rounded-md font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-speedometer2"></i> Dashboard</a>
+                {% elif user.is_authenticated and user.profile.eh_parceiro %}
+                <a href="{% url 'accounts:parceiro_dashboard' %}" class="flex items-center gap-2 px-3 py-2 rounded-md font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-speedometer2"></i> Dashboard</a>
+                {% elif user.is_superuser or user.is_staff %}
+                <a href="{% url 'dashboard:dashboard' %}" class="flex items-center gap-2 px-3 py-2 rounded-md font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-speedometer2"></i> Dashboard</a>
+                {% endif %}
+
+                <!-- Grupo reutilizável macro-like (manual) -->
+                {% if user.is_superuser or user.is_staff %}
+                <div class="border border-slate-200 dark:border-slate-700 rounded-md" x-data>
+                    <button type="button" class="w-full flex items-center justify-between px-3 py-2 rounded-md font-medium text-left text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800" data-mobile-toggle="vinculos" aria-expanded="false">
+                        <span class="flex items-center gap-2"><i class="bi bi-people"></i> Vínculos</span>
+                        <i class="bi bi-chevron-down transition-transform" data-chevron></i>
+                    </button>
+                    <div class="hidden flex-col gap-1 px-2 pb-2" data-mobile-submenu="vinculos">
+                        <a href="{% url 'novo_cliente' %}" class="flex items-center gap-2 px-2 py-2 rounded text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-person-plus"></i> Cliente</a>
+                        <a href="{% url 'novo_parceiro' %}" class="flex items-center gap-2 px-2 py-2 rounded text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-person-plus"></i> Parceiro</a>
+                        <a href="{% url 'lista_clientes' %}" class="flex items-center gap-2 px-2 py-2 rounded text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-list"></i> Listar Clientes</a>
+                        <a href="{% url 'lista_parceiros' %}" class="flex items-center gap-2 px-2 py-2 rounded text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-list"></i> Listar Parceiros</a>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="border border-slate-200 dark:border-slate-700 rounded-md">
+                    <button type="button" class="w-full flex items-center justify-between px-3 py-2 rounded-md font-medium text-left text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800" data-mobile-toggle="teses" aria-expanded="false">
+                        <span class="flex items-center gap-2"><i class="bi bi-journal-text"></i> Teses de Crédito</span>
+                        <i class="bi bi-chevron-down transition-transform" data-chevron></i>
+                    </button>
+                    <div class="hidden flex-col gap-1 px-2 pb-2" data-mobile-submenu="teses">
+                        <a href="{% url 'correcao:tese_credito_list' %}" class="flex items-center gap-2 px-2 py-2 rounded text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-list"></i> Listar Teses</a>
+                        {% if user.is_superuser or user.is_staff %}
+                        <a href="{% url 'correcao:tese_credito_create' %}" class="flex items-center gap-2 px-2 py-2 rounded text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-plus"></i> Nova Tese</a>
+                        {% endif %}
+                        <a href="{% url 'correcao:tipo_tese_list' %}" class="flex items-center gap-2 px-2 py-2 rounded text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-tags"></i> Tipos de Tese</a>
+                    </div>
+                </div>
+
+                <div class="border border-slate-200 dark:border-slate-700 rounded-md">
+                    <button type="button" class="w-full flex items-center justify-between px-3 py-2 rounded-md font-medium text-left text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800" data-mobile-toggle="correcoes" aria-expanded="false">
+                        <span class="flex items-center gap-2"><i class="bi bi-pencil-square"></i> Correções</span>
+                        <i class="bi bi-chevron-down transition-transform" data-chevron></i>
+                    </button>
+                    <div class="hidden flex-col gap-1 px-2 pb-2" data-mobile-submenu="correcoes">
+                        <a href="{% url 'correcao:list' %}" class="flex items-center gap-2 px-2 py-2 rounded text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-list"></i> Listar Correções</a>
+                        {% if user.is_superuser or user.is_staff %}
+                        <a href="{% url 'correcao:create' %}" class="flex items-center gap-2 px-2 py-2 rounded text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-plus"></i> Nova Correção</a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if not user.profile.eh_cliente %}
+                <div class="border border-slate-200 dark:border-slate-700 rounded-md">
+                    <button type="button" class="w-full flex items-center justify-between px-3 py-2 rounded-md font-medium text-left text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800" data-mobile-toggle="adesoes" aria-expanded="false">
+                        <span class="flex items-center gap-2"><i class="bi bi-file-earmark-plus"></i> Adesões</span>
+                        <i class="bi bi-chevron-down transition-transform" data-chevron></i>
+                    </button>
+                    <div class="hidden flex-col gap-1 px-2 pb-2" data-mobile-submenu="adesoes">
+                        <a href="{% url 'adesao:list' %}" class="flex items-center gap-2 px-2 py-2 rounded text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-list"></i> Listar Adesões</a>
+                        {% if user.is_superuser or user.is_staff %}
+                        <a href="{% url 'adesao:create' %}" class="flex items-center gap-2 px-2 py-2 rounded text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-plus"></i> Nova Adesão</a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="border border-slate-200 dark:border-slate-700 rounded-md">
+                    <button type="button" class="w-full flex items-center justify-between px-3 py-2 rounded-md font-medium text-left text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800" data-mobile-toggle="compensacoes" aria-expanded="false">
+                        <span class="flex items-center gap-2"><i class="bi bi-cash-stack"></i> Compensações</span>
+                        <i class="bi bi-chevron-down transition-transform" data-chevron></i>
+                    </button>
+                    <div class="hidden flex-col gap-1 px-2 pb-2" data-mobile-submenu="compensacoes">
+                        <a href="{% url 'lancamentos:list' %}" class="flex items-center gap-2 px-2 py-2 rounded text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-list"></i> Listar Declarações</a>
+                        {% if user.is_superuser or user.is_staff %}
+                        <a href="{% url 'lancamentos:create' %}" class="flex items-center gap-2 px-2 py-2 rounded text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-plus"></i> Nova Declaração</a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Perfil & Sessão -->
+                <div class="pt-2 border-t border-slate-200 dark:border-slate-700 mt-2">
+                    <a href="{% url 'accounts:profile' %}" class="flex items-center gap-2 px-3 py-2 rounded-md font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-person"></i> Meu Perfil</a>
+                    <button type="button" id="theme-toggle-mobile" class="w-full flex items-center gap-2 px-3 py-2 rounded-md font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-moon-stars"></i><span>Tema</span></button>
+                    <a href="{% url 'accounts:logout' %}" class="flex items-center gap-2 px-3 py-2 rounded-md font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-box-arrow-right"></i> Sair</a>
+                </div>
                 {% endif %}
             </div>
         </div>
@@ -373,6 +455,33 @@
             this.setAttribute('aria-expanded', !expanded);
             menu.classList.toggle('hidden');
         });
+
+        // Mobile submenu accordions
+        document.querySelectorAll('[data-mobile-toggle]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const key = btn.getAttribute('data-mobile-toggle');
+                const panel = document.querySelector(`[data-mobile-submenu="${key}"]`);
+                const chevron = btn.querySelector('[data-chevron]');
+                const expanded = btn.getAttribute('aria-expanded') === 'true';
+                btn.setAttribute('aria-expanded', !expanded);
+                if(panel){
+                    panel.classList.toggle('hidden');
+                }
+                if(chevron){
+                    chevron.classList.toggle('rotate-180');
+                }
+            });
+        });
+
+        // Mobile theme toggle
+        const themeMobileBtn = document.getElementById('theme-toggle-mobile');
+        if(themeMobileBtn){
+            themeMobileBtn.addEventListener('click', () => {
+                const root = document.documentElement;
+                const isDark = root.classList.toggle('dark');
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            });
+        }
 
         // Theme toggle
         document.getElementById('theme-toggle').addEventListener('click', function() {

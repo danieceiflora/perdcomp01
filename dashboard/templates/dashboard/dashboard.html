@@ -5,47 +5,47 @@
 
 {% block content %}
 <!-- Header com gradiente -->
-<div class="bg-gradient-to-br from-blue-600 to-purple-600 text-white py-8">
-    <div class="container mx-auto px-4">
+<div class="bg-card py-8 border-b">
+    <div class="container mx-auto px-6 md:px-8">
         <div class="flex items-center">
             <div class="flex-grow">
-                <h1 class="text-3xl font-bold mb-2">Dashboard Administrativo</h1>
-                <p class="text-blue-100">Visão geral de parceiros, clientes e créditos recuperados</p>
+                <h1 class="text-3xl font-bold mb-2 text-foreground">Dashboard Administrativo</h1>
+                <p class="text-muted-foreground">Visão geral de parceiros, clientes e créditos recuperados</p>
             </div>
         </div>
     </div>
 </div>
 
-<div class="container mx-auto px-4 py-6">
+<div class="container mx-auto px-6 md:px-8 py-6">
     <!-- Cards com os dados principais -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <!-- Total de parceiros -->
-        <div class="rounded-lg border bg-blue-600 dark:bg-blue-700 text-white shadow-sm hover:shadow-lg transition-all">
+        <div class="rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-lg transition-all">
             <div class="p-6">
                 <div class="flex items-center">
-                    <div class="flex items-center justify-center w-16 h-16 bg-white/20 dark:bg-white/30 rounded-full mr-4">
-                        <i class="bi bi-people text-2xl text-white"></i>
+                    <div class="flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mr-4">
+                        <i class="bi bi-people text-2xl text-primary"></i>
                     </div>
                     <div>
-                        <h3 class="text-sm font-medium text-white/90 dark:text-white/95">Parceiros</h3>
-                        <p class="text-3xl font-bold mt-1 text-white">{{ total_parceiros }}</p>
-                        <p class="text-xs text-white/80 dark:text-white/85 mt-1">Total de parceiros cadastrados</p>
+                        <h3 class="text-sm font-medium text-muted-foreground">Parceiros</h3>
+                        <p class="text-3xl font-bold mt-1 text-foreground">{{ total_parceiros }}</p>
+                        <p class="text-xs text-muted-foreground mt-1">Total de parceiros cadastrados</p>
                     </div>
                 </div>
             </div>
         </div>
         
         <!-- Total de clientes -->
-        <div class="rounded-lg border bg-green-600 dark:bg-green-700 text-white shadow-sm hover:shadow-lg transition-all">
+        <div class="rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-lg transition-all">
             <div class="p-6">
                 <div class="flex items-center">
-                    <div class="flex items-center justify-center w-16 h-16 bg-white/20 dark:bg-white/30 rounded-full mr-4">
-                        <i class="bi bi-building text-2xl text-white"></i>
+                    <div class="flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mr-4">
+                        <i class="bi bi-building text-2xl text-primary"></i>
                     </div>
                     <div>
-                        <h3 class="text-sm font-medium text-white/90 dark:text-white/95">Clientes</h3>
-                        <p class="text-3xl font-bold mt-1 text-white">{{ total_clientes }}</p>
-                        <p class="text-xs text-white/80 dark:text-white/85 mt-1">Total de clientes cadastrados</p>
+                        <h3 class="text-sm font-medium text-muted-foreground">Clientes</h3>
+                        <p class="text-3xl font-bold mt-1 text-foreground">{{ total_clientes }}</p>
+                        <p class="text-xs text-muted-foreground mt-1">Total de clientes cadastrados</p>
                     </div>
                 </div>
             </div>
@@ -57,9 +57,9 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <!-- Top parceiros -->
         <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
-            <div class="border-b bg-muted/50 px-6 py-4">
-                <h3 class="text-lg font-semibold flex items-center gap-2">
-                    <i class="bi bi-trophy"></i>Parceiros com Mais Clientes
+            <div class="border-b bg-muted/50 px-10 py-4">
+                <h3 class="text-lg font-semibold flex items-center gap-3 pl-6">
+                    <i class="bi bi-trophy ml-2"></i> <span>Parceiros com Mais Clientes</span>
                 </h3>
             </div>
             <div class="p-6">
@@ -93,9 +93,9 @@
 
         <!-- Top clientes -->
         <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
-            <div class="border-b bg-muted/50 px-6 py-4">
-                <h3 class="text-lg font-semibold flex items-center gap-2">
-                    <i class="bi bi-star"></i>Clientes com Mais Crédito Recuperado
+            <div class="border-b bg-muted/50 px-10 py-4">
+                <h3 class="text-lg font-semibold flex items-center gap-3 pl-6">
+                    <i class="bi bi-star ml-2"></i> <span>Clientes com Mais Crédito Recuperado</span>
                 </h3>
             </div>
             <div class="p-6">
@@ -131,9 +131,9 @@
     <!-- Crédito por Parceiro -->
     <div class="mb-6">
         <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
-            <div class="border-b bg-muted/50 px-6 py-4">
-                <h3 class="text-lg font-semibold flex items-center gap-2">
-                    <i class="bi bi-cash-stack"></i>Crédito Recuperado por Parceiro
+            <div class="border-b bg-muted/50 px-10 py-4">
+                <h3 class="text-lg font-semibold flex items-center gap-3 pl-6">
+                    <i class="bi bi-graph-up-arrow ml-2"></i> <span>Crédito Recuperado por Parceiro</span>
                 </h3>
             </div>
             <div class="p-6">

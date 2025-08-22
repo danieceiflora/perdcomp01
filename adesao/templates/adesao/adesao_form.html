@@ -49,7 +49,6 @@
                         <div class="space-y-2">
                             <label for="{{ form.saldo.id_for_label }}" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{{ form.saldo.label }}:</label>
                             <div class="relative">
-                                <div class="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-muted-foreground pointer-events-none">R$</div>
                                 {{ form.saldo }}
                             </div>
                             {% if form.saldo.errors %}<div class="text-sm text-destructive">{{ form.saldo.errors }}</div>{% endif %}
