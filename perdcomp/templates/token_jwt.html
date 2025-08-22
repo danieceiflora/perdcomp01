@@ -1,29 +1,152 @@
 {% extends "base.html" %}
-{% block content %}
-<div class="container mt-5">
-    <h2>Emitir Token JWT</h2>
-    <form method="post" action="/api/token/">
-        {% csrf_token %}
-        <div class="mb-3">
-            <label for="username" class="form-label">Usuário</label>
-            <input type="text" class="form-control" id="username" name="username" required>
-        </div>
-        <div class="mb-3">
-            <label for="password" class="form-label">Senha</label>
-            <input type="password" class="form-control" id="password" name="password" required>
-        </div>
-        <button type="submit" class="btn btn-primary">Emitir Token</button>
-    </form>
+{% load static %}
 
-    <hr>
-    <h2>Atualizar Token JWT</h2>
-    <form method="post" action="/api/token/refresh/">
-        {% csrf_token %}
-        <div class="mb-3">
-            <label for="refresh" class="form-label">Refresh Token</label>
-            <input type="text" class="form-control" id="refresh" name="refresh" required>
+{% block title %}Tokens JWT - PERDCOMP{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- Header -->
+    <div class="bg-card border rounded-lg shadow-sm mb-6">
+        <div class="p-6 border-b">
+            <h1 class="text-2xl font-semibold text-card-foreground flex items-center">
+                <i class="bi bi-key mr-3 text-primary"></i>
+                Gerenciamento de Tokens JWT
+            </h1>
+            <p class="text-muted-foreground mt-2">Emita e atualize tokens de autenticação para acesso à API</p>
         </div>
-        <button type="submit" class="btn btn-success">Atualizar Token</button>
-    </form>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Emitir Token -->
+        <div class="bg-card border rounded-lg shadow-sm">
+            <div class="p-6 border-b">
+                <h2 class="text-lg font-semibold text-card-foreground flex items-center">
+                    <i class="bi bi-plus-circle mr-2 text-green-600"></i>
+                    Emitir Token JWT
+                </h2>
+                <p class="text-muted-foreground text-sm mt-1">Gere um novo token de acesso usando suas credenciais</p>
+            </div>
+            <div class="p-6">
+                <form method="post" action="/api/token/" class="space-y-4">
+                    {% csrf_token %}
+                    
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-foreground mb-2">
+                            <i class="bi bi-person mr-1"></i>Usuário
+                        </label>
+                        <input type="text" 
+                               class="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors" 
+                               id="username" 
+                               name="username" 
+                               placeholder="Digite seu usuário"
+                               required>
+                    </div>
+                    
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-foreground mb-2">
+                            <i class="bi bi-lock mr-1"></i>Senha
+                        </label>
+                        <input type="password" 
+                               class="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors" 
+                               id="password" 
+                               name="password" 
+                               placeholder="Digite sua senha"
+                               required>
+                    </div>
+                    
+                    <button type="submit" 
+                            class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 px-4 rounded-md transition-colors duration-200 flex items-center justify-center">
+                        <i class="bi bi-key mr-2"></i>
+                        Emitir Token
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Atualizar Token -->
+        <div class="bg-card border rounded-lg shadow-sm">
+            <div class="p-6 border-b">
+                <h2 class="text-lg font-semibold text-card-foreground flex items-center">
+                    <i class="bi bi-arrow-clockwise mr-2 text-blue-600"></i>
+                    Atualizar Token JWT
+                </h2>
+                <p class="text-muted-foreground text-sm mt-1">Renove seu token de acesso usando o refresh token</p>
+            </div>
+            <div class="p-6">
+                <form method="post" action="/api/token/refresh/" class="space-y-4">
+                    {% csrf_token %}
+                    
+                    <div>
+                        <label for="refresh" class="block text-sm font-medium text-foreground mb-2">
+                            <i class="bi bi-arrow-repeat mr-1"></i>Refresh Token
+                        </label>
+                        <textarea class="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors resize-none" 
+                                  id="refresh" 
+                                  name="refresh" 
+                                  rows="4"
+                                  placeholder="Cole aqui seu refresh token..."
+                                  required></textarea>
+                    </div>
+                    
+                    <button type="submit" 
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-md transition-colors duration-200 flex items-center justify-center">
+                        <i class="bi bi-arrow-clockwise mr-2"></i>
+                        Atualizar Token
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informações sobre JWT -->
+    <div class="bg-card border rounded-lg shadow-sm mt-6">
+        <div class="p-6 border-b">
+            <h3 class="text-lg font-semibold text-card-foreground flex items-center">
+                <i class="bi bi-info-circle mr-2 text-blue-600"></i>
+                Informações sobre JWT
+            </h3>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h4 class="font-semibold text-foreground mb-2 flex items-center">
+                        <i class="bi bi-shield-check mr-2 text-green-500"></i>
+                        Token de Acesso
+                    </h4>
+                    <ul class="text-muted-foreground text-sm space-y-1">
+                        <li>• Usado para autenticar requisições à API</li>
+                        <li>• Tempo de expiração limitado (segurança)</li>
+                        <li>• Deve ser incluído no header Authorization</li>
+                        <li>• Formato: <code class="bg-muted px-1 rounded">Bearer &lt;token&gt;</code></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-foreground mb-2 flex items-center">
+                        <i class="bi bi-arrow-repeat mr-2 text-blue-500"></i>
+                        Refresh Token
+                    </h4>
+                    <ul class="text-muted-foreground text-sm space-y-1">
+                        <li>• Usado para gerar novos tokens de acesso</li>
+                        <li>• Tempo de expiração mais longo</li>
+                        <li>• Deve ser armazenado com segurança</li>
+                        <li>• Evita necessidade de login frequente</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <div class="flex items-start">
+                    <i class="bi bi-exclamation-triangle text-yellow-600 dark:text-yellow-400 mr-2 mt-0.5"></i>
+                    <div>
+                        <h5 class="font-semibold text-yellow-800 dark:text-yellow-200 mb-1">Importante</h5>
+                        <p class="text-yellow-700 dark:text-yellow-300 text-sm">
+                            Mantenha seus tokens seguros e nunca os compartilhe. 
+                            Use sempre HTTPS em produção e considere implementar rotação automática de tokens.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

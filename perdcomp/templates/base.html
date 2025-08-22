@@ -239,10 +239,12 @@
                             </button>
                             <div class="absolute right-0 mt-2 w-48 origin-top-right rounded-md border bg-white shadow-lg ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 dark:bg-slate-900 dark:border-slate-700 z-10">
                                 <div class="py-1">
+                                    {% if not user.is_superuser and not user.is_staff %}
                                     <a href="{% url 'accounts:profile' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
                                         <i class="bi bi-person mr-2"></i>Meu Perfil
                                     </a>
                                     <div class="border-t border-slate-200 dark:border-slate-700 my-1"></div>
+                                    {% endif %}
                                     <a href="{% url 'accounts:logout' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
                                         <i class="bi bi-box-arrow-right mr-2"></i>Sair
                                     </a>
@@ -350,7 +352,9 @@
 
                 <!-- Perfil & Sessão -->
                 <div class="pt-2 border-t border-slate-200 dark:border-slate-700 mt-2">
+                    {% if not user.is_superuser and not user.is_staff %}
                     <a href="{% url 'accounts:profile' %}" class="flex items-center gap-2 px-3 py-2 rounded-md font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-person"></i> Meu Perfil</a>
+                    {% endif %}
                     <button type="button" id="theme-toggle-mobile" class="w-full flex items-center gap-2 px-3 py-2 rounded-md font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-moon-stars"></i><span>Tema</span></button>
                     <a href="{% url 'accounts:logout' %}" class="flex items-center gap-2 px-3 py-2 rounded-md font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-box-arrow-right"></i> Sair</a>
                 </div>
