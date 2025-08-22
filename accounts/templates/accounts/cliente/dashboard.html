@@ -3,124 +3,31 @@
 
 {% block dashboard_type %}Cliente{% endblock %}
 
-{% block header_gradient %}#28a745 0%, #20c997 100%{% endblock %}
-
-{% block header_subtitle_class %}text-black{% endblock %}
+{% block header_gradient %}#10b981 0%, #059669 100%{% endblock %}
 
 {% block role_specific_css %}
 .stat-card {
-    border-radius: 12px;
-    overflow: hidden;
     transition: all 0.3s ease;
 }
 .stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.15);
-}
-.stat-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 70px;
-    height: 70px;
+    transform: translateY(-2px);
 }
 {% endblock %}
 
-
-{% block tipo_acesso_badge_class %}bg-success{% endblock %}
-
-{% block content %}
-<div class="dashboard-header">
-    <div class="container">
-        <div class="row align-items-center">
-            <div class="col-md-8">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <h1 class="h3 mb-1">Bem-vindo, {{ user.get_full_name|default:user.username }}!</h1>
-                        <span class="badge bg-light text-success px-2 py-1 rounded-pill fs-8">
-                            {{ tipo_acesso }}
-                        </span>
-                        <span class="badge bg-light text-success px-2 py-1 rounded-pill fs-8">
-                            {{ empresa.nome_fantasia|default:empresa.razao_social }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="container mt-4">
-    <!-- 1. CARD DE CRÉDITO RECUPERADO PRIMEIRO -->
-    <div class="row mb-4">
-        <div class="col-lg-4">
-            <div class="card stat-card bg-success text-white">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="stat-icon bg-light text-success rounded-circle p-3 me-3">
-                            <i class="bi bi-cash-stack fs-1"></i>
+{% block stat_cards %}
+<div class="mb-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-1">
+            <div class="stat-card rounded-lg border bg-green-600 dark:bg-green-700 text-white shadow-sm hover:shadow-lg transition-all">
+                <div class="p-6">
+                    <div class="flex items-center">
+                        <div class="flex items-center justify-center w-16 h-16 bg-white/20 dark:bg-white/30 rounded-full mr-4">
+                            <i class="bi bi-cash-stack text-2xl text-white"></i>
                         </div>
                         <div>
-                            <h6 class="card-title mb-0">Crédito Recuperado</h6>
-                            <h3 class="mt-2 mb-0">R$ {{ credito_recuperado|floatformat:2 }}</h3>
-                            <p class="text-white-50 small mb-0">Últimos 12 meses</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 2. INFORMAÇÕES DA EMPRESA -->
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="bi bi-building me-2"></i>{% block empresa_title %}Informações da Empresa{% endblock %}
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Razão Social:</strong><br>{{ empresa.razao_social }}</p>
-                            <p><strong>Nome Fantasia:</strong><br>{{ empresa.nome_fantasia|default:"--" }}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>CNPJ:</strong><br>{{ empresa.cnpj }}</p>
-                            <p><strong>Código de Origem:</strong><br>{{ empresa.codigo_origem|default:"--" }}</p>
-                        </div>
-                    </div>
-                    {% block empresa_additional_info %}{% endblock %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 3. INFORMAÇÕES DO PERFIL -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="bi bi-person-badge me-2"></i>Perfil de Acesso
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <p><strong>Usuário:</strong><br>{{ user.username }}</p>
-                        </div>
-                        <div class="col-md-3">
-                            <p><strong>Nome:</strong><br>{{ user.get_full_name|default:"--" }}</p>
-                        </div>
-                        <div class="col-md-3">
-                            <p><strong>Email:</strong><br>{{ user.email|default:"--" }}</p>
-                        </div>
-                        <div class="col-md-3">
-                            <p><strong>Tipo de Acesso:</strong><br>
-                                <span class="badge {% block tipo_acesso_badge_class_0 %}bg-primary{% endblock %}">{{ tipo_acesso }}</span>
-                            </p>
+                            <h3 class="text-sm font-medium text-white/90 dark:text-white/95">Crédito Recuperado</h3>
+                            <p class="text-2xl font-bold mt-1 text-white">R$ {{ credito_recuperado|floatformat:2 }}</p>
+                            <p class="text-xs text-white/80 dark:text-white/85 mt-1">Últimos 12 meses</p>
                         </div>
                     </div>
                 </div>

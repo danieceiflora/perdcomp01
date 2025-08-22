@@ -14,13 +14,13 @@
             </div>
             <div class="p-6">
                 {% if has_references %}
-                    <div class="rounded-lg border border-red-200 bg-red-50 p-4 mb-6 dark:border-red-800 dark:bg-red-950">
+                    <div class="rounded-lg border border-red-300 bg-red-50 p-4 mb-6">
                         <div class="flex">
                             <div class="flex-shrink-0">
-                                <i class="bi bi-ban text-red-400"></i>
+                                <i class="bi bi-ban text-red-600"></i>
                             </div>
                             <div class="ml-3">
-                                <h3 class="text-sm font-medium text-red-800 dark:text-red-200">
+                                <h3 class="text-sm font-medium text-red-900">
                                     Esta tese de crédito não pode ser excluída porque existem adesões vinculadas.
                                 </h3>
                             </div>
@@ -41,13 +41,13 @@
                         </div>
                     </div>
                 {% else %}
-                    <div class="rounded-lg border border-yellow-200 bg-yellow-50 p-4 mb-6 dark:border-yellow-800 dark:bg-yellow-950">
+                    <div class="rounded-lg border border-orange-300 bg-orange-50 p-4 mb-6">
                         <div class="flex">
                             <div class="flex-shrink-0">
-                                <i class="bi bi-exclamation-triangle text-yellow-400"></i>
+                                <i class="bi bi-exclamation-triangle text-orange-600"></i>
                             </div>
                             <div class="ml-3">
-                                <h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                                <h3 class="text-sm font-medium text-orange-900">
                                     Tem certeza que deseja excluir a tese de crédito <strong>"{{ object.descricao }}"</strong>?
                                 </h3>
                             </div>

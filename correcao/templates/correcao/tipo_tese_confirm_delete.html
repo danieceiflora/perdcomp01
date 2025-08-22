@@ -6,6 +6,7 @@
 {% block content %}
 <div class="container mx-auto px-4 py-6">
     <div class="max-w-4xl mx-auto">
+        <link rel="stylesheet" href="{% static 'css/alerts.css' %}">
         <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
             <div class="flex flex-col space-y-1.5 p-6 border-b">
                 <h3 class="text-2xl font-semibold leading-none tracking-tight">
@@ -13,16 +14,11 @@
                 </h3>
             </div>
             <div class="p-6">
-                <div class="rounded-lg border border-yellow-200 bg-yellow-50 p-4 mb-6 dark:border-yellow-800 dark:bg-yellow-950">
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            <i class="bi bi-exclamation-triangle text-yellow-400"></i>
-                        </div>
-                        <div class="ml-3">
-                            <h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                                Tem certeza que deseja excluir o tipo de tese <strong>"{{ object.descricao }}"</strong>?
-                            </h3>
-                        </div>
+                <!-- Alerta principal de confirmação (sempre exibido) -->
+                <div class="alert alert-warning mb-6">
+                    <div class="flex items-start gap-3">
+                        <i class="bi bi-exclamation-triangle text-orange-500 alert-icon mt-0.5"></i>
+                        <p class="text-sm leading-relaxed">Tem certeza que deseja excluir o tipo de tese <strong>"{{ object.descricao }}"</strong>?</p>
                     </div>
                 </div>
                 
@@ -33,29 +29,17 @@
                 
                 {% with total=object.tesecredito_set.count %}
                 {% if total > 0 %}
-                    <div class="rounded-lg border border-red-200 bg-red-50 p-4 mt-6 dark:border-red-800 dark:bg-red-950">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <i class="bi bi-exclamation-triangle-fill text-red-400"></i>
-                            </div>
-                            <div class="ml-3">
-                                <h3 class="text-sm font-medium text-red-800 dark:text-red-200">
-                                    <strong>Exclusão bloqueada:</strong> Existem {{ total }} tese(s) de crédito vinculada(s) a este tipo. Remova ou reatribua antes de excluir.
-                                </h3>
-                            </div>
+                    <div class="alert alert-danger mt-6">
+                        <div class="flex items-start gap-3">
+                            <i class="bi bi-exclamation-triangle-fill text-red-500 alert-icon mt-0.5"></i>
+                            <p class="text-sm leading-relaxed"><strong>Exclusão bloqueada:</strong> Existem {{ total }} tese(s) de crédito vinculada(s) a este tipo. Remova ou reatribua antes de excluir.</p>
                         </div>
                     </div>
                 {% else %}
-                    <div class="rounded-lg border border-red-200 bg-red-50 p-4 mt-6 dark:border-red-800 dark:bg-red-950">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <i class="bi bi-exclamation-triangle-fill text-red-400"></i>
-                            </div>
-                            <div class="ml-3">
-                                <h3 class="text-sm font-medium text-red-800 dark:text-red-200">
-                                    <strong>Atenção:</strong> Esta ação não pode ser desfeita.
-                                </h3>
-                            </div>
+                    <div class="alert alert-danger mt-6">
+                        <div class="flex items-start gap-3">
+                            <i class="bi bi-exclamation-triangle-fill text-red-500 alert-icon mt-0.5"></i>
+                            <p class="text-sm leading-relaxed"><strong>Atenção:</strong> Esta ação não pode ser desfeita.</p>
                         </div>
                     </div>
                 {% endif %}

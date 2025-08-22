@@ -4,135 +4,164 @@
 {% block title %}Dashboard Administrativo{% endblock %}
 
 {% block content %}
-<div class="container-fluid mt-4">
-    <div class="row mb-4">
-        <div class="col">
-            <h1 class="display-4">Dashboard Administrativo</h1>
-            <p class="lead">Visão geral de parceiros, clientes e créditos recuperados</p>
+<!-- Header com gradiente -->
+<div class="bg-gradient-to-br from-blue-600 to-purple-600 text-white py-8">
+    <div class="container mx-auto px-4">
+        <div class="flex items-center">
+            <div class="flex-grow">
+                <h1 class="text-3xl font-bold mb-2">Dashboard Administrativo</h1>
+                <p class="text-blue-100">Visão geral de parceiros, clientes e créditos recuperados</p>
+            </div>
         </div>
     </div>
+</div>
 
+<div class="container mx-auto px-4 py-6">
     <!-- Cards com os dados principais -->
-    <div class="row mb-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <!-- Total de parceiros -->
-        <div class="col-md-4">
-            <div class="card bg-primary text-white h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Parceiros</h5>
-                    <p class="card-text display-3">{{ total_parceiros }}</p>
-                    <p>Total de parceiros cadastrados</p>
+        <div class="rounded-lg border bg-blue-600 dark:bg-blue-700 text-white shadow-sm hover:shadow-lg transition-all">
+            <div class="p-6">
+                <div class="flex items-center">
+                    <div class="flex items-center justify-center w-16 h-16 bg-white/20 dark:bg-white/30 rounded-full mr-4">
+                        <i class="bi bi-people text-2xl text-white"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-white/90 dark:text-white/95">Parceiros</h3>
+                        <p class="text-3xl font-bold mt-1 text-white">{{ total_parceiros }}</p>
+                        <p class="text-xs text-white/80 dark:text-white/85 mt-1">Total de parceiros cadastrados</p>
+                    </div>
                 </div>
             </div>
         </div>
         
         <!-- Total de clientes -->
-        <div class="col-md-4">
-            <div class="card bg-success text-white h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Clientes</h5>
-                    <p class="card-text display-3">{{ total_clientes }}</p>
-                    <p>Total de clientes cadastrados</p>
+        <div class="rounded-lg border bg-green-600 dark:bg-green-700 text-white shadow-sm hover:shadow-lg transition-all">
+            <div class="p-6">
+                <div class="flex items-center">
+                    <div class="flex items-center justify-center w-16 h-16 bg-white/20 dark:bg-white/30 rounded-full mr-4">
+                        <i class="bi bi-building text-2xl text-white"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-white/90 dark:text-white/95">Clientes</h3>
+                        <p class="text-3xl font-bold mt-1 text-white">{{ total_clientes }}</p>
+                        <p class="text-xs text-white/80 dark:text-white/85 mt-1">Total de clientes cadastrados</p>
+                    </div>
                 </div>
             </div>
         </div>
-            
     </div>
 
 
     <!-- Top parceiros e clientes -->
-    <div class="row mb-4">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <!-- Top parceiros -->
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="card-title">Parceiros com Mais Clientes</h5>
-                </div>
-                <div class="card-body">
-                    {% if top_parceiros %}
-                    <table class="table table-striped">
+        <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+            <div class="border-b bg-muted/50 px-6 py-4">
+                <h3 class="text-lg font-semibold flex items-center gap-2">
+                    <i class="bi bi-trophy"></i>Parceiros com Mais Clientes
+                </h3>
+            </div>
+            <div class="p-6">
+                {% if top_parceiros %}
+                <div class="overflow-x-auto">
+                    <table class="w-full">
                         <thead>
-                            <tr>
-                                <th>Parceiro</th>
-                                <th>Total de Clientes</th>
+                            <tr class="border-b">
+                                <th class="text-left py-2 px-4 font-medium text-muted-foreground">Parceiro</th>
+                                <th class="text-left py-2 px-4 font-medium text-muted-foreground">Total de Clientes</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for parceiro in top_parceiros %}
-                            <tr>
-                                <td>{{ parceiro.id_company_base__razao_social }}</td>
-                                <td>{{ parceiro.total_clientes }}</td>
+                            <tr class="border-b last:border-b-0 hover:bg-muted/50">
+                                <td class="py-3 px-4">{{ parceiro.id_company_base__razao_social }}</td>
+                                <td class="py-3 px-4 font-semibold">{{ parceiro.total_clientes }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
-                    {% else %}
-                    <p>Nenhum parceiro encontrado.</p>
-                    {% endif %}
                 </div>
+                {% else %}
+                <div class="text-center py-8">
+                    <i class="bi bi-inbox text-gray-400 dark:text-gray-300 text-4xl mb-3"></i>
+                    <p class="text-muted-foreground">Nenhum parceiro encontrado.</p>
+                </div>
+                {% endif %}
             </div>
         </div>
 
         <!-- Top clientes -->
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="card-title">Clientes com Mais Crédito Recuperado</h5>
-                </div>
-                <div class="card-body">
-                    {% if top_clientes %}
-                    <table class="table table-striped">
+        <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+            <div class="border-b bg-muted/50 px-6 py-4">
+                <h3 class="text-lg font-semibold flex items-center gap-2">
+                    <i class="bi bi-star"></i>Clientes com Mais Crédito Recuperado
+                </h3>
+            </div>
+            <div class="p-6">
+                {% if top_clientes %}
+                <div class="overflow-x-auto">
+                    <table class="w-full">
                         <thead>
-                            <tr>
-                                <th>Cliente</th>
-                                <th>Crédito Recuperado</th>
+                            <tr class="border-b">
+                                <th class="text-left py-2 px-4 font-medium text-muted-foreground">Cliente</th>
+                                <th class="text-left py-2 px-4 font-medium text-muted-foreground">Crédito Recuperado</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for cliente in top_clientes %}
-                            <tr>
-                                <td>{{ cliente.id_adesao__cliente__id_company_vinculada__razao_social }}</td>
-                                <td>R$ {{ cliente.total_credito|floatformat:2|cut:"-" }}</td>
+                            <tr class="border-b last:border-b-0 hover:bg-muted/50">
+                                <td class="py-3 px-4">{{ cliente.id_adesao__cliente__id_company_vinculada__razao_social }}</td>
+                                <td class="py-3 px-4 font-semibold text-green-600">R$ {{ cliente.total_credito|floatformat:2|cut:"-" }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
-                    {% else %}
-                    <p>Nenhum cliente encontrado.</p>
-                    {% endif %}
                 </div>
+                {% else %}
+                <div class="text-center py-8">
+                    <i class="bi bi-inbox text-gray-400 dark:text-gray-300 text-4xl mb-3"></i>
+                    <p class="text-muted-foreground">Nenhum cliente encontrado.</p>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
     
     <!-- Crédito por Parceiro -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title">Crédito Recuperado por Parceiro</h5>
-                </div>
-                <div class="card-body">
-                    {% if credito_por_parceiro %}
-                    <table class="table table-striped">
+    <div class="mb-6">
+        <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+            <div class="border-b bg-muted/50 px-6 py-4">
+                <h3 class="text-lg font-semibold flex items-center gap-2">
+                    <i class="bi bi-cash-stack"></i>Crédito Recuperado por Parceiro
+                </h3>
+            </div>
+            <div class="p-6">
+                {% if credito_por_parceiro %}
+                <div class="overflow-x-auto">
+                    <table class="w-full">
                         <thead>
-                            <tr>
-                                <th>Parceiro</th>
-                                <th>Total de Crédito Recuperado</th>
+                            <tr class="border-b">
+                                <th class="text-left py-2 px-4 font-medium text-muted-foreground">Parceiro</th>
+                                <th class="text-left py-2 px-4 font-medium text-muted-foreground">Total de Crédito Recuperado</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for item in credito_por_parceiro %}
-                            <tr>
-                                <td>{{ item.parceiro }}</td>
-                                <td>R$ {{ item.total_credito|floatformat:2|cut:"-" }}</td>
+                            <tr class="border-b last:border-b-0 hover:bg-muted/50">
+                                <td class="py-3 px-4">{{ item.parceiro }}</td>
+                                <td class="py-3 px-4 font-semibold text-green-600">R$ {{ item.total_credito|floatformat:2|cut:"-" }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
-                    {% else %}
-                    <p>Nenhum parceiro encontrado.</p>
-                    {% endif %}
                 </div>
+                {% else %}
+                <div class="text-center py-8">
+                    <i class="bi bi-inbox text-gray-400 dark:text-gray-300 text-4xl mb-3"></i>
+                    <p class="text-muted-foreground">Nenhum parceiro encontrado.</p>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>

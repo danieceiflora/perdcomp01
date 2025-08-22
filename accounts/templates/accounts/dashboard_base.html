@@ -6,197 +6,97 @@
 {% block extra_css %}
 <style>
     .dashboard-header {
-        background: linear-gradient(135deg, {% block header_gradient %}#007bff 0%, #6610f2 100%{% endblock %});
-        color: white;
-        padding: 2rem 0;
+        background: linear-gradient(135deg, {% block header_gradient %}#3b82f6 0%, #8b5cf6 100%{% endblock %});
     }
-    .stat-card {
-        border: none;
-        border-radius: 15px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        transition: transform 0.3s ease;
-    }
-    .stat-card:hover {
-        transform: translateY(-5px);
-    }
-    
-    /* Customizações específicas para o header */
-    .dashboard-header .empresa-logo,
-    .dashboard-header .logo-placeholder {
-        border-color: rgba(255,255,255,0.3) !important;
-        background: rgba(255,255,255,0.95) !important;
-    }
-    
-    /* Estilo para o botão de Minha Conta com logomarca */
-    .btn-light.dropdown-toggle {
-        padding: 0.4rem 0.75rem;
-        display: inline-flex !important;
-        align-items: center;
-        border-radius: 30px;
-        border: 1px solid rgba(0,0,0,0.1);
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        transition: all 0.2s ease-in-out;
-    }
-    
-    .btn-light.dropdown-toggle:hover {
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    
-    .btn-light .logo-container {
-        margin-right: 8px;
-    }
-    
-    /* Estilo para o ícone do dropdown */
-    .dropdown-toggle-icon {
-        position: relative;
-        width: 12px;
-        height: 12px;
-    }
-    
-    .dropdown-toggle-icon:after {
-        content: '';
-        display: inline-block;
-        width: 0;
-        height: 0;
-        margin-left: 0.255em;
-        vertical-align: 0.255em;
-        border-top: 0.3em solid;
-        border-right: 0.3em solid transparent;
-        border-bottom: 0;
-        border-left: 0.3em solid transparent;
-    }
-    
-    /* Responsividade para o botão Minha Conta */
-    @media (max-width: 576px) {
-        .btn-light.dropdown-toggle span:not(.dropdown-toggle-icon) {
-            display: none; /* Oculta o texto em dispositivos pequenos */
-        }
-        
-        .btn-light.dropdown-toggle .logo-container {
-            margin-right: 0; /* Remove margem quando texto está oculto */
-        }
-        
-        .account-dropdown-wrapper {
-            justify-content: flex-end !important;
-        }
-        
-        .account-dropdown-wrapper .dropdown {
-            margin-left: auto !important;
-        }
-    }
-    
-    /* Classe para garantir alinhamento à direita */
-    .account-dropdown-wrapper {
-        display: flex;
-        justify-content: flex-end;
-    }
-    
-    /* Responsividade para mobile */
-    @media (max-width: 768px) {
-        .dashboard-header {
-            padding: 1.5rem 0;
-        }
-        .dashboard-header h1 {
-            font-size: 1.25rem !important;
-        }
-        .dashboard-header p {
-            font-size: 0.9rem;
-        }
-    }
-    
-    @media (max-width: 576px) {
-        .dashboard-header h1 {
-            font-size: 1.1rem !important;
-        }
-        .stat-card i {
-            font-size: 2rem !important;
-        }
-        .stat-card h3 {
-            font-size: 1.5rem;
-        }
-    }
-    
     {% block role_specific_css %}{% endblock %}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="dashboard-header">
-    <div class="container">
-        <div class="row align-items-center">
-            <div class="col-md-8">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <h1 class="h3 mb-1">Bem-vindo, {{ user.get_full_name|default:user.username }}!</h1>
-                        <span class="badge bg-light text-success px-2 py-1 rounded-pill fs-8">
-                            {{ tipo_acesso }}
-                        </span>
-                        <span class="badge bg-light text-success px-2 py-1 rounded-pill fs-8">
-                            {{ empresa.nome_fantasia|default:empresa.razao_social }}
-                        </span>
-                    </div>
+<div class="dashboard-header text-white py-8">
+    <div class="container mx-auto px-4">
+        <div class="flex items-center">
+            <div class="flex-grow">
+                <h1 class="text-2xl font-bold mb-2">Bem-vindo, {{ user.get_full_name|default:user.username }}!</h1>
+                <div class="flex flex-wrap gap-2">
+                    <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-white/20 text-white">
+                        {{ tipo_acesso }}
+                    </span>
+                    <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-white/20 text-white">
+                        {{ empresa.nome_fantasia|default:empresa.razao_social }}
+                    </span>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="container mt-4">
+<div class="container mx-auto px-4 py-6">
+    {% block stat_cards %}{% endblock %}
     
     <!-- Informações da Empresa -->
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="bi bi-building me-2"></i>{% block empresa_title %}Informações da Empresa{% endblock %}
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Razão Social:</strong><br>{{ empresa.razao_social }}</p>
-                            <p><strong>Nome Fantasia:</strong><br>{{ empresa.nome_fantasia|default:"--" }}</p>
+    <div class="mb-6">
+        <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+            <div class="flex flex-col space-y-1.5 p-6 border-b">
+                <h3 class="text-lg font-semibold leading-none tracking-tight flex items-center gap-2">
+                    <i class="bi bi-building"></i>{% block empresa_title %}Informações da Empresa{% endblock %}
+                </h3>
+            </div>
+            <div class="p-6">
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div>
+                            <p class="text-sm font-medium text-muted-foreground">Razão Social</p>
+                            <p class="text-foreground">{{ empresa.razao_social }}</p>
                         </div>
-                        <div class="col-md-6">
-                            <p><strong>CNPJ:</strong><br>{{ empresa.cnpj }}</p>
-                            <p><strong>Código de Origem:</strong><br>{{ empresa.codigo_origem|default:"--" }}</p>
+                        <div>
+                            <p class="text-sm font-medium text-muted-foreground">Nome Fantasia</p>
+                            <p class="text-foreground">{{ empresa.nome_fantasia|default:"--" }}</p>
                         </div>
                     </div>
-                    {% block empresa_additional_info %}{% endblock %}
+                    <div class="space-y-4">
+                        <div>
+                            <p class="text-sm font-medium text-muted-foreground">CNPJ</p>
+                            <p class="text-foreground">{{ empresa.cnpj }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-muted-foreground">Código de Origem</p>
+                            <p class="text-foreground">{{ empresa.codigo_origem|default:"--" }}</p>
+                        </div>
+                    </div>
                 </div>
+                {% block empresa_additional_info %}{% endblock %}
             </div>
         </div>
-        
     </div>
 
     {% block content_middle %}{% endblock %}
 
     <!-- Informações do Perfil -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="bi bi-person-badge me-2"></i>Perfil de Acesso
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <p><strong>Usuário:</strong><br>{{ user.username }}</p>
-                        </div>
-                        <div class="col-md-3">
-                            <p><strong>Nome:</strong><br>{{ user.get_full_name|default:"--" }}</p>
-                        </div>
-                        <div class="col-md-3">
-                            <p><strong>Email:</strong><br>{{ user.email|default:"--" }}</p>
-                        </div>
-                        <div class="col-md-3">
-                            <p><strong>Tipo de Acesso:</strong><br>
-                                <span class="badge {% block tipo_acesso_badge_class %}bg-primary{% endblock %}">{{ tipo_acesso }}</span>
-                            </p>
-                        </div>
+    <div class="mt-6">
+        <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+            <div class="flex flex-col space-y-1.5 p-6 border-b">
+                <h3 class="text-lg font-semibold leading-none tracking-tight flex items-center gap-2">
+                    <i class="bi bi-person-badge"></i>Perfil de Acesso
+                </h3>
+            </div>
+            <div class="p-6">
+                <div class="grid md:grid-cols-4 gap-6">
+                    <div>
+                        <p class="text-sm font-medium text-muted-foreground">Usuário</p>
+                        <p class="text-foreground">{{ user.username }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-muted-foreground">Nome</p>
+                        <p class="text-foreground">{{ user.get_full_name|default:"--" }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-muted-foreground">Email</p>
+                        <p class="text-foreground">{{ user.email|default:"--" }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-muted-foreground">Tipo de Acesso</p>
+                        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-primary text-primary-foreground">{{ tipo_acesso }}</span>
                     </div>
                 </div>
             </div>
