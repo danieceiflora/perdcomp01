@@ -20,73 +20,73 @@ class AdesaoForm(forms.ModelForm):
         ]
         widgets = {
             'cliente': forms.Select(attrs={
-                'class': 'form-select',
+                'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
             }),
             'tese_credito_id': forms.Select(attrs={
-                'class': 'form-select',
+                'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
             }),
             'metodo_credito': forms.Select(attrs={
-                'class': 'form-select',
+                'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
             }),
             'data_inicio': forms.DateInput(attrs={
-                'class': 'form-control',
+                'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
                 'type': 'date'
             }),
             'perdcomp': forms.TextInput(attrs={
-                'class': 'form-control',
+                'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
                 'placeholder': 'Número do PERDCOMP'
             }),
             'ano': forms.TextInput(attrs={
-                'class': 'form-control',
+                'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
                 'placeholder': 'Ano'
             }),
             'trimestre': forms.Select(attrs={
-                'class': 'form-select',
+                'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
                 'placeholder': 'Trimestre'
             }),
             'periodo_apuracao_credito': forms.TextInput(attrs={
-                'class': 'form-control',
+                'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
                 'placeholder': 'mm/aaaa'
             }),
             'periodo_apuracao_debito': forms.TextInput(attrs={
-                'class': 'form-control',
+                'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
                 'placeholder': 'mm/aaaa'
             }),
             'tipo_credito': forms.TextInput(attrs={
-                'class': 'form-control',
+                'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
                 'placeholder': 'Tipo de Crédito'
             }),
             'codigo_receita': forms.TextInput(attrs={
-                'class': 'form-control',
+                'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
                 'placeholder': 'Código da Receita'
             }),
             'codigo_receita_denominacao': forms.TextInput(attrs={
-                'class': 'form-control',
+                'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
                 'placeholder': 'Código Receita / Denominação'
             }),
             'valor_do_principal': forms.NumberInput(attrs={
-                'class': 'form-control',
+                'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
                 'placeholder': 'Valor do Principal',
                 'step': '0.01'
             }),
             'credito_original_utilizado': forms.NumberInput(attrs={
-                'class': 'form-control',
+                'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
                 'placeholder': 'Crédito Original Utilizado',
                 'step': '0.01'
             }),
             'total': forms.NumberInput(attrs={
-                'class': 'form-control',
+                'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
                 'placeholder': 'Total',
                 'step': '0.01'
             }),
             'saldo': forms.NumberInput(attrs={
-                'class': 'form-control',
+                'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pl-8',
                 'placeholder': 'Saldo',
                 'step': '0.01'
             }),
           
             'saldo_atual': forms.NumberInput(attrs={
-                'class': 'form-control',
+                'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
                 'placeholder': 'Saldo Atual',
                 'step': '0.01'
             }),
@@ -99,7 +99,7 @@ class AdesaoForm(forms.ModelForm):
         if 'metodo_credito' in self.fields:
             base_choices = [
                 ('', 'Selecione...'),
-                ('Pedido de compensação', 'Pedido de ressarcimento'),
+                ('Pedido de ressarcimento', 'Pedido de ressarcimento'),
                 ('Pedido de restituição', 'Pedido de restituição'),
                 ('Declaração de compensação pagamento indevido', 'Declaração de compensação pagamento indevido'),
             ]

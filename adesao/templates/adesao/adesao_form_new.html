@@ -123,7 +123,7 @@
                         </div>
                     </div>
 
-                    <!-- Seção Débito (visível para: Pedido de restituição, Pedido de ressarcimento, Declaração de compensação pagamento indevido) -->
+                    <!-- Seção Débito (visível apenas no método Pagamento Indevido) -->
                     <div id="sec-debito-card" class="rounded-lg border bg-card text-card-foreground shadow-sm mt-6 hidden">
                         <div class="flex flex-col space-y-1.5 p-6 border-b">
                             <h3 class="text-lg font-semibold leading-none tracking-tight">Débito</h3>
@@ -245,29 +245,27 @@
                 '{{ form.total.id_for_label }}'
             ], false);
 
-            // Show appropriate fields based on original working logic
-            if (nval === 'pedido de compensacao' || nval === 'pedido de ressarcimento') {
-                // Pedido de compensação / ressarcimento: ano, trimestre e tipo de crédito
+            // Show appropriate fields based on method
+            if (nval === 'juros sobre capital proprio' || nval === 'juros sobre capital proprio reembolso') {
                 showGroup(gAno, ['{{ form.ano.id_for_label }}']);
                 showGroup(gTrimestre, ['{{ form.trimestre.id_for_label }}']);
                 showGroup(gTipoCredito, ['{{ form.tipo_credito.id_for_label }}']);
                 setRequired(['{{ form.ano.id_for_label }}', '{{ form.tipo_credito.id_for_label }}'], true);
             } else if (nval === 'pedido de restituição' || nval === 'pedido de restituiçao' || nval === 'pedido de restituicao') {
-                // Pedido de restituição: período apuração crédito + código receita
                 showGroup(gPerApCred, ['{{ form.periodo_apuracao_credito.id_for_label }}']);
                 showGroup(gRec, ['{{ form.codigo_receita.id_for_label }}']);
                 setRequired(['{{ form.periodo_apuracao_credito.id_for_label }}', '{{ form.codigo_receita.id_for_label }}'], true);
             } else if (nval === 'declaracao de compensacao') {
-                // Declaração de compensação: crédito original utilizado
                 showGroup(gCredOrig, ['{{ form.credito_original_utilizado.id_for_label }}']);
                 setRequired(['{{ form.credito_original_utilizado.id_for_label }}'], true);
             } else if (nval === 'declaracao de compensacao pagamento indevido') {
-                // Pagamento indevido: vários campos + seção débito completa
                 showGroup(gPerApCred, ['{{ form.periodo_apuracao_credito.id_for_label }}']);
                 showGroup(gRec, ['{{ form.codigo_receita.id_for_label }}']);
                 showGroup(gRecDenom, ['{{ form.codigo_receita_denominacao.id_for_label }}']);
+                // Seção Débito
                 if (secDebito) secDebito.classList.remove('hidden');
                 showGroup(gPerApDeb, ['{{ form.periodo_apuracao_debito.id_for_label }}']);
+                // extras solicitados (não obrigatórios por enquanto):
                 showGroup(gValPrin, ['{{ form.valor_do_principal.id_for_label }}']);
                 showGroup(gTotal, ['{{ form.total.id_for_label }}']);
                 setRequired([
