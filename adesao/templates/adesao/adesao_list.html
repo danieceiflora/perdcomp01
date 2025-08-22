@@ -163,57 +163,41 @@
 {% endblock %}
 {% block extra_js %}
 <!-- Modal para Histórico da Adesão -->
-<div id="historyAdesaoModal" class="fixed inset-0 z-50 hidden">
-    <!-- Backdrop -->
-    <div class="fixed inset-0 bg-black/50 transition-opacity" aria-hidden="true"></div>
-    
-    <!-- Modal -->
-    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
-        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-            <div class="relative transform overflow-hidden rounded-lg bg-card shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-4xl">
-                <!-- Header -->
-                <div class="flex items-center justify-between p-6 border-b">
-                    <h3 class="text-lg font-semibold text-card-foreground">Histórico da Adesão</h3>
-                    <button type="button" id="closeModalBtn" class="rounded-md p-2 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                        <span class="sr-only">Fechar</span>
-                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-                
-                <!-- Content -->
-                <div class="p-6">
-                    <!-- Loading state -->
-                    <div id="history-adesao-loading" class="hidden text-center py-8">
-                        <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite]" role="status">
-                            <span class="sr-only">Carregando...</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Table -->
-                    <div class="overflow-x-auto">
-                        <table class="w-full" id="history-adesao-table">
-                            <thead>
-                                <tr class="border-b bg-muted/50">
-                                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Data</th>
-                                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Usuário</th>
-                                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Tipo</th>
-                                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Alterações</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                <!-- Footer -->
-                <div class="flex justify-end p-6 border-t bg-muted/30">
-                    <button type="button" id="closeModalFooterBtn" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
-                        Fechar
-                    </button>
-                </div>
+<div id="historyAdesaoModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 hidden z-50" role="dialog" aria-modal="true" aria-labelledby="historyAdesaoTitle">
+    <div class="bg-background rounded-lg shadow-xl w-full max-w-lg sm:max-w-3xl md:max-w-5xl lg:max-w-6xl 2xl:max-w-[90rem] border border-border" style="height:80vh;display:flex;flex-direction:column;">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-6 py-4 border-b" style="flex-shrink:0;">
+            <h3 id="historyAdesaoTitle" class="text-lg font-semibold">Histórico da Adesão</h3>
+            <button type="button" id="closeModalBtn" class="rounded-md p-2 hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" title="Fechar">
+                <i class="bi bi-x text-xl"></i>
+            </button>
+        </div>
+        <!-- Body -->
+        <div class="px-6 py-4" style="flex:1;overflow-y:auto;min-height:0;">
+            <!-- Loading -->
+            <div id="history-adesao-loading" class="text-center py-8 hidden">
+                <div class="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p class="text-muted-foreground">Carregando histórico...</p>
             </div>
+            <div class="overflow-x-auto rounded-md border" id="historyAdesaoTableWrap">
+                <table class="w-full" id="history-adesao-table">
+                    <thead class="border-b bg-muted/50">
+                        <tr>
+                            <th class="h-12 px-4 text-left text-sm font-medium text-muted-foreground">Data</th>
+                            <th class="h-12 px-4 text-left text-sm font-medium text-muted-foreground">Usuário</th>
+                            <th class="h-12 px-4 text-left text-sm font-medium text-muted-foreground">Tipo</th>
+                            <th class="h-12 px-4 text-left text-sm font-medium text-muted-foreground">Alterações</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+        <!-- Footer -->
+        <div class="flex justify-end px-6 py-4 border-t gap-2" style="flex-shrink:0;">
+            <button type="button" id="closeModalFooterBtn" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                Fechar
+            </button>
         </div>
     </div>
 </div>
@@ -238,7 +222,7 @@ closeButtons.forEach(btn => {
     btn.addEventListener('click', closeModal);
 });
 
-// Close modal when clicking backdrop
+// Close modal when clicking backdrop (outside panel)
 modal.addEventListener('click', (e) => {
     if (e.target === modal) {
         closeModal();
