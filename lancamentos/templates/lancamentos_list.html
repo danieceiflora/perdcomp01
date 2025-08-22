@@ -3,294 +3,227 @@
 
 {% block title %}Lista de Lançamentos{% endblock %}
 
-{% block extra_css %}
-<style>
-    /* Estilos para os cards de lançamento */
-    .card-lancamento {
-        margin-bottom: 1rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        transition: transform 0.2s;
-        overflow: hidden;
-    }
-    
-    .card-lancamento:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-    
-    .card-lancamento .card-header {
-        padding: 0.75rem 1rem;
-        border-bottom: 1px solid rgba(0,0,0,0.1);
-    }
-    
-    .card-lancamento .info-item {
-        padding: 0.5rem 0;
-        border-bottom: 1px solid rgba(0,0,0,0.05);
-    }
-    
-    .card-lancamento .info-item:last-child {
-        border-bottom: none;
-    }
-    
-    .card-lancamento .info-label {
-        font-weight: bold;
-        color: #6c757d;
-        font-size: 0.85rem;
-        margin-bottom: 0.2rem;
-    }
-    
-    .card-lancamento .info-value {
-        font-weight: 500;
-    }
-    
-    .card-lancamento .status-badge {
-        font-size: 0.8rem;
-        padding: 0.25rem 0.5rem;
-    }
-    
-    .card-lancamento .card-footer {
-        background-color: rgba(0,0,0,0.02);
-        padding: 0.75rem 1rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    
-    .button-container {
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-        justify-content: flex-end;
-    }
-    
-    .button-container .btn {
-        margin-bottom: 0.25rem;
-    }
-    
-    @media (max-width: 767.98px) {
-        .info-item {
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-            margin-bottom: 0.5rem;
-        }
-        
-        .card-body .row > div:last-child .info-item:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-        }
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
-                    <h3 class="card-title mb-2 mb-md-0">Lançamentos</h3>
-                    <div class="d-flex flex-column flex-md-row gap-2 align-items-center">
-                        <form class="d-flex me-md-2 w-100 w-md-auto" method="get">
-                            <div class="input-group">
-                                <input type="text" name="perdcomp" class="form-control" placeholder="PERDCOMP" 
-                                       value="{{ request.GET.perdcomp|default:'' }}">
-                                <button class="btn btn-outline-secondary" type="submit">
-                                    <i class="bi bi-search"></i>
-                                </button>
-                                {% if request.GET.perdcomp %}
-                                    <a href="{% url 'lancamentos:list' %}" class="btn btn-outline-secondary">
-                                        <i class="bi bi-x-lg"></i>
-                                    </a>
-                                {% endif %}
-                            </div>
-                        </form>
-                        <form method="get" action="{% url 'lancamentos:exportar_xlsx' %}" class="m-0">
-                            {% if request.GET.perdcomp %}
-                                <input type="hidden" name="perdcomp" value="{{ request.GET.perdcomp }}">
-                            {% endif %}
-                            <button type="submit" class="btn btn-outline-success d-flex align-items-center gap-1 h-100"
-                                title="Exportar lançamentos para Excel (.xlsx)" aria-label="Exportar lançamentos para Excel">
-                                <i class="bi bi-file-earmark-excel" aria-hidden="true"></i>
-                                <span class="d-none d-sm-inline">Exportar</span>
-                            </button>
-                        </form>
-                        {% if user.is_staff or user.is_superuser %}
-                            <a href="{% url 'lancamentos:create' %}" class="btn btn-primary w-100 w-md-auto">
-                                <i class="bi bi-plus"></i> Novo Lançamento
-                            </a>
+<div class="max-w-7xl mx-auto px-4 py-6">
+    <div class="bg-card border rounded-lg shadow-sm mb-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-6 border-b">
+            <h1 class="text-2xl font-semibold text-card-foreground">Lançamentos</h1>
+            <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                <form method="get" class="flex w-full sm:w-auto">
+                    <div class="flex w-full items-stretch rounded-md border border-input overflow-hidden focus-within:ring-2 focus-within:ring-ring">
+                        <input type="text" name="perdcomp" placeholder="PERDCOMP" value="{{ request.GET.perdcomp|default:'' }}" class="flex-1 bg-background px-3 py-2 text-sm outline-none" />
+                        <button type="submit" class="inline-flex items-center justify-center bg-muted px-3 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
+                            <i class="bi bi-search"></i>
+                        </button>
+                        {% if request.GET.perdcomp %}
+                        <a href="{% url 'lancamentos:list' %}" class="inline-flex items-center justify-center bg-muted px-3 text-sm font-medium text-muted-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors">
+                            <i class="bi bi-x-lg"></i>
+                        </a>
                         {% endif %}
+                    </div>
+                </form>
+                <form method="get" action="{% url 'lancamentos:exportar_xlsx' %}" class="flex">
+                    {% if request.GET.perdcomp %}<input type="hidden" name="perdcomp" value="{{ request.GET.perdcomp }}">{% endif %}
+                    <button type="submit" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">
+                        <i class="bi bi-file-earmark-excel mr-2"></i><span>Exportar</span>
+                    </button>
+                </form>
+                {% if user.is_staff or user.is_superuser %}
+                <a href="{% url 'lancamentos:create' %}" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors">
+                    <i class="bi bi-plus mr-2"></i>Novo Lançamento
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="p-6">
+            <div class="flex items-start gap-3 p-4 mb-6 rounded-md border bg-muted/30 text-sm text-muted-foreground">
+                <i class="bi bi-info-circle text-base"></i>
+                <span>O saldo restante indica o saldo da adesão após cada lançamento confirmado.</span>
+            </div>
+            {% if lancamentos %}
+            <!-- Desktop table -->
+            <div class="hidden md:block">
+                <div class="rounded-md border overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b bg-muted/50 text-muted-foreground">
+                                <th class="h-10 px-4 text-left font-medium">Perdcomp</th>
+                                <th class="h-10 px-4 text-left font-medium">Cliente</th>
+                                <th class="h-10 px-4 text-left font-medium">Data de Criação</th>
+                                <th class="h-10 px-4 text-left font-medium">Valor</th>
+                                <th class="h-10 px-4 text-left font-medium">Saldo Restante</th>
+                                <th class="h-10 px-4 text-left font-medium">Anexos</th>
+                                <th class="h-10 px-4 text-left font-medium">Status</th>
+                                <th class="h-10 px-4 text-left font-medium">Ações</th>
+                                <th class="h-10 px-4 text-left font-medium">Histórico</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for lancamento in lancamentos %}
+                            <tr class="border-b last:border-0 hover:bg-muted/50 transition-colors">
+                                <td class="px-4 py-3 font-medium">{{ lancamento.id_adesao.perdcomp }}</td>
+                                <td class="px-4 py-3">{% if lancamento.id_adesao.cliente.id_company_vinculada %}{{ lancamento.id_adesao.cliente.id_company_vinculada.razao_social }}{% else %}{{ lancamento.id_adesao.cliente }}{% endif %}</td>
+                                <td class="px-4 py-3">{{ lancamento.data_criacao }}</td>
+                                <td class="px-4 py-3 font-semibold {% if lancamento.sinal == '+' %}text-green-600 dark:text-green-400{% else %}text-destructive{% endif %}">{{ lancamento.sinal }} R$ {{ lancamento.valor|floatformat:2 }}</td>
+                                <td class="px-4 py-3 font-semibold">R$ {{ lancamento.saldo_restante|floatformat:2 }}</td>
+                                <td class="px-4 py-3"><span class="inline-flex items-center rounded-md bg-blue-500/10 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-300">{{ lancamento.anexos.count }} anexo(s)</span></td>
+                                <td class="px-4 py-3"><span class="inline-flex items-center rounded-md bg-red-500/10 px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300">Débito</span></td>
+                                <td class="px-4 py-3">
+                                    <a href="{% url 'lancamentos:detail' lancamento.pk %}" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent hover:text-accent-foreground transition-colors"><i class="bi bi-eye mr-1"></i>Detalhes</a>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <button class="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent hover:text-accent-foreground transition-colors btn-history-lanc" data-id="{{ lancamento.id }}" title="Histórico"><i class="bi bi-clock-history"></i></button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Mobile cards -->
+            <div class="md:hidden space-y-4">
+                {% for lancamento in lancamentos %}
+                <div class="bg-card border rounded-lg shadow-sm transition hover:shadow-md">
+                    <div class="p-4 border-b flex items-center justify-between">
+                        <h3 class="font-semibold">Perdcomp: {{ lancamento.id_adesao.perdcomp }}</h3>
+                        <span class="inline-flex items-center rounded-md bg-red-500/10 px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300">Débito</span>
+                    </div>
+                    <div class="p-4 space-y-2 text-sm">
+                        <div><span class="text-muted-foreground">Cliente:</span> {% if lancamento.id_adesao.cliente.id_company_vinculada %}{{ lancamento.id_adesao.cliente.id_company_vinculada.razao_social }}{% else %}{{ lancamento.id_adesao.cliente }}{% endif %}</div>
+                        <div><span class="text-muted-foreground">Data:</span> {{ lancamento.data_lancamento|date:"d/m/Y" }}</div>
+                        <div><span class="text-muted-foreground">Valor:</span> <span class="font-semibold {% if lancamento.sinal == '+' %}text-green-600 dark:text-green-400{% else %}text-destructive{% endif %}">{{ lancamento.sinal }} R$ {{ lancamento.valor|floatformat:2 }}</span></div>
+                        <div><span class="text-muted-foreground">Saldo Restante:</span> <span class="font-semibold {% if lancamento.saldo_restante > 0 %}text-green-600 dark:text-green-400{% elif lancamento.saldo_restante < 0 %}text-destructive{% endif %}">{% if lancamento.saldo_restante != None %}R$ {{ lancamento.saldo_restante|floatformat:2 }}{% else %}<span class="text-muted-foreground">--</span>{% endif %}</span></div>
+                        <div><span class="text-muted-foreground">Anexos:</span> <span class="inline-flex items-center rounded-md bg-blue-500/10 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-300">{{ lancamento.anexos.count }} anexo(s)</span></div>
+                    </div>
+                    <div class="p-4 bg-muted/30 border-t flex flex-col gap-2">
+                        <a href="{% url 'lancamentos:detail' lancamento.pk %}" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"><i class="bi bi-eye mr-2"></i>Detalhes</a>
+                        <button class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors btn-history-lanc" data-id="{{ lancamento.id }}"><i class="bi bi-clock-history mr-2"></i>Histórico</button>
                     </div>
                 </div>
-                <div class="card-body">
-                    <div class="alert alert-info mb-3">
-                        <i class="bi bi-info-circle me-2"></i>
-                        O saldo restante indica o saldo da adesão após cada lançamento confirmado.
-                    </div>
-                    
-                    {% if lancamentos %}
-                        <div class="d-none d-md-block">
-                            <table class="table table-hover align-middle mb-0">
-                                <thead class="table-primary">
-                                    <tr>
-                                        <th>Perdcomp</th>
-                                        <th>Cliente</th>
-                                        <th>Data de Criação</th>
-                                        <th>Valor do Lançamento</th>
-                                        <th>Saldo Restante</th>
-                                        <th>Anexos</th>
-                                        <th>Status</th>
-                                        <th>Ações</th>
-                                        <th>Histórico</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for lancamento in lancamentos %}
-                                    <tr>
-                                        <td>{{ lancamento.id_adesao.perdcomp }}</td>
-                                        <td>{% if lancamento.id_adesao.cliente.id_company_vinculada %}{{ lancamento.id_adesao.cliente.id_company_vinculada.razao_social }}{% else %}{{ lancamento.id_adesao.cliente }}{% endif %}</td>
-                                        <td>{{ lancamento.data_criacao }}</td>
-                                        <td class="fw-bold {% if lancamento.sinal == '+' %}text-success{% else %}text-danger{% endif %}">{{ lancamento.sinal }} R$ {{ lancamento.valor|floatformat:2 }}</td>
-                                        <td class="fw-bold">R$ {{ lancamento.saldo_restante|floatformat:2 }}</td>
-                                        <td><span class="badge bg-info">{{ lancamento.anexos.count }} anexo(s)</span></td>
-                                        <td><span class="badge bg-danger status-badge">Débito</span></td>
-                                        <td>
-                                            <a href="{% url 'lancamentos:detail' lancamento.pk %}" class="btn btn-outline-primary btn-sm">
-                                                <i class="bi bi-eye"></i> Ver Detalhes
-                                            </a>
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-outline-info btn-sm btn-history-lanc" data-id="{{ lancamento.id }}" title="Histórico">
-                                                <i class="bi bi-clock-history"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="d-block d-md-none">
-                            {% for lancamento in lancamentos %}
-                                <div class="card card-lancamento mb-3">
-                                    <div class="card-header d-flex justify-content-between align-items-center">
-                                        <h5 class="mb-0">Perdcomp: {{ lancamento.id_adesao.perdcomp }}</h5>
-                                        <span class="badge bg-danger status-badge">Débito</span>
-                                    </div>
-                                    <div class="card-body p-2">
-                                        <div class="mb-2"><span class="fw-bold">Cliente:</span> {% if lancamento.id_adesao.cliente.id_company_vinculada %}{{ lancamento.id_adesao.cliente.id_company_vinculada.razao_social }}{% else %}{{ lancamento.id_adesao.cliente }}{% endif %}</div>
-                                        <div class="mb-2"><span class="fw-bold">Data:</span> {{ lancamento.data_lancamento|date:"d/m/Y" }}</div>
-                                        <div class="mb-2"><span class="fw-bold">Valor do Lançamento:</span> <span class="fw-bold text-danger">- R$ {{ lancamento.valor|floatformat:2 }}</span></div>
-                                        <div class="mb-2"><span class="fw-bold">Saldo Restante:</span> <span class="fw-bold {% if lancamento.saldo_restante > 0 %}text-success{% elif lancamento.saldo_restante < 0 %}text-danger{% endif %}">{% if lancamento.saldo_restante != None %}R$ {{ lancamento.saldo_restante|floatformat:2 }}{% else %}<span class="text-muted">--</span>{% endif %}</span></div>
-                                        <div class="mb-2"><span class="fw-bold">Anexos:</span> <span class="badge bg-info">{{ lancamento.anexos.count }} anexo(s)</span></div>
-                                    </div>
-                                    <div class="card-footer">
-                                        <div class="button-container">
-                                            <a href="{% url 'lancamentos:detail' lancamento.pk %}" class="btn btn-outline-primary btn-sm w-100">
-                                                <i class="bi bi-eye"></i> Ver Detalhes
-                                            </a>
-                                            <button class="btn btn-outline-info btn-sm w-100 btn-history-lanc" data-id="{{ lancamento.id }}">
-                                                <i class="bi bi-clock-history"></i> Histórico
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                        
-                        {% if is_paginated %}
-                        <nav aria-label="Paginação" class="mt-4">
-                            <ul class="pagination justify-content-center">
-                                {% if page_obj.has_previous %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.perdcomp %}&perdcomp={{ request.GET.perdcomp }}{% endif %}">Anterior</a>
-                                    </li>
-                                {% endif %}
-                                
-                                <li class="page-item active">
-                                    <span class="page-link">
-                                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
-                                    </span>
-                                </li>
-                                
-                                {% if page_obj.has_next %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.perdcomp %}&perdcomp={{ request.GET.perdcomp }}{% endif %}">Próximo</a>
-                                    </li>
-                                {% endif %}
-                            </ul>
-                        </nav>
-                        {% endif %}
-                    {% else %}
-                        <div class="alert alert-info">
-                            <i class="bi bi-info-circle"></i> Nenhum lançamento cadastrado.
-                        </div>
+                {% endfor %}
+            </div>
+            {% if is_paginated %}
+            <nav class="mt-8 flex justify-center" aria-label="Paginação">
+                <div class="flex items-center gap-2">
+                    {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.perdcomp %}&perdcomp={{ request.GET.perdcomp }}{% endif %}" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground">Anterior</a>
+                    {% endif %}
+                    <span class="px-4 py-2 text-sm text-muted-foreground">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                    {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if request.GET.perdcomp %}&perdcomp={{ request.GET.perdcomp }}{% endif %}" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground">Próximo</a>
                     {% endif %}
                 </div>
+            </nav>
+            {% endif %}
+            {% else %}
+            <div class="flex items-center gap-3 p-4 rounded-md border bg-blue-50 dark:bg-blue-950/30 text-sm">
+                <i class="bi bi-info-circle text-blue-600 dark:text-blue-400"></i>
+                <span>Nenhum lançamento cadastrado.</span>
             </div>
+            {% endif %}
         </div>
     </div>
 </div>
 {% endblock %}
+
 {% block extra_js %}
-<div class="modal fade" id="historyLancModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Histórico do Lançamento</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<!-- Modal Histórico Lançamento (estrutura harmonizada com lista_clientes) -->
+<div id="historyLancModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 hidden z-50" role="dialog" aria-modal="true" aria-labelledby="historyLancTitle">
+    <div class="bg-background rounded-lg shadow-xl w-full max-w-5xl border" style="height:80vh;display:flex;flex-direction:column;">
+        <div class="flex items-center justify-between px-6 py-4 border-b" style="flex-shrink:0;">
+            <h3 id="historyLancTitle" class="text-lg font-semibold">Histórico do Lançamento</h3>
+            <button type="button" class="rounded-md p-2 hover:bg-accent transition-colors" data-close-history>
+                <i class="bi bi-x text-xl"></i>
+            </button>
+        </div>
+        <div class="px-6 py-4" style="flex:1;overflow-y:auto;min-height:0;">
+            <div id="history-lanc-loading" class="text-center py-8 hidden">
+                <div class="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p class="text-muted-foreground">Carregando histórico...</p>
             </div>
-            <div class="modal-body">
-                <div id="history-lanc-loading" class="text-center py-3 d-none">
-                        <div class="spinner-border" role="status"><span class="visually-hidden">Carregando...</span></div>
+            <div id="historyLancContent">
+                <div class="overflow-x-auto rounded-md border" id="historyLancTableWrap">
+                    <table class="w-full text-sm" id="history-lanc-body-table">
+                        <thead>
+                            <tr class="border-b bg-muted/50 text-muted-foreground">
+                                <th class="h-10 px-4 text-left font-medium">Data</th>
+                                <th class="h-10 px-4 text-left font-medium">Usuário</th>
+                                <th class="h-10 px-4 text-left font-medium">Tipo</th>
+                                <th class="h-10 px-4 text-left font-medium">Alterações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-lanc-body"></tbody>
+                    </table>
                 </div>
-                <div class="table-responsive">
-                        <table class="table table-sm table-striped align-middle">
-                                <thead class="table-light">
-                                        <tr>
-                                                <th>Data</th>
-                                                <th>Usuário</th>
-                                                <th>Tipo</th>
-                                                <th>Alterações</th>
-                                        </tr>
-                                </thead>
-                                <tbody id="history-lanc-body"></tbody>
-                        </table>
-                </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-            </div>
+        </div>
+        <div class="flex justify-end px-6 py-4 border-t" style="flex-shrink:0;">
+            <button type="button" data-close-history class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground">Fechar</button>
         </div>
     </div>
 </div>
+
 <script>
+const historyLancModal = document.getElementById('historyLancModal');
+const historyLancBody = document.getElementById('history-lanc-body');
+const historyLancLoading = document.getElementById('history-lanc-loading');
+
+function openHistoryLanc() {
+    historyLancModal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+function closeHistoryLanc() {
+    historyLancModal.classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+// Close on root backdrop click (like clientes modal)
+historyLancModal.addEventListener('click', e => { if (e.target === historyLancModal) closeHistoryLanc(); });
+historyLancModal.querySelectorAll('[data-close-history]').forEach(btn => btn.addEventListener('click', closeHistoryLanc));
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !historyLancModal.classList.contains('hidden')) closeHistoryLanc(); });
+
 document.addEventListener('click', async (e)=>{
     const btn = e.target.closest('.btn-history-lanc');
     if(!btn) return;
     const id = btn.getAttribute('data-id');
-    const modalEl = document.getElementById('historyLancModal');
-    const tbody = modalEl.querySelector('#history-lanc-body');
-    tbody.innerHTML='';
-    modalEl.querySelector('#history-lanc-loading').classList.remove('d-none');
-    const modal = new bootstrap.Modal(modalEl); modal.show();
+    historyLancBody.innerHTML='';
+    historyLancLoading.classList.remove('hidden');
+    openHistoryLanc();
     try {
         const base = window.location.origin + window.location.pathname;
         const resp = await fetch(base + 'historico/' + id + '/');
         if(!resp.ok) throw new Error('Falha ao carregar histórico');
         const data = await resp.json();
-        (data.history||[]).forEach(entry=>{
+        const hist = data.history || [];
+            hist.forEach(entry => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b last:border-0 hover:bg-muted/50';
+                const tipoMap = { '+':'Criação','~':'Atualização','-':'Exclusão' };
+                const tipoClass = { '+':'bg-green-500/10 text-green-700 dark:text-green-300','~':'bg-blue-500/10 text-blue-700 dark:text-blue-300','-':'bg-red-500/10 text-red-700 dark:text-red-300' };
+                const alterations = (entry.changes || []).map(c => {
+                    const oldVal = c.old === null ? '<em class="text-muted-foreground">(vazio)</em>' : c.old;
+                    const newVal = c.new === null ? '<em class="text-muted-foreground">(vazio)</em>' : c.new;
+                    return `<div class="mb-2"><span class=\"inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground\">${c.field}</span> <span class=\"font-medium\">${oldVal}</span> → <span class=\"font-medium\">${newVal}</span></div>`;
+                }).join('');
+                const note = entry.note ? `<div class="text-xs text-muted-foreground">${entry.note}</div>` : '';
+                tr.innerHTML = `
+                    <td class='px-4 py-3 align-top'>${entry.history_date}</td>
+                    <td class='px-4 py-3 align-top'>${entry.history_user||'-'}</td>
+                    <td class='px-4 py-3 align-top'><span class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${tipoClass[entry.history_type]||'bg-muted text-muted-foreground'}">${tipoMap[entry.history_type]||entry.history_type}</span></td>
+                    <td class='px-4 py-3'>${alterations || note || '<span class="text-muted-foreground">Nenhuma alteração</span>'}</td>`;
+                historyLancBody.appendChild(tr);
+            });
+        if(hist.length===0){
             const tr = document.createElement('tr');
-            const tipoMap = { '+':'Criação','~':'Atualização','-':'Exclusão' };
-            const alterations = entry.changes.map(c=>`<div><span class='badge bg-secondary'>${c.field}</span> <strong>${c.old===null?'<em>(vazio)</em>':c.old}</strong> → <strong>${c.new===null?'<em>(vazio)</em>':c.new}</strong></div>`).join('');
-            const note = entry.note ? `<div class='text-muted small'>${entry.note}</div>` : '';
-            tr.innerHTML = `<td>${entry.history_date}</td><td>${entry.history_user||'-'}</td><td>${tipoMap[entry.history_type]||entry.history_type}</td><td>${alterations||note||'<span class="text-muted">Nenhuma alteração</span>'}</td>`;
-            tbody.appendChild(tr);
-        });
+            tr.innerHTML = `<td colspan="4" class="px-4 py-8 text-center text-muted-foreground">Nenhum histórico encontrado</td>`;
+            historyLancBody.appendChild(tr);
+        }
     } catch(err){
         const tr=document.createElement('tr');
-        tr.innerHTML = `<td colspan='4' class='text-danger'>${err.message}</td>`;
-        tbody.appendChild(tr);
+        tr.innerHTML = `<td colspan="4" class="px-4 py-4 text-center text-destructive">${err.message}</td>`;
+        historyLancBody.appendChild(tr);
     } finally {
-        modalEl.querySelector('#history-lanc-loading').classList.add('d-none');
+        historyLancLoading.classList.add('hidden');
     }
 });
 </script>
