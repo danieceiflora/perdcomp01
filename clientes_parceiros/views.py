@@ -274,6 +274,11 @@ class ListClienteParceiroView(LoginRequiredMixin, ListView):
         context['total_empresas_cliente_unicas'] = len(set(cp.id_company_vinculada_id for cp in clientes_parceiros))
         context['empresa_base_atual'] = getattr(getattr(self.request.user, 'profile', None), 'empresa_vinculada', None)
         context['q'] = self.request.GET.get('q', '')
+        
+        # Calcular total de parceiros
+        parceiros_qs = ClientesParceiros.objects.filter(tipo_parceria='parceiro', ativo=True)
+        context['total_parceiros'] = parceiros_qs.count()
+        
         # Lista de parceiros para filtro (apenas para staff/superuser)
         if self.request.user.is_staff or self.request.user.is_superuser:
             # Parceiros são empresas que aparecem como base em vínculos de cliente

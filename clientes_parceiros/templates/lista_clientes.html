@@ -4,7 +4,7 @@
 {% block title %}Lista de Clientes{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto">
+<div class="max-w-7xl mx-auto px-6">
     <!-- Page Header -->
     <div class="mb-8">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -31,7 +31,7 @@
     {% if clientes_parceiros %}
     <!-- Filters -->
     <div class="card mb-6">
-        <div class="card-content">
+        <div class="p-6">
             <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                     <label for="q" class="block text-sm font-medium text-foreground mb-2">Buscar cliente</label>
@@ -62,71 +62,26 @@
         </div>
     </div>
 
-    <!-- Summary Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div class="card">
-            <div class="card-content">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center">
-                        <i class="bi bi-people text-primary"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm text-muted-foreground">Total de Clientes</p>
-                        <p class="text-2xl font-bold text-foreground">{{ total_clientes }}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="card">
-            <div class="card-content">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-md bg-secondary/10 flex items-center justify-center">
-                        <i class="bi bi-briefcase text-secondary"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm text-muted-foreground">Total de Parceiros</p>
-                        <p class="text-2xl font-bold text-foreground">{{ total_parceiros }}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% if empresa_base_atual %}
-        <div class="card">
-            <div class="card-content">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-md bg-blue-500/10 flex items-center justify-center">
-                        <i class="bi bi-building text-blue-600"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm text-muted-foreground">Empresa Base</p>
-                        <p class="text-sm font-medium text-foreground">{{ empresa_base_atual.nome_fantasia|default:empresa_base_atual.razao_social }}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-    </div>
-
     <!-- Clients Table -->
     <div class="card">
-        <div class="card-header">
-            <h3 class="text-lg font-semibold">Clientes ({{ clientes_parceiros|length }})</h3>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead class="border-b">
-                    <tr class="text-left">
-                        <th class="px-6 py-4 text-sm font-medium text-muted-foreground">Cliente</th>
-                        <th class="px-6 py-4 text-sm font-medium text-muted-foreground">Parceiro</th>
-                        <th class="px-6 py-4 text-sm font-medium text-muted-foreground">Tipo</th>
-                        <th class="px-6 py-4 text-sm font-medium text-muted-foreground">Data Criação</th>
-                        <th class="px-6 py-4 text-sm font-medium text-muted-foreground">Ações</th>
-                    </tr>
-                </thead>
+        <div class="p-6">
+            <h3 class="text-lg font-semibold mb-4">Clientes ({{ clientes_parceiros|length }})</h3>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="border-b">
+                            <th class="text-left py-3 text-sm font-medium text-muted-foreground">Cliente</th>
+                            <th class="text-left py-3 text-sm font-medium text-muted-foreground">Parceiro</th>
+                            <th class="text-left py-3 text-sm font-medium text-muted-foreground">Tipo</th>
+                            <th class="text-left py-3 text-sm font-medium text-muted-foreground">Data Criação</th>
+                            <th class="text-left py-3 text-sm font-medium text-muted-foreground">Ações</th>
+                        </tr>
+                    </thead>
                 <tbody class="divide-y">
                     {% for cliente_parceiro in clientes_parceiros %}
                     <tr class="hover:bg-muted/50 transition-colors">
-                        <td class="px-6 py-4">
+                        <td class="py-3">
                             <div class="flex items-center gap-3">
                                 {% if cliente_parceiro.id_company_vinculada.logomarca %}
                                 <img src="{{ cliente_parceiro.id_company_vinculada.logomarca.url }}" 
@@ -147,7 +102,7 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="px-6 py-4">
+                        <td class="py-3">
                             <div class="font-medium text-foreground">
                                 {{ cliente_parceiro.id_company_base.nome_fantasia|default:cliente_parceiro.id_company_base.razao_social }}
                             </div>
@@ -155,17 +110,17 @@
                                 {{ cliente_parceiro.id_company_base.cnpj }}
                             </div>
                         </td>
-                        <td class="px-6 py-4">
+                        <td class="py-3">
                             <span class="inline-flex items-center rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300">
                                 {{ cliente_parceiro.tipo_relacionamento.nome }}
                             </span>
                         </td>
-                        <td class="px-6 py-4">
+                        <td class="py-3">
                             <div class="text-sm text-muted-foreground">
                                 {{ cliente_parceiro.data_criacao|date:"d/m/Y H:i" }}
                             </div>
                         </td>
-                        <td class="px-6 py-4">
+                        <td class="py-3">
                             <div class="flex items-center gap-2">
                                 <a href="{% url 'cliente_detail' cliente_parceiro.pk %}" 
                                    class="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -191,12 +146,13 @@
                     {% endfor %}
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
     {% else %}
     <!-- Empty State -->
     <div class="card">
-        <div class="card-content text-center py-12">
+        <div class="p-6 text-center py-12">
             <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
                 <i class="bi bi-people text-2xl text-muted-foreground"></i>
             </div>
