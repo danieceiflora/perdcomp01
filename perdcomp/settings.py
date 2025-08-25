@@ -147,6 +147,11 @@ JAZZMIN_SETTINGS = {
             "new_window": True,
             "icon": "fas fa-key",
         },
+        {
+          "name": "Site",
+          "url": "/",
+          "icon": "fas fa-home"
+        }
     ],
     "icons":
         {

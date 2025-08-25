@@ -16,9 +16,11 @@
                     </h1>
                     <p class="text-muted-foreground mt-1">Gerenciar teses de crédito e suas correções</p>
                 </div>
+                {% if perms.correcao.add_tesecredito %}
                 <a href="{% url 'correcao:tese_credito_create' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
                     <i class="bi bi-plus-lg mr-2"></i>Nova Tese de Crédito
                 </a>
+                {% endif %}
             </div>
         </div>
 
@@ -79,11 +81,13 @@
                                 </td>
                                 <td class="p-4 align-middle [&:has([role=checkbox])]:pr-0">
                                     <div class="flex items-center gap-2">
+                                        {% if perms.correcao.change_tesecredito %}
                                         <a href="{% url 'correcao:tese_credito_update' tese.pk %}" 
                                            class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3"
                                            title="Editar">
                                             <i class="bi bi-pencil mr-1"></i>Editar
                                         </a>
+                                        {% endif %}
                                         <button type="button" 
                                                 class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3 btn-history" 
                                                 data-history-id="{{ tese.pk }}"
@@ -91,19 +95,21 @@
                                             <i class="bi bi-clock-history mr-1"></i>Histórico
                                         </button>
                                         {% with total=tese.adesoes_total|default:tese.adesoes.count %}
-                                            {% if total == 0 %}
-                                                <a href="{% url 'correcao:tese_credito_delete' tese.pk %}" 
-                                                   class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-destructive text-destructive-foreground hover:bg-destructive/90 h-8 px-3"
-                                                   title="Excluir">
-                                                    <i class="bi bi-trash mr-1"></i>Excluir
-                                                </a>
-                                            {% else %}
-                                                <button type="button" 
-                                                        class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-muted text-muted-foreground cursor-not-allowed h-8 px-3" 
-                                                        disabled 
-                                                        title="Há {{ total }} adesão(ões) vinculada(s)">
-                                                    <i class="bi bi-lock mr-1"></i>Excluir
-                                                </button>
+                                            {% if perms.correcao.delete_tesecredito %}
+                                                {% if total == 0 %}
+                                                    <a href="{% url 'correcao:tese_credito_delete' tese.pk %}" 
+                                                       class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-destructive text-destructive-foreground hover:bg-destructive/90 h-8 px-3"
+                                                       title="Excluir">
+                                                        <i class="bi bi-trash mr-1"></i>Excluir
+                                                    </a>
+                                                {% else %}
+                                                    <button type="button" 
+                                                            class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-muted text-muted-foreground cursor-not-allowed h-8 px-3" 
+                                                            disabled 
+                                                            title="Há {{ total }} adesão(ões) vinculada(s)">
+                                                        <i class="bi bi-lock mr-1"></i>Excluir
+                                                    </button>
+                                                {% endif %}
                                             {% endif %}
                                         {% endwith %}
                                     </div>
@@ -143,9 +149,11 @@
                 <div class="text-center">
                     <i class="bi bi-info-circle text-4xl text-muted-foreground mb-4"></i>
                     <p class="text-muted-foreground">Nenhuma tese de crédito cadastrada.</p>
+                    {% if perms.correcao.add_tesecredito %}
                     <a href="{% url 'correcao:tese_credito_create' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 mt-4">
                         <i class="bi bi-plus mr-2"></i>Nova Tese de Crédito
                     </a>
+                    {% endif %}
                 </div>
             </div>
         </div>

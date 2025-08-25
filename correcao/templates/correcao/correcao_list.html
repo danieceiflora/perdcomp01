@@ -16,9 +16,11 @@
                     </h3>
                     <p class="text-sm text-muted-foreground mt-1">Gerenciar correções e suas teses de crédito</p>
                 </div>
+                {% if perms.correcao.add_correcao %}
                 <a href="{% url 'correcao:create' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
                     <i class="bi bi-plus mr-2"></i>Nova Correção
                 </a>
+                {% endif %}
             </div>
 
     {% if correcoes %}
@@ -57,10 +59,12 @@
                                 </td>
                                 <td class="p-4 align-middle [&:has([role=checkbox])]:pr-0">
                                     <div class="flex items-center gap-2">
+                                        {% if perms.correcao.change_correcao %}
                                         <a href="{% url 'correcao:update' correcao.pk %}" 
                                            class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3">
                                             <i class="bi bi-pencil mr-1"></i>Editar
                                         </a>
+                                        {% endif %}
                                         <button type="button" 
                                                 class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 w-8 btn-history" 
                                                 data-history-id="{{ correcao.id }}"
@@ -68,19 +72,21 @@
                                             <i class="bi bi-clock-history"></i>
                                         </button>
                                         {% with total=correcao.teses_total|default:correcao.tesecredito_set.count %}
-                                            {% if total == 0 %}
-                                                <a href="{% url 'correcao:delete' correcao.pk %}" 
-                                                   class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-destructive text-destructive-foreground hover:bg-destructive/90 h-8 px-3">
-                                                    <i class="bi bi-trash mr-1"></i>Excluir
-                                                </a>
-                                            {% else %}
-                                                <button type="button" 
-                                                        class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-muted text-muted-foreground cursor-not-allowed h-8 px-3" 
-                                                        disabled 
-                                                        data-bs-toggle="tooltip" 
-                                                        title="Há {{ total }} tese(s) vinculada(s)">
-                                                    <i class="bi bi-lock mr-1"></i>Excluir
-                                                </button>
+                                            {% if perms.correcao.delete_correcao %}
+                                                {% if total == 0 %}
+                                                    <a href="{% url 'correcao:delete' correcao.pk %}" 
+                                                       class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-destructive text-destructive-foreground hover:bg-destructive/90 h-8 px-3">
+                                                        <i class="bi bi-trash mr-1"></i>Excluir
+                                                    </a>
+                                                {% else %}
+                                                    <button type="button" 
+                                                            class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-muted text-muted-foreground cursor-not-allowed h-8 px-3" 
+                                                            disabled 
+                                                            data-bs-toggle="tooltip" 
+                                                            title="Há {{ total }} tese(s) vinculada(s)">
+                                                        <i class="bi bi-lock mr-1"></i>Excluir
+                                                    </button>
+                                                {% endif %}
                                             {% endif %}
                                         {% endwith %}
                                     </div>
@@ -118,9 +124,11 @@
                 <div class="text-center">
                     <i class="bi bi-file-earmark-check text-4xl text-muted-foreground mb-4"></i>
                     <p class="text-muted-foreground">Nenhuma correção cadastrada.</p>
+                    {% if perms.correcao.add_correcao %}
                     <a href="{% url 'correcao:create' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 mt-4">
                         <i class="bi bi-plus mr-2"></i>Nova Correção
                     </a>
+                    {% endif %}
                 </div>
             </div>
         {% endif %}

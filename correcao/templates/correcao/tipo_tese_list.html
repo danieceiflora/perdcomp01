@@ -9,9 +9,11 @@
         <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
             <div class="flex flex-col space-y-1.5 p-6 border-b sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
                 <h3 class="text-2xl font-semibold leading-none tracking-tight">Lista de Tipos de Tese</h3>
+                {% if perms.correcao.add_tipotese %}
                 <a href="{% url 'correcao:tipo_tese_create' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
                     <i class="bi bi-plus mr-2"></i>Novo Tipo de Tese
                 </a>
+                {% endif %}
             </div>
             <div class="p-6">
                 {% if tipos_tese %}
@@ -34,24 +36,28 @@
                                     <td class="p-4 align-middle [&:has([role=checkbox])]:pr-0">{{ tipo.periodicidade }}</td>
                                     <td class="p-4 align-middle [&:has([role=checkbox])]:pr-0">
                                         <div class="flex items-center gap-2">
+                                            {% if perms.correcao.change_tipotese %}
                                             <a href="{% url 'correcao:tipo_tese_update' tipo.pk %}" 
                                                class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3">
                                                 <i class="bi bi-pencil mr-1"></i>Editar
                                             </a>
+                                            {% endif %}
                                             {% with total=tipo.tesecredito_set.count %}
-                                                {% if total == 0 %}
-                                                    <a href="{% url 'correcao:tipo_tese_delete' tipo.pk %}" 
-                                                       class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-destructive text-destructive-foreground hover:bg-destructive/90 h-8 px-3">
-                                                        <i class="bi bi-trash mr-1"></i>Excluir
-                                                    </a>
-                                                {% else %}
-                                                    <button type="button" 
-                                                            class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-muted text-muted-foreground cursor-not-allowed h-8 px-3" 
-                                                            disabled 
-                                                            data-bs-toggle="tooltip" 
-                                                            title="Há {{ total }} tese(s) vinculada(s)">
-                                                        <i class="bi bi-lock mr-1"></i>Excluir
-                                                    </button>
+                                                {% if perms.correcao.delete_tipotese %}
+                                                    {% if total == 0 %}
+                                                        <a href="{% url 'correcao:tipo_tese_delete' tipo.pk %}" 
+                                                           class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-destructive text-destructive-foreground hover:bg-destructive/90 h-8 px-3">
+                                                            <i class="bi bi-trash mr-1"></i>Excluir
+                                                        </a>
+                                                    {% else %}
+                                                        <button type="button" 
+                                                                class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-muted text-muted-foreground cursor-not-allowed h-8 px-3" 
+                                                                disabled 
+                                                                data-bs-toggle="tooltip" 
+                                                                title="Há {{ total }} tese(s) vinculada(s)">
+                                                            <i class="bi bi-lock mr-1"></i>Excluir
+                                                        </button>
+                                                    {% endif %}
                                                 {% endif %}
                                             {% endwith %}
                                         </div>
@@ -96,9 +102,11 @@
                         <div class="text-center">
                             <i class="bi bi-info-circle text-4xl text-muted-foreground mb-4"></i>
                             <p class="text-muted-foreground">Nenhum tipo de tese cadastrado.</p>
+                            {% if perms.correcao.add_tipotese %}
                             <a href="{% url 'correcao:tipo_tese_create' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 mt-4">
                                 <i class="bi bi-plus mr-2"></i>Novo Tipo de Tese
                             </a>
+                            {% endif %}
                         </div>
                     </div>
                 {% endif %}

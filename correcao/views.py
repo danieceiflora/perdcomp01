@@ -12,41 +12,53 @@ from django.views.decorators.http import require_GET
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from .forms import CorrecaoForm, tipoTeseForm, TeseCreditoForm
-from .permissions import AdminRequiredMixin
+from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
+from django.contrib.auth.decorators import login_required, permission_required
 
-class CorrecaoListView(ListView):
+# OBS: Substituímos AdminRequiredMixin (que restringia a staff/superuser) por controle
+# baseado em permissões nativas do Django para permitir delegação granular.
+
+class CorrecaoListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     model = Correcao
     template_name = 'correcao/correcao_list.html'
     context_object_name = 'correcoes'
     paginate_by = 10
+    permission_required = 'correcao.view_correcao'
+    raise_exception = True
     def get_queryset(self):
         # Anotar quantidade de teses para evitar N+1 no template
         return Correcao.objects.all().annotate(teses_total=Count('tesecredito'))
 
-class CorrecaoCreateView(AdminRequiredMixin, CreateView):
+class CorrecaoCreateView(PermissionRequiredMixin, CreateView):
     model = Correcao
     form_class = CorrecaoForm
     template_name = 'correcao/correcao_form.html'
     success_url = reverse_lazy('correcao:list')
+    permission_required = 'correcao.add_correcao'
+    raise_exception = True
     
     def form_valid(self, form):
         messages.success(self.request, 'Correção cadastrada com sucesso!')
         return super().form_valid(form)
 
-class CorrecaoUpdateView(AdminRequiredMixin, UpdateView):
+class CorrecaoUpdateView(PermissionRequiredMixin, UpdateView):
     model = Correcao
     form_class = CorrecaoForm
     template_name = 'correcao/correcao_form.html'
     success_url = reverse_lazy('correcao:list')
+    permission_required = 'correcao.change_correcao'
+    raise_exception = True
     
     def form_valid(self, form):
         messages.success(self.request, 'Correção atualizada com sucesso!')
         return super().form_valid(form)
 
-class CorrecaoDeleteView(AdminRequiredMixin, DeleteView):
+class CorrecaoDeleteView(PermissionRequiredMixin, DeleteView):
     model = Correcao
     template_name = 'correcao/correcao_confirm_delete.html'
     success_url = reverse_lazy('correcao:list')
+    permission_required = 'correcao.delete_correcao'
+    raise_exception = True
     
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -67,36 +79,44 @@ class CorrecaoDeleteView(AdminRequiredMixin, DeleteView):
             return redirect(self.success_url)
 
 # Views para tipoTese
-class tipoTeseListView(ListView):
+class tipoTeseListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     model = tipoTese
     template_name = 'correcao/tipo_tese_list.html'
     context_object_name = 'tipos_tese'
     paginate_by = 10
+    permission_required = 'correcao.view_tipotese'
+    raise_exception = True
 
-class tipoTeseCreateView(AdminRequiredMixin, CreateView):
+class tipoTeseCreateView(PermissionRequiredMixin, CreateView):
     model = tipoTese
     form_class = tipoTeseForm
     template_name = 'correcao/tipo_tese_form.html'
     success_url = reverse_lazy('correcao:tipo_tese_list')
+    permission_required = 'correcao.add_tipotese'
+    raise_exception = True
     
     def form_valid(self, form):
         messages.success(self.request, 'Tipo de tese cadastrado com sucesso!')
         return super().form_valid(form)
 
-class tipoTeseUpdateView(AdminRequiredMixin, UpdateView):
+class tipoTeseUpdateView(PermissionRequiredMixin, UpdateView):
     model = tipoTese
     form_class = tipoTeseForm
     template_name = 'correcao/tipo_tese_form.html'
     success_url = reverse_lazy('correcao:tipo_tese_list')
+    permission_required = 'correcao.change_tipotese'
+    raise_exception = True
     
     def form_valid(self, form):
         messages.success(self.request, 'Tipo de tese atualizado com sucesso!')
         return super().form_valid(form)
 
-class tipoTeseDeleteView(AdminRequiredMixin, DeleteView):
+class tipoTeseDeleteView(PermissionRequiredMixin, DeleteView):
     model = tipoTese
     template_name = 'correcao/tipo_tese_confirm_delete.html'
     success_url = reverse_lazy('correcao:tipo_tese_list')
+    permission_required = 'correcao.delete_tipotese'
+    raise_exception = True
     
     def delete(self, request, *args, **kwargs):
         self.object = self.get_object()
@@ -107,40 +127,48 @@ class tipoTeseDeleteView(AdminRequiredMixin, DeleteView):
         return super().delete(request, *args, **kwargs)
 
 # Views para TeseCredito
-class TeseCreditoListView(ListView):
+class TeseCreditoListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     model = TeseCredito
     template_name = 'correcao/tese_credito_list.html'
     context_object_name = 'teses_credito'
     paginate_by = 10
+    permission_required = 'correcao.view_tesecredito'
+    raise_exception = True
     
     def get_queryset(self):
         # Anotar quantidade de adesões para cada tese
         return TeseCredito.objects.all().annotate(adesoes_total=Count('adesoes'))
 
-class TeseCreditoCreateView(AdminRequiredMixin, CreateView):
+class TeseCreditoCreateView(PermissionRequiredMixin, CreateView):
     model = TeseCredito
     form_class = TeseCreditoForm
     template_name = 'correcao/tese_credito_form.html'
     success_url = reverse_lazy('correcao:tese_credito_list')
+    permission_required = 'correcao.add_tesecredito'
+    raise_exception = True
     
     def form_valid(self, form):
         messages.success(self.request, 'Tese de crédito cadastrada com sucesso!')
         return super().form_valid(form)
 
-class TeseCreditoUpdateView(AdminRequiredMixin, UpdateView):
+class TeseCreditoUpdateView(PermissionRequiredMixin, UpdateView):
     model = TeseCredito
     form_class = TeseCreditoForm
     template_name = 'correcao/tese_credito_form.html'
     success_url = reverse_lazy('correcao:tese_credito_list')
+    permission_required = 'correcao.change_tesecredito'
+    raise_exception = True
     
     def form_valid(self, form):
         messages.success(self.request, 'Tese de crédito atualizada com sucesso!')
         return super().form_valid(form)
 
-class TeseCreditoDeleteView(AdminRequiredMixin, DeleteView):
+class TeseCreditoDeleteView(PermissionRequiredMixin, DeleteView):
     model = TeseCredito
     template_name = 'correcao/tese_credito_confirm_delete.html'
     success_url = reverse_lazy('correcao:tese_credito_list')
+    permission_required = 'correcao.delete_tesecredito'
+    raise_exception = True
     
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -164,6 +192,8 @@ class TeseCreditoDeleteView(AdminRequiredMixin, DeleteView):
 @login_required
 @require_GET
 def correcao_history_json(request, pk):
+    if not request.user.has_perm('correcao.view_correcao'):
+        return JsonResponse({'error': 'Forbidden'}, status=403)
     """Retorna histórico em JSON com diffs para a Correção indicada."""
     try:
         correcao = Correcao.objects.get(pk=pk)
@@ -220,6 +250,8 @@ def correcao_history_json(request, pk):
 @login_required
 @require_GET
 def tese_credito_history_json(request, pk):
+    if not request.user.has_perm('correcao.view_tesecredito'):
+        return JsonResponse({'error': 'Forbidden'}, status=403)
     """Retorna histórico em JSON com diffs para a TeseCredito indicada."""
     try:
         tese = TeseCredito.objects.get(pk=pk)
@@ -299,6 +331,8 @@ def tese_credito_history_json(request, pk):
 @login_required
 @require_GET
 def tipo_tese_history_json(request, pk):
+    if not request.user.has_perm('correcao.view_tipotese'):
+        return JsonResponse({'error': 'Forbidden'}, status=403)
     """Histórico JSON para tipoTese."""
     try:
         tt = tipoTese.objects.get(pk=pk)
