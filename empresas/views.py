@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from empresas.forms import EmpresaForm
 from empresas.models import Empresa
 from contatos.models import Contatos
@@ -8,6 +8,10 @@ from django.urls import reverse_lazy
 import os
 from django.conf import settings
 import uuid
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import permissions, status
+from .serializers import EmpresaSerializer
 
 
 def home_view(request):
@@ -127,3 +131,47 @@ class EmpresaDeleteView(DeleteView):
     def delete(self, request, *args, **kwargs):
         messages.success(request, 'Empresa excluída com sucesso!')
         return super().delete(request, *args, **kwargs)
+
+
+# ============== DRF API ==================
+class IsSuperAdmin(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated and (request.user.is_superuser or request.user.is_staff)
+
+
+class EmpresaListAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+    def get(self, request):
+        objs = Empresa.objects.all()
+        ser = EmpresaSerializer(objs, many=True)
+        return Response(ser.data)
+
+
+class EmpresaCreateAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+    def post(self, request):
+        ser = EmpresaSerializer(data=request.data)
+        if ser.is_valid():
+            ser.save()
+            return Response(ser.data, status=status.HTTP_201_CREATED)
+        return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class EmpresaDetailAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+    def get_object(self, pk):
+        return get_object_or_404(Empresa, pk=pk)
+    def get(self, request, pk):
+        ser = EmpresaSerializer(self.get_object(pk))
+        return Response(ser.data)
+    def patch(self, request, pk):
+        obj = self.get_object(pk)
+        ser = EmpresaSerializer(obj, data=request.data, partial=True)
+        if ser.is_valid():
+            ser.save()
+            return Response(ser.data)
+        return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+    def delete(self, request, pk):
+        obj = self.get_object(pk)
+        obj.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

@@ -28,4 +28,18 @@ urlpatterns = [
     path('tese-credito/excluir/<int:pk>/', views.TeseCreditoDeleteView.as_view(), name='tese_credito_delete'),
     # Histórico Tese de Crédito
     path('tese-credito/historico/<int:pk>/', views.tese_credito_history_json, name='tese_credito_history_json'),
+
+    # === API DRF padronizada ===
+    # Correcao
+    path('api/v1/listar-correcao/', views.CorrecaoListAPI.as_view(), name='api-correcao-list'),
+    path('api/v1/criar-correcao/', views.CorrecaoCreateAPI.as_view(), name='api-correcao-create'),
+    path('api/v1/listar-correcao/<int:pk>/', views.CorrecaoDetailAPI.as_view(), name='api-correcao-detail'),
+    # tipoTese
+    path('api/v1/listar-tipo-tese/', views.TipoTeseListAPI.as_view(), name='api-tipotese-list'),
+    path('api/v1/criar-tipo-tese/', views.TipoTeseCreateAPI.as_view(), name='api-tipotese-create'),
+    path('api/v1/listar-tipo-tese/<int:pk>/', views.TipoTeseDetailAPI.as_view(), name='api-tipotese-detail'),
+    # TeseCredito
+    path('api/v1/listar-tese-credito/', views.TeseCreditoListAPI.as_view(), name='api-tesecredito-list'),
+    path('api/v1/criar-tese-credito/', views.TeseCreditoCreateAPI.as_view(), name='api-tesecredito-create'),
+    path('api/v1/listar-tese-credito/<int:pk>/', views.TeseCreditoDetailAPI.as_view(), name='api-tesecredito-detail'),
 ]

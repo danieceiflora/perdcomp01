@@ -387,3 +387,121 @@ def tipo_tese_history_json(request, pk):
         result.append(entry)
     result.reverse()
     return JsonResponse({'object_id': tt.id, 'history': result})
+
+# ================= DRF API Views ==================
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status, permissions
+from .serializers import CorrecaoSerializer, TipoTeseSerializer, TeseCreditoSerializer
+
+class IsSuperAdmin(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated and (request.user.is_superuser or request.user.is_staff)
+
+# Correcao API
+class CorrecaoListAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+    def get(self, request):
+        objs = Correcao.objects.all()
+        ser = CorrecaoSerializer(objs, many=True)
+        return Response(ser.data)
+
+class CorrecaoCreateAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+    def post(self, request):
+        ser = CorrecaoSerializer(data=request.data)
+        if ser.is_valid():
+            ser.save()
+            return Response(ser.data, status=status.HTTP_201_CREATED)
+        return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class CorrecaoDetailAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+    def get_object(self, pk):
+        return get_object_or_404(Correcao, pk=pk)
+    def get(self, request, pk):
+        ser = CorrecaoSerializer(self.get_object(pk))
+        return Response(ser.data)
+    def patch(self, request, pk):
+        obj = self.get_object(pk)
+        ser = CorrecaoSerializer(obj, data=request.data, partial=True)
+        if ser.is_valid():
+            ser.save()
+            return Response(ser.data)
+        return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+    def delete(self, request, pk):
+        obj = self.get_object(pk)
+        obj.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+# tipoTese API
+class TipoTeseListAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+    def get(self, request):
+        objs = tipoTese.objects.all()
+        ser = TipoTeseSerializer(objs, many=True)
+        return Response(ser.data)
+
+class TipoTeseCreateAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+    def post(self, request):
+        ser = TipoTeseSerializer(data=request.data)
+        if ser.is_valid():
+            ser.save()
+            return Response(ser.data, status=status.HTTP_201_CREATED)
+        return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class TipoTeseDetailAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+    def get_object(self, pk):
+        return get_object_or_404(tipoTese, pk=pk)
+    def get(self, request, pk):
+        ser = TipoTeseSerializer(self.get_object(pk))
+        return Response(ser.data)
+    def patch(self, request, pk):
+        obj = self.get_object(pk)
+        ser = TipoTeseSerializer(obj, data=request.data, partial=True)
+        if ser.is_valid():
+            ser.save()
+            return Response(ser.data)
+        return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+    def delete(self, request, pk):
+        obj = self.get_object(pk)
+        obj.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+# TeseCredito API
+class TeseCreditoListAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+    def get(self, request):
+        objs = TeseCredito.objects.all()
+        ser = TeseCreditoSerializer(objs, many=True)
+        return Response(ser.data)
+
+class TeseCreditoCreateAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+    def post(self, request):
+        ser = TeseCreditoSerializer(data=request.data)
+        if ser.is_valid():
+            ser.save()
+            return Response(ser.data, status=status.HTTP_201_CREATED)
+        return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class TeseCreditoDetailAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+    def get_object(self, pk):
+        return get_object_or_404(TeseCredito, pk=pk)
+    def get(self, request, pk):
+        ser = TeseCreditoSerializer(self.get_object(pk))
+        return Response(ser.data)
+    def patch(self, request, pk):
+        obj = self.get_object(pk)
+        ser = TeseCreditoSerializer(obj, data=request.data, partial=True)
+        if ser.is_valid():
+            ser.save()
+            return Response(ser.data)
+        return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+    def delete(self, request, pk):
+        obj = self.get_object(pk)
+        obj.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

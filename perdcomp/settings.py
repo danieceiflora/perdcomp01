@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'lancamentos',
     'dashboard',
     'rest_framework',
+    'drf_spectacular',
     'utils',
     'simple_history'  # App utilitário (filtros de template, etc.)
 ]
@@ -44,6 +45,19 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'PERDCOMP API',
+    'DESCRIPTION': 'Documentação interativa da API PERDCOMP',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'CONTACT': {'name': 'Equipe PERDCOMP', 'email': 'suporte@example.com'},
+    'LICENSE': {'name': 'Proprietary'},
+    'SERVERS': [
+        {'url': 'http://localhost:8000', 'description': 'Local'},
+    ],
 }
 
 MIDDLEWARE = [

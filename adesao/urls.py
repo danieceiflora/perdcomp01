@@ -12,11 +12,9 @@ urlpatterns = [
     path('historico/<int:pk>/', views.adesao_history_json, name='history_json'),
 
     ## API endpoint for listing adesoes 
-    path('api/v1/listar-adesoes/', views.AdesaoListAPI.as_view(), name='api-list'),
-    path('api/v1/create/', views.AdesaoCreateApi.as_view(), name='api-create'),
-
-    ## listar adesão por id
-    path('api/v1/<int:pk>/', views.AdesaoDetailApi.as_view(), name='api-detail'),
+    path('api/v1/listar-adesao/', views.AdesaoListAPI.as_view(), name='api-adesao-list'),
+    path('api/v1/criar-adesao/', views.AdesaoCreateAPI.as_view(), name='api-adesao-create'),
+    path('api/v1/listar-adesao/<int:pk>/', views.AdesaoDetailAPI.as_view(), name='api-adesao-detail'),
 
     # ...existing code...
 ]

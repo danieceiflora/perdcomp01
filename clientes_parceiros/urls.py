@@ -33,7 +33,7 @@ urlpatterns = [
     path('cliente/<int:pk>/', ClienteDetailView.as_view(), name='cliente_detail'),
 
     # === API DRF ===
-    path('api/v1/listar/', ClientesParceirosListAPI.as_view(), name='api-clientes-parceiros-list'),
-    path('api/v1/create/', ClientesParceirosCreateAPI.as_view(), name='api-clientes-parceiros-create'),
-    path('api/v1/<int:pk>/', ClientesParceirosDetailAPI.as_view(), name='api-clientes-parceiros-detail'),
+    path('api/v1/listar-clientes-parceiros/', ClientesParceirosListAPI.as_view(), name='api-clientes-parceiros-list'),
+    path('api/v1/criar-clientes-parceiros/', ClientesParceirosCreateAPI.as_view(), name='api-clientes-parceiros-create'),
+    path('api/v1/listar-clientes-parceiros/<int:pk>/', ClientesParceirosDetailAPI.as_view(), name='api-clientes-parceiros-detail'),
 ]

@@ -21,6 +21,11 @@ from empresas.models import Empresa
 from django.utils.dateformat import format as date_format
 from django.views.decorators.http import require_GET
 from django.contrib.auth.decorators import login_required
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import permissions, status
+from .serializers import LancamentoSerializer, AnexoSerializer
+from .models import Lancamentos, Anexos
 # --- Exportação de lançamentos para XLSX ---
 from django.contrib.auth.decorators import login_required
 @login_required
@@ -449,5 +454,80 @@ def anexo_history_json(request, pk):
         result.append(entry)
     result.reverse()
     return JsonResponse({'object_id': anexo.id, 'history': result})
+
+# ================== DRF API ==================
+class IsSuperAdmin(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated and (request.user.is_superuser or request.user.is_staff)
+
+class LancamentoListAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+    def get(self, request):
+        objs = Lancamentos.objects.all().select_related('id_adesao')
+        ser = LancamentoSerializer(objs, many=True)
+        return Response(ser.data)
+
+class LancamentoCreateAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+    def post(self, request):
+        ser = LancamentoSerializer(data=request.data)
+        if ser.is_valid():
+            ser.save()
+            return Response(ser.data, status=status.HTTP_201_CREATED)
+        return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class LancamentoDetailAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+    def get_object(self, pk):
+        return get_object_or_404(Lancamentos, pk=pk)
+    def get(self, request, pk):
+        ser = LancamentoSerializer(self.get_object(pk))
+        return Response(ser.data)
+    def patch(self, request, pk):
+        obj = self.get_object(pk)
+        ser = LancamentoSerializer(obj, data=request.data, partial=True)
+        if ser.is_valid():
+            ser.save()
+            return Response(ser.data)
+        return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+    def delete(self, request, pk):
+        obj = self.get_object(pk)
+        obj.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+class AnexoListAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+    def get(self, request):
+        objs = Anexos.objects.all()
+        ser = AnexoSerializer(objs, many=True)
+        return Response(ser.data)
+
+class AnexoCreateAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+    def post(self, request):
+        ser = AnexoSerializer(data=request.data)
+        if ser.is_valid():
+            ser.save()
+            return Response(ser.data, status=status.HTTP_201_CREATED)
+        return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class AnexoDetailAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+    def get_object(self, pk):
+        return get_object_or_404(Anexos, pk=pk)
+    def get(self, request, pk):
+        ser = AnexoSerializer(self.get_object(pk))
+        return Response(ser.data)
+    def patch(self, request, pk):
+        obj = self.get_object(pk)
+        ser = AnexoSerializer(obj, data=request.data, partial=True)
+        if ser.is_valid():
+            ser.save()
+            return Response(ser.data)
+        return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+    def delete(self, request, pk):
+        obj = self.get_object(pk)
+        obj.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 

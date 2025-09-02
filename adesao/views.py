@@ -158,7 +158,7 @@ class AdesaoListAPI(APIView):
         serializer = AdesaoSerializer(adesoes, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-class AdesaoCreateApi(APIView):
+class AdesaoCreateAPI(APIView):
     permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
 
     def post(self, request):
@@ -168,14 +168,22 @@ class AdesaoCreateApi(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class AdesaoDetailApi(APIView):
+class AdesaoDetailAPI(APIView):
     permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
 
+    def get_object(self, pk):
+        return get_object_or_404(Adesao, pk=pk)
     def get(self, request, pk):
-        try:
-            adesao = Adesao.objects.get(pk=pk)
-        except Adesao.DoesNotExist:
-            return Response({'error': 'Adesão não encontrada.'}, status=status.HTTP_404_NOT_FOUND)
-
-        serializer = AdesaoSerializer(adesao)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        ser = AdesaoSerializer(self.get_object(pk))
+        return Response(ser.data)
+    def patch(self, request, pk):
+        obj = self.get_object(pk)
+        ser = AdesaoSerializer(obj, data=request.data, partial=True)
+        if ser.is_valid():
+            ser.save()
+            return Response(ser.data)
+        return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+    def delete(self, request, pk):
+        obj = self.get_object(pk)
+        obj.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

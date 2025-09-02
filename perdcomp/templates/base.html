@@ -55,7 +55,7 @@
                         {% if user.is_authenticated %}
 
                         {# Vínculos: somente se staff/superuser ou tiver permissões do app clientes_parceiros (ajuste o codename conforme modelos) #}
-                        {% if user.is_superuser or user.is_staff or perms.clientes_parceiros.view_clientesparceiros %}
+                        {% if user.is_superuser or user.is_staff and perms.clientes_parceiros.view_clientesparceiros %}
                         <!-- Vínculos Dropdown -->
                         <div class="relative group">
                             <button type="button" class="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 group-hover:bg-slate-100 dark:group-hover:bg-slate-800 transition-colors" aria-expanded="false">
