@@ -5,16 +5,21 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 from empresas.views import home_view
+from django.views.generic import RedirectView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 from perdcomp.views import token_jwt_view
 from django.conf import settings
 from django.conf.urls.static import static
+from accounts.views import LoginView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
-    path('home/', home_view, name='home'),
-    path('', home_view),
+    # Redireciona /home para /admin-login/
+    path('home/', RedirectView.as_view(pattern_name='admin-login', permanent=False), name='home'),
+    # Alias amigável que leva à tela de login do admin
+    path('admin-login/', RedirectView.as_view(url='/accounts/admin-login'), name='admin-login'),
+    path('', RedirectView.as_view(pattern_name='admin-login', permanent=False)),
     path('empresas/', include('empresas.urls')),
     path('contatos/', include('contatos.urls')),
     path('clientes-parceiros/', include('clientes_parceiros.urls')),
