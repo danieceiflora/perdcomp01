@@ -168,3 +168,14 @@ class AdesaoCreateApi(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class AdesaoDetailApi(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+
+    def get(self, request, pk):
+        try:
+            adesao = Adesao.objects.get(pk=pk)
+        except Adesao.DoesNotExist:
+            return Response({'error': 'Adesão não encontrada.'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = AdesaoSerializer(adesao)
+        return Response(serializer.data, status=status.HTTP_200_OK)

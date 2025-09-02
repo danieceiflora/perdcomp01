@@ -25,6 +25,10 @@ from .forms import NovoClienteForm, ContatoFormSet, NovoParceiroForm
 from empresas.forms import EmpresaForm
 from empresas.models import Empresa
 from contatos.models import Contatos
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status, permissions
+from .serializers import ClientesParceirosSerializer
 
 # === FIM IMPORTS ===
 
@@ -579,3 +583,67 @@ class EditarParceiroView(LoginRequiredMixin, UpdateView):
 
 # Mantendo compatibilidade com URLs existentes
 NewClienteParceiroView = NovoClienteView
+
+# ================= DRF API Views =================
+
+class IsSuperAdmin(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.is_superuser
+
+class ClientesParceirosListAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+
+    def get(self, request):
+        objetos = ClientesParceiros.objects.all()
+        serializer = ClientesParceirosSerializer(objetos, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class ClientesParceirosCreateAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+
+    def post(self, request):
+        serializer = ClientesParceirosSerializer(data=request.data)
+        if serializer.is_valid():
+            try:
+                obj = serializer.save()
+            except Exception as e:
+                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            out = ClientesParceirosSerializer(obj).data
+            return Response(out, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ClientesParceirosDetailAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+
+    def get_object(self, pk):
+        try:
+            return ClientesParceiros.objects.get(pk=pk)
+        except ClientesParceiros.DoesNotExist:
+            return None
+
+    def get(self, request, pk):
+        obj = self.get_object(pk)
+        if not obj:
+            return Response({'error': 'Registro não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ClientesParceirosSerializer(obj)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, pk):
+        obj = self.get_object(pk)
+        if not obj:
+            return Response({'error': 'Registro não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ClientesParceirosSerializer(obj, data=request.data, partial=True)
+        if serializer.is_valid():
+            try:
+                obj = serializer.save()
+            except Exception as e:
+                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(ClientesParceirosSerializer(obj).data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        obj = self.get_object(pk)
+        if not obj:
+            return Response({'error': 'Registro não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+        obj.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
