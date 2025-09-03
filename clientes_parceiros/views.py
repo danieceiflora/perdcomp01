@@ -9,12 +9,12 @@ from django.urls import reverse_lazy
 from django.db import transaction
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse, Http404
-from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views import View
 import json
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django import forms
+from django.db import models
 from django.db.models import Q
 from django.utils.timezone import localtime
 from django.utils.dateformat import format as date_format
@@ -441,12 +441,11 @@ class ClienteParceiroUpdateView(LoginRequiredMixin, UpdateView):
         return initial
 
 # Views para AJAX (se necessário)
-@method_decorator(csrf_exempt, name='dispatch')
 class EmpresasAjaxView(LoginRequiredMixin, View):
     """
     View para buscar empresas via AJAX
     """
-    def get(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):  # Somente GET (idempotente) – CSRF não é exigido para GET
         term = request.GET.get('term', '')
         empresas = Empresa.objects.filter(
             razao_social__icontains=term
@@ -519,7 +518,14 @@ class NovoParceiroView(UserPassesTestMixin, LoginRequiredMixin, CreateView):
 class ParceiroDetailView(LoginRequiredMixin, View):
     template_name = 'parceiro_detail.html'
     def get(self, request, pk):
-        parceiro = get_object_or_404(ClientesParceiros, pk=pk, tipo_parceria='parceiro')
+        qs = ClientesParceiros.objects.filter(tipo_parceria='parceiro')
+        # Restringe para não-admin: somente registros cuja empresa base coincide com empresa_vinculada do perfil
+        if not (request.user.is_staff or request.user.is_superuser):
+            empresa_vinc = getattr(getattr(request.user, 'profile', None), 'empresa_vinculada', None)
+            if not empresa_vinc:
+                raise Http404
+            qs = qs.filter(id_company_base=empresa_vinc)
+        parceiro = get_object_or_404(qs, pk=pk)
         contatos = parceiro.id_company_vinculada.empresa_base_contato.all()
         return render(request, self.template_name, {
             'parceiro': parceiro,
@@ -529,7 +535,20 @@ class ParceiroDetailView(LoginRequiredMixin, View):
 class ClienteDetailView(LoginRequiredMixin, View):
     template_name = 'cliente_detail.html'
     def get(self, request, pk):
-        cliente = get_object_or_404(ClientesParceiros, pk=pk, tipo_parceria='cliente')
+        qs = ClientesParceiros.objects.filter(tipo_parceria='cliente')
+        if not (request.user.is_staff or request.user.is_superuser):
+            profile = getattr(request.user, 'profile', None)
+            empresa_vinc = getattr(profile, 'empresa_vinculada', None)
+            if not empresa_vinc:
+                raise Http404
+            # Permite acesso se for parceiro (empresa base) ou cliente (empresa vinculada)
+            # Caso de cliente: seu relacionamento onde é id_company_vinculada
+            filtro = (
+                models.Q(id_company_base=empresa_vinc) |
+                models.Q(id_company_vinculada=empresa_vinc)
+            )
+            qs = qs.filter(filtro)
+        cliente = get_object_or_404(qs, pk=pk)
         contatos = cliente.id_company_vinculada.empresa_base_contato.all()
         return render(request, self.template_name, {
             'cliente': cliente,

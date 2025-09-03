@@ -1,4 +1,6 @@
 from django.db import models
+from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
 from adesao.models import Adesao
 from django.urls import reverse
 from datetime import datetime, timedelta
@@ -200,9 +202,24 @@ class Anexos(models.Model):
         verbose_name='Lançamento'
     )
     
+    def _anexo_upload_path(instance, filename):
+        # Evita path traversal garantindo somente nome básico
+        import os
+        base = os.path.basename(filename)
+        return f'documentos/lancamentos/{base}'
+
+    def validar_tamanho(arquivo):
+        max_mb = 10
+        if arquivo.size > max_mb * 1024 * 1024:
+            raise ValidationError(f"Arquivo excede {max_mb}MB.")
+
     arquivo = models.FileField(
-        upload_to='documentos/lancamentos/',
-        verbose_name='Arquivo'
+        upload_to=_anexo_upload_path,
+        verbose_name='Arquivo',
+        validators=[
+            FileExtensionValidator(allowed_extensions=['pdf','jpg','jpeg','png','gif','txt','csv','xlsx','xls']),
+            validar_tamanho
+        ]
     )
     
     nome_anexo = models.CharField(

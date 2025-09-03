@@ -6,12 +6,12 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-5zmof9y39ed%%3!%#vsc7ur#5pr8gi$#)#-!mrp&ts0x+=%398'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-5zmof9y39ed%%3!%#vsc7ur#5pr8gi$#)#-!mrp&ts0x+=%398')  # TODO: definir via variável de ambiente em produção
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DJANGO_DEBUG', 'True').lower() in ('1','true','yes')
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', '*').split(',')
 
 CSRF_TRUSTED_ORIGINS = [
     'http://177.153.62.100:81',
@@ -63,6 +63,8 @@ SPECTACULAR_SETTINGS = {
 MIDDLEWARE = [
     'simple_history.middleware.HistoryRequestMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    # Adiciona WhiteNoise (se instalado) para servir estáticos de forma segura em produção
+    # 'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -223,3 +225,18 @@ JAZZMIN_UI_TWEAKS = {
         "success": "btn-success"
     }
 }
+
+# ======= Segurança adicional (apenas se DEBUG False) =======
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = os.getenv('DJANGO_SECURE_SSL_REDIRECT', 'True').lower() in ('1','true','yes')
+    SECURE_HSTS_SECONDS = int(os.getenv('DJANGO_SECURE_HSTS_SECONDS', '31536000'))  # 1 ano
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+    SECURE_BROWSER_XSS_FILTER = True  # (obsoleto em alguns navegadores, mantido por compat.)
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    # Content Security Policy básica (se usar django-csp instalar e ajustar)
+    # Exemplo de variável: os.environ.get('CSP_DEFAULT_SRC', "'self'")
