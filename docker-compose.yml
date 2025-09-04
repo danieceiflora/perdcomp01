@@ -1,0 +1,23 @@
+version: '3.9'
+
+services:
+  web:
+    build: .
+    container_name: perdcomp_web
+    environment:
+      DJANGO_SECRET_KEY: dev-secret-change
+      DJANGO_DEBUG: 'True'
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+      DJANGO_SQLITE_PATH: /app/sqlite/db.sqlite3
+    ports:
+      - '8000:8000'
+    volumes:
+      - sqlite_data:/app/sqlite
+      - media_data:/app/media
+      # Código montado somente leitura (evitar sobrescrever dependências instaladas no container)
+      - ./:/app:ro
+    restart: unless-stopped
+
+volumes:
+  sqlite_data:
+  media_data:

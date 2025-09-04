@@ -11,10 +11,10 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-5zmof9y39ed%%3!%#vs
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DJANGO_DEBUG', 'True').lower() in ('1','true','yes')
 
-ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', '*').split(',')
+ALLOWED_HOSTS = ['*']
 
 CSRF_TRUSTED_ORIGINS = [
-    'http://177.153.62.100:81',
+    'http://177.153.62.100:3000',
 ]
 
 # Application definition
@@ -94,12 +94,13 @@ WSGI_APPLICATION = 'perdcomp.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
+# Em desenvolvimento usamos SQLite com caminho configurável por variável de ambiente
+# Para produção recomenda-se Postgres.
+SQLITE_PATH = os.getenv('DJANGO_SQLITE_PATH', str(BASE_DIR / 'db.sqlite3'))
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': SQLITE_PATH,
     }
 }
 
