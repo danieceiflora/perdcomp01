@@ -15,6 +15,7 @@ ALLOWED_HOSTS = ['*']
 
 CSRF_TRUSTED_ORIGINS = [
     'http://177.153.62.100:3000',
+    'https://programmer-ribbon-ellis-raid.trycloudflare.com',
 ]
 
 # Application definition
