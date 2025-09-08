@@ -161,22 +161,41 @@ class ClienteDashboardView(LoginRequiredMixin, TemplateView):
                 'data_inicio': relacionamento_com_parceiro.data_inicio_parceria
             }
         
-        # Calcular o total de crédito recuperado para este cliente
-        # Considerando apenas lançamentos com sinal='-' que representam créditos recuperados
+        # Calcular as métricas para este cliente
+        from adesao.models import Adesao
+        
         credito_recuperado = 0
+        credito_utilizado = 0
+        saldo_credito = 0
+        
         if relacionamento_com_parceiro:
-            # Obtém os últimos 12 meses
-            doze_meses_atras = timezone.now() - timezone.timedelta(days=365)
+            # Buscar todas as adesões do cliente
+            adesoes_cliente = Adesao.objects.filter(
+                cliente=relacionamento_com_parceiro
+            )
             
-            # Calcula o total de crédito recuperado (lançamentos com sinal '-')
-            resultado = Lancamentos.objects.filter(
-                id_adesao__cliente=relacionamento_com_parceiro,
-                sinal='-',  # Sinal negativo representa crédito recuperado/utilizado
-                data_lancamento__gte=doze_meses_atras
-            ).aggregate(total=Sum('valor'))
+            # 1. Crédito Recuperado: Soma do valor inicial de todas as adesões
+            credito_recuperado = adesoes_cliente.aggregate(
+                total=Sum('saldo')
+            )['total'] or 0
             
-            # O resultado pode ser None se não houver lançamentos
-            credito_recuperado = abs(resultado['total'] or 0)
+            # 2. Crédito Utilizado: Total de lançamentos com sinal='-' nas adesões do cliente
+            credito_utilizado_resultado = Lancamentos.objects.filter(
+                id_adesao__in=adesoes_cliente,
+                sinal='-'  # Débito representa crédito utilizado
+            ).aggregate(total=Sum('valor'))['total'] or 0
+            
+            # Como os valores de débito são negativos, pegamos o valor absoluto
+            credito_utilizado = abs(credito_utilizado_resultado)
+            
+            # 3. Saldo de Crédito: Soma dos saldos atuais de todas as adesões
+            saldo_credito = adesoes_cliente.aggregate(
+                total=Sum('saldo_atual')
+            )['total'] or 0
+            
+            # Garante que os valores sejam não-negativos
+            credito_recuperado = max(0, credito_recuperado)
+            saldo_credito = max(0, saldo_credito)
         
         context.update({
             'profile': profile,
@@ -184,7 +203,9 @@ class ClienteDashboardView(LoginRequiredMixin, TemplateView):
             'tipo_acesso': 'Cliente',
             'empresas_acessiveis': empresas_acessiveis,  # Apenas a própria empresa
             'parceiro_info': parceiro_info,  # Informações sobre o parceiro que atende este cliente
-            'credito_recuperado': credito_recuperado,  # Total de crédito recuperado
+            'credito_recuperado': credito_recuperado,  # Total inicial das adesões
+            'credito_utilizado': credito_utilizado,    # Total de lançamentos de débito
+            'saldo_credito': saldo_credito,           # Saldo atual das adesões
         })
         return context
 
