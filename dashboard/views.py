@@ -21,39 +21,43 @@ def dashboard_view(request):
     View para o dashboard administrativo.
     Exibe métricas e gráficos sobre parceiros, clientes e créditos recuperados.
     """
-    # Contagem total de parceiros (empresas com relacionamento do tipo parceiro)
-    # Assumindo que parceiros são empresas que têm clientes vinculados
-    parceiros = ClientesParceiros.objects.values('id_company_base').distinct().count()
+    # Contagem correta de parceiros (registros com tipo_parceria='parceiro')
+    parceiros = ClientesParceiros.objects.filter(
+        tipo_parceria='parceiro',
+        ativo=True
+    ).values('id_company_vinculada').distinct().count()
     
-    # Total de clientes (empresas vinculadas)
-    clientes = ClientesParceiros.objects.values('id_company_vinculada').distinct().count()
-    
-    # Parceiros com mais clientes
-    top_parceiros = ClientesParceiros.objects.values(
-        'id_company_base__razao_social'
-    ).annotate(
-        total_clientes=Count('id_company_vinculada', distinct=True)
-    ).order_by('-total_clientes')[:5]
+    # Contagem correta de clientes (registros com tipo_parceria='cliente')
+    clientes = ClientesParceiros.objects.filter(
+        tipo_parceria='cliente',
+        ativo=True
+    ).values('id_company_vinculada').distinct().count()
     
     # Crédito recuperado por parceiro
     credito_por_parceiro = []
-    for parceiro in ClientesParceiros.objects.values('id_company_base').distinct():
+    parceiros_ativos = ClientesParceiros.objects.filter(
+        tipo_parceria='parceiro',
+        ativo=True
+    ).select_related('id_company_vinculada').distinct()
+    
+    for parceiro in parceiros_ativos:
         # Encontra todos os clientes deste parceiro
+        # Os clientes são empresas onde id_company_base é a empresa do parceiro
         clientes_do_parceiro = ClientesParceiros.objects.filter(
-            id_company_base=parceiro['id_company_base']
+            id_company_base=parceiro.id_company_vinculada,
+            tipo_parceria='cliente',
+            ativo=True
         ).values_list('id_company_vinculada', flat=True)
         
         # Calcula o crédito total recuperado para estes clientes
-        # Considerando apenas lançamentos de débito (sinal='-') que representam créditos recuperados
+        # Considerando lançamentos de débito (sinal='-') que representam créditos utilizados
         total_credito = Lancamentos.objects.filter(
             id_adesao__cliente__id_company_vinculada__in=clientes_do_parceiro,
             sinal='-'
         ).aggregate(total=Sum('valor'))['total'] or 0
         
-        # Obtém o nome do parceiro
-        nome_parceiro = Empresa.objects.get(
-            id=parceiro['id_company_base']
-        ).razao_social
+        # Nome do parceiro
+        nome_parceiro = parceiro.id_company_vinculada.razao_social
         
         credito_por_parceiro.append({
             'parceiro': nome_parceiro,
@@ -162,7 +166,6 @@ def dashboard_view(request):
         'total_parceiros': parceiros,
         'total_clientes': clientes,
         'credito_por_parceiro': credito_por_parceiro,
-        'top_parceiros': top_parceiros,
         'top_clientes': top_clientes,
         'labels_grafico': labels_json,
         'valores_grafico': valores_json,
