@@ -53,44 +53,7 @@
     </div>
 
 
-    <!-- Top parceiros e clientes -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <!-- Top parceiros -->
-        <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
-            <div class="border-b bg-muted/50 px-10 py-4">
-                <h3 class="text-lg font-semibold flex items-center gap-3 pl-6">
-                    <i class="bi bi-trophy ml-2"></i> <span>Parceiros com Mais Clientes</span>
-                </h3>
-            </div>
-            <div class="p-6">
-                {% if top_parceiros %}
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead>
-                            <tr class="border-b">
-                                <th class="text-left py-2 px-4 font-medium text-muted-foreground">Parceiro</th>
-                                <th class="text-left py-2 px-4 font-medium text-muted-foreground">Total de Clientes</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for parceiro in top_parceiros %}
-                            <tr class="border-b last:border-b-0 hover:bg-muted/50">
-                                <td class="py-3 px-4">{{ parceiro.id_company_base__razao_social }}</td>
-                                <td class="py-3 px-4 font-semibold">{{ parceiro.total_clientes }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <div class="text-center py-8">
-                    <i class="bi bi-inbox text-gray-400 dark:text-gray-300 text-4xl mb-3"></i>
-                    <p class="text-muted-foreground">Nenhum parceiro encontrado.</p>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-
+    
         <!-- Top clientes -->
         <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
             <div class="border-b bg-muted/50 px-10 py-4">
