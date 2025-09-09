@@ -96,15 +96,29 @@ WSGI_APPLICATION = 'perdcomp.wsgi.application'
 
 
 # Database
-# Em desenvolvimento usamos SQLite com caminho configurável por variável de ambiente
-# Para produção recomenda-se Postgres.
+# Em desenvolvimento, usamos SQLite (padrão). Em produção, defina DJANGO_DB_ENGINE=postgres
+# e variáveis POSTGRES_* para usar Postgres.
 SQLITE_PATH = os.getenv('DJANGO_SQLITE_PATH', str(BASE_DIR / 'db.sqlite3'))
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': SQLITE_PATH,
+
+DB_ENGINE = os.getenv('DJANGO_DB_ENGINE', '').lower()
+if DB_ENGINE in ('postgres', 'postgresql', 'pgsql', 'psql'):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('POSTGRES_DB', 'perdcomp'),
+            'USER': os.getenv('POSTGRES_USER', 'perdcomp'),
+            'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'perdcomp'),
+            'HOST': os.getenv('POSTGRES_HOST', 'postgres'),
+            'PORT': os.getenv('POSTGRES_PORT', '5432'),
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': SQLITE_PATH,
+        }
+    }
 
 
 # Password validation
