@@ -26,6 +26,8 @@ CSRF_TRUSTED_ORIGINS = [
 CSRF_USE_SESSIONS = False
 CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SECURE = False  # Manter False até termos HTTPS
+CSRF_COOKIE_NAME = 'csrftoken'
 
 # Opcional: permitir definir origens CSRF adicionais via variável
 _extra_csrf = os.getenv('DJANGO_CSRF_TRUSTED_ORIGINS')
@@ -261,12 +263,12 @@ JAZZMIN_UI_TWEAKS = {
 
 # ======= Segurança adicional (apenas se DEBUG False) =======
 if not DEBUG:
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SECURE_SSL_REDIRECT = os.getenv('DJANGO_SECURE_SSL_REDIRECT', 'True').lower() in ('1','true','yes')
-    SECURE_HSTS_SECONDS = int(os.getenv('DJANGO_SECURE_HSTS_SECONDS', '31536000'))  # 1 ano
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
+    SESSION_COOKIE_SECURE = False  # Manter False até HTTPS
+    # CSRF_COOKIE_SECURE = True  # Comentado até termos HTTPS
+    SECURE_SSL_REDIRECT = os.getenv('DJANGO_SECURE_SSL_REDIRECT', 'False').lower() in ('1','true','yes')  # Default False
+    SECURE_HSTS_SECONDS = int(os.getenv('DJANGO_SECURE_HSTS_SECONDS', '0'))  # Desabilitado até HTTPS
+    # SECURE_HSTS_INCLUDE_SUBDOMAINS = True  # Comentado até HTTPS
+    # SECURE_HSTS_PRELOAD = True  # Comentado até HTTPS
     SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
     SECURE_BROWSER_XSS_FILTER = True  # (obsoleto em alguns navegadores, mantido por compat.)
     SECURE_CONTENT_TYPE_NOSNIFF = True

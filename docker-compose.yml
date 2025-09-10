@@ -7,6 +7,7 @@ services:
       DJANGO_DEBUG: 'False'
       DJANGO_ALLOWED_HOSTS: '*'  # ajuste para seu dominio.com,IP
       DJANGO_SECURE_SSL_REDIRECT: 'False'
+      DJANGO_CSRF_TRUSTED_ORIGINS: 'http://localhost,http://127.0.0.1'
       DJANGO_DB_ENGINE: postgres
       POSTGRES_DB: perdcomp
       POSTGRES_USER: perdcomp
