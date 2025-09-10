@@ -7,7 +7,7 @@ services:
     environment:
       DJANGO_SECRET_KEY: dev-secret-change
       DJANGO_DEBUG: 'False'
-      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+      DJANGO_ALLOWED_HOSTS: '*'
       DJANGO_SECURE_SSL_REDIRECT: 'False'
       # Use Postgres em produção
       DJANGO_DB_ENGINE: postgres
