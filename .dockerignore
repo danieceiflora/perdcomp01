@@ -1,0 +1,15 @@
+# Excluir diretórios e arquivos que não precisam ir para o build context
+.git
+.gitignore
+node_modules
+media
+__pycache__
+*.pyc
+*.sqlite3
+*.log
+.env
+.env.*
+Dockerfile*
+README.md
+perdcomp.pdf
+relatorios.md

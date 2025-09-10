@@ -13,9 +13,9 @@ RUN npm install --no-audit --no-fund --quiet
 
 # Copia configs do Tailwind/PostCSS e fontes de static
 COPY tailwind.config.js postcss.config.js ./
-RUN echo "[DEBUG] Listando arquivos raiz antes de copiar static:" && ls -1 .
-RUN test -d perdcomp/static && echo "[DEBUG] Diretorio perdcomp/static existe no contexto" || (echo "[ERRO] perdcomp/static NAO encontrado" && ls -R . | head -100)
-COPY ./perdcomp/static/ ./perdcomp/static/
+RUN echo "[DEBUG] Listando arquivos raiz antes de copiar static:" && ls -1 . && echo "---" && echo "[DEBUG] Verificando arvore perdcomp:" && ls -R perdcomp | head -200 || true
+RUN test -d perdcomp/static && echo "[DEBUG] Diretorio perdcomp/static existe no contexto" || (echo "[ERRO] perdcomp/static NAO encontrado" && ls -R . | head -300)
+COPY perdcomp/static ./perdcomp/static
 
 # Gera CSS minificado
 RUN npx tailwindcss -i ./perdcomp/static/src/input.css -o ./perdcomp/static/css/app.css --minify
