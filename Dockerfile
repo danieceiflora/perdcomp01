@@ -8,7 +8,7 @@ WORKDIR /build
 COPY . .
 
 # Instala dependências Node
-RUN npm ci --no-audit --no-fund --quiet
+RUN npm install --no-audit --no-fund --quiet
 
 # Compila Tailwind CSS
 RUN npx tailwindcss -i ./perdcomp/static/src/input.css -o ./perdcomp/static/css/app.css --minify
