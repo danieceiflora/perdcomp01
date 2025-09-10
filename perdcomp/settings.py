@@ -11,13 +11,18 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-5zmof9y39ed%%3!%#vs
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DJANGO_DEBUG', 'True').lower() in ('1','true','yes')
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [h.strip() for h in os.getenv('DJANGO_ALLOWED_HOSTS', '*').split(',') if h.strip()]
 
 CSRF_TRUSTED_ORIGINS = [
     'http://177.153.62.100:3000',
     'https://programmer-ribbon-ellis-raid.trycloudflare.com',
     'https://tvs-dentists-festival-usb.trycloudflare.com',
 ]
+
+# Opcional: permitir definir origens CSRF adicionais via variável
+_extra_csrf = os.getenv('DJANGO_CSRF_TRUSTED_ORIGINS')
+if _extra_csrf:
+    CSRF_TRUSTED_ORIGINS = list(set(CSRF_TRUSTED_ORIGINS + [o.strip() for o in _extra_csrf.split(',') if o.strip()]))
 
 # Application definition
 
@@ -152,10 +157,14 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'perdcomp/static'),
-]
+STATIC_URL = '/static/'
+
+# Inclui diretórios de estáticos adicionais só se existirem (evita W004)
+STATICFILES_DIRS = []
+_app_static = BASE_DIR / 'perdcomp' / 'static'
+if _app_static.exists():
+    STATICFILES_DIRS.append(_app_static)
+
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Arquivos de mídia(uploads)
@@ -257,3 +266,11 @@ if not DEBUG:
     X_FRAME_OPTIONS = 'DENY'
     # Content Security Policy básica (se usar django-csp instalar e ajustar)
     # Exemplo de variável: os.environ.get('CSP_DEFAULT_SRC', "'self'")
+
+    # Proxy headers (quando atrás de Nginx/Load Balancer)
+    USE_X_FORWARDED_HOST = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# WhiteNoise opcional (habilitar via var DJANGO_ENABLE_WHITENOISE=1)
+if os.getenv('DJANGO_ENABLE_WHITENOISE', '0').lower() in ('1','true','yes') and 'whitenoise.middleware.WhiteNoiseMiddleware' not in MIDDLEWARE:
+    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
