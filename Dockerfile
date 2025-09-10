@@ -11,14 +11,12 @@ COPY package-lock.json* ./
 
 RUN npm install --no-audit --no-fund --quiet
 
-# Copia configs do Tailwind/PostCSS e fontes de static
-COPY tailwind.config.js postcss.config.js ./
-RUN echo "[DEBUG] Listando arquivos raiz antes de copiar static:" && ls -1 . && echo "---" && echo "[DEBUG] Verificando arvore perdcomp:" && ls -R perdcomp | head -200 || true
-RUN test -d perdcomp/static && echo "[DEBUG] Diretorio perdcomp/static existe no contexto" || (echo "[ERRO] perdcomp/static NAO encontrado" && ls -R . | head -300)
-COPY perdcomp/static ./perdcomp/static
+# Copia configs + todo o código ( .dockerignore controla o que entra )
+COPY . .
 
-# Gera CSS minificado
-RUN npx tailwindcss -i ./perdcomp/static/src/input.css -o ./perdcomp/static/css/app.css --minify
+# Gera CSS minificado (garante diretório existente)
+RUN test -f ./perdcomp/static/src/input.css || (echo '[ERRO] Arquivo input.css não encontrado' && ls -R perdcomp/static | head -200 && exit 1); \
+    npx tailwindcss -i ./perdcomp/static/src/input.css -o ./perdcomp/static/css/app.css --minify
 
 ############################################
 # Stage 2: Runtime Python + Django + Gunicorn
