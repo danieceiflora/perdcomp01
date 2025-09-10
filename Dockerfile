@@ -12,7 +12,7 @@ RUN npm ci --no-audit --no-fund --quiet
 COPY tailwind.config.js postcss.config.js ./
 COPY perdcomp/templates perdcomp/templates/
 COPY */templates */templates/
-COPY perdcomp/static perdcomp/static/
+COPY ./perdcomp/static/ ./perdcomp/static/
 
 # Compila Tailwind CSS
 RUN npx tailwindcss -i ./perdcomp/static/src/input.css -o ./perdcomp/static/css/app.css --minify
