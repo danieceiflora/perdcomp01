@@ -159,11 +159,10 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-# Inclui diretórios de estáticos adicionais só se existirem (evita W004)
-STATICFILES_DIRS = []
-_app_static = BASE_DIR / 'perdcomp' / 'static'
-if _app_static.exists():
-    STATICFILES_DIRS.append(_app_static)
+# Configuração de estáticos para produção
+STATICFILES_DIRS = [
+    BASE_DIR / 'perdcomp' / 'static',
+]
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 

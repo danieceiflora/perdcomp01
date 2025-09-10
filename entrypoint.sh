@@ -30,7 +30,8 @@ PY
 fi
 
 python manage.py migrate --noinput
-python manage.py collectstatic --noinput || true
+echo "[entrypoint] Executando collectstatic..."
+python manage.py collectstatic --noinput --verbosity=2
 
 if [ "${DJANGO_DEBUG}" = "True" ] || [ "${DJANGO_DEBUG}" = "true" ]; then
   echo "[entrypoint] Iniciando em modo desenvolvimento (runserver)"

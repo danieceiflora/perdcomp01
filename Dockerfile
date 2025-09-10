@@ -4,15 +4,11 @@
 FROM node:20-alpine AS assets
 WORKDIR /build
 
-# Copia package files para cache eficiente
-COPY package*.json ./
-RUN npm ci --no-audit --no-fund --quiet
+# Copia todo o projeto (dockerignore vai filtrar)
+COPY . .
 
-# Copia configurações e arquivos necessários para Tailwind
-COPY tailwind.config.js postcss.config.js ./
-COPY perdcomp/templates perdcomp/templates/
-COPY */templates */templates/
-COPY ./perdcomp/static/ ./perdcomp/static/
+# Instala dependências Node
+RUN npm ci --no-audit --no-fund --quiet
 
 # Compila Tailwind CSS
 RUN npx tailwindcss -i ./perdcomp/static/src/input.css -o ./perdcomp/static/css/app.css --minify

@@ -1,6 +1,5 @@
-# Excluir diretórios e arquivos que não precisam ir para o build context
+# Excluir apenas o essencial para reduzir contexto
 .git
-.gitignore
 node_modules
 media
 __pycache__
@@ -9,7 +8,3 @@ __pycache__
 *.log
 .env
 .env.*
-Dockerfile*
-README.md
-perdcomp.pdf
-relatorios.md
