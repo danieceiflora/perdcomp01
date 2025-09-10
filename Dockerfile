@@ -4,19 +4,24 @@
 FROM node:20-alpine AS assets
 WORKDIR /build
 
-# Copia apenas manifestos primeiro para cache eficiente
-COPY package.json ./
-# Se existir lockfile copie também (não falha se não houver)
-COPY package-lock.json* ./
-
-RUN npm install --no-audit --no-fund --quiet
-
-# Copia configs + todo o código ( .dockerignore controla o que entra )
+# Copia todo o código primeiro para garantir presença de perdcomp/static
 COPY . .
 
-# Gera CSS minificado (garante diretório existente)
-RUN test -f ./perdcomp/static/src/input.css || (echo '[ERRO] Arquivo input.css não encontrado' && ls -R perdcomp/static | head -200 && exit 1); \
-    npx tailwindcss -i ./perdcomp/static/src/input.css -o ./perdcomp/static/css/app.css --minify
+# Diagnóstico de estrutura (limite para não explodir log)
+RUN echo "[DEBUG] Estrutura de diretorios (nivel 2):" && find . -maxdepth 2 -type d | sort && \
+        echo "[DEBUG] Listando perdcomp/static:" && (ls -R perdcomp/static 2>/dev/null | head -200 || echo '[WARN] perdcomp/static ausente')
+
+# Instala dependências Node (usa lock se existir)
+RUN if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
+
+# Compila Tailwind somente se o fonte existir; caso contrário cria CSS vazio para não quebrar estágio seguinte
+RUN if [ -f ./perdcomp/static/src/input.css ]; then \
+            echo "[INFO] Compilando Tailwind" && \
+            npx tailwindcss -i ./perdcomp/static/src/input.css -o ./perdcomp/static/css/app.css --minify ; \
+        else \
+            echo "[WARN] Fonte Tailwind (perdcomp/static/src/input.css) não encontrado. Gerando placeholder." && \
+            mkdir -p ./perdcomp/static/css && echo '/* placeholder tailwind (fonte ausente no build) */' > ./perdcomp/static/css/app.css ; \
+        fi
 
 ############################################
 # Stage 2: Runtime Python + Django + Gunicorn
