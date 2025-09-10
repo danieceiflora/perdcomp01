@@ -13,11 +13,19 @@ DEBUG = os.getenv('DJANGO_DEBUG', 'True').lower() in ('1','true','yes')
 
 ALLOWED_HOSTS = [h.strip() for h in os.getenv('DJANGO_ALLOWED_HOSTS', '*').split(',') if h.strip()]
 
+# Configurações CSRF para funcionar com Nginx
 CSRF_TRUSTED_ORIGINS = [
+    'http://localhost',
+    'http://127.0.0.1',
     'http://177.153.62.100:3000',
     'https://programmer-ribbon-ellis-raid.trycloudflare.com',
     'https://tvs-dentists-festival-usb.trycloudflare.com',
 ]
+
+# Configurações adicionais para CSRF com proxy
+CSRF_USE_SESSIONS = False
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SAMESITE = 'Lax'
 
 # Opcional: permitir definir origens CSRF adicionais via variável
 _extra_csrf = os.getenv('DJANGO_CSRF_TRUSTED_ORIGINS')
