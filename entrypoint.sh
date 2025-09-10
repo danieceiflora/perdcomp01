@@ -1,6 +1,34 @@
 #!/bin/sh
 set -e
 
+# Aguarda Postgres se estiver configurado para usar Postgres
+if [ "${DJANGO_DB_ENGINE}" = "postgres" ] || [ "${DJANGO_DB_ENGINE}" = "postgresql" ]; then
+  echo "[entrypoint] Aguardando Postgres em ${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}..."
+  ATTEMPTS=0
+  until python - <<'PY'
+import os, psycopg2, time, sys
+host=os.environ.get('POSTGRES_HOST','postgres')
+port=int(os.environ.get('POSTGRES_PORT','5432'))
+user=os.environ.get('POSTGRES_USER','postgres')
+password=os.environ.get('POSTGRES_PASSWORD','')
+db=os.environ.get('POSTGRES_DB','postgres')
+try:
+    psycopg2.connect(host=host, port=port, user=user, password=password, dbname=db).close()
+except Exception as e:
+    print(e)
+    sys.exit(1)
+PY
+  do
+    ATTEMPTS=$((ATTEMPTS+1))
+    if [ "$ATTEMPTS" -ge 30 ]; then
+      echo "[entrypoint] Postgres indisponível após 30 tentativas." >&2
+      exit 1
+    fi
+    sleep 2
+  done
+  echo "[entrypoint] Postgres disponível."
+fi
+
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput || true
 
