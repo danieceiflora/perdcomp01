@@ -22,7 +22,6 @@ RUN chmod +x /app/entrypoint.sh || true
 EXPOSE 8000
 
 ENV DJANGO_SETTINGS_MODULE=perdcomp.settings \
-    DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1 \
     PYTHONPATH=/app
 
 ENTRYPOINT ["/app/entrypoint.sh"]

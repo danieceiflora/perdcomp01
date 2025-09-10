@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   web:
     build: .
@@ -5,7 +7,7 @@ services:
     environment:
       DJANGO_SECRET_KEY: dev-secret-change
       DJANGO_DEBUG: 'False'
-      DJANGO_ALLOWED_HOSTS: '*'  # permitir acesso externo
+      DJANGO_ALLOWED_HOSTS: '*'  # ajuste para seu dominio.com,IP
       DJANGO_SECURE_SSL_REDIRECT: 'False'
       DJANGO_DB_ENGINE: postgres
       POSTGRES_DB: perdcomp
@@ -17,6 +19,10 @@ services:
       - media_data:/app/media
       - staticfiles_data:/app/staticfiles
     command: gunicorn perdcomp.wsgi:application --bind 0.0.0.0:8000 --workers 3
+    expose:
+      - "8000"
+    depends_on:
+      - postgres
     restart: unless-stopped
 
   postgres:
@@ -28,8 +34,9 @@ services:
       POSTGRES_PASSWORD: perdcomp
     volumes:
       - pg_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+  # Remova o mapeamento de porta se não precisar acessar o Postgres de fora
+  # ports:
+  #   - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
@@ -40,9 +47,10 @@ services:
   nginx:
     image: nginx:1.27-alpine
     container_name: perdcomp_nginx
-    network_mode: "host"   # Nginx compartilha a rede do host
     depends_on:
       - web
+    ports:
+      - "80:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/app.conf:/etc/nginx/conf.d/app.conf:ro
