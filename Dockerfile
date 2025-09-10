@@ -4,24 +4,18 @@
 FROM node:20-alpine AS assets
 WORKDIR /build
 
-# Copia todo o código primeiro para garantir presença de perdcomp/static
-COPY . .
+# Copia package files para cache eficiente
+COPY package*.json ./
+RUN npm ci --no-audit --no-fund --quiet
 
-# Diagnóstico de estrutura (limite para não explodir log)
-RUN echo "[DEBUG] Estrutura de diretorios (nivel 2):" && find . -maxdepth 2 -type d | sort && \
-        echo "[DEBUG] Listando perdcomp/static:" && (ls -R perdcomp/static 2>/dev/null | head -200 || echo '[WARN] perdcomp/static ausente')
+# Copia configurações e arquivos necessários para Tailwind
+COPY tailwind.config.js postcss.config.js ./
+COPY perdcomp/templates perdcomp/templates/
+COPY */templates */templates/
+COPY perdcomp/static perdcomp/static/
 
-# Instala dependências Node (usa lock se existir)
-RUN if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
-
-# Compila Tailwind somente se o fonte existir; caso contrário cria CSS vazio para não quebrar estágio seguinte
-RUN if [ -f ./perdcomp/static/src/input.css ]; then \
-            echo "[INFO] Compilando Tailwind" && \
-            npx tailwindcss -i ./perdcomp/static/src/input.css -o ./perdcomp/static/css/app.css --minify ; \
-        else \
-            echo "[WARN] Fonte Tailwind (perdcomp/static/src/input.css) não encontrado. Gerando placeholder." && \
-            mkdir -p ./perdcomp/static/css && echo '/* placeholder tailwind (fonte ausente no build) */' > ./perdcomp/static/css/app.css ; \
-        fi
+# Compila Tailwind CSS
+RUN npx tailwindcss -i ./perdcomp/static/src/input.css -o ./perdcomp/static/css/app.css --minify
 
 ############################################
 # Stage 2: Runtime Python + Django + Gunicorn
@@ -46,8 +40,7 @@ RUN mkdir -p /app/sqlite /app/media /app/staticfiles
 
 COPY . .
 
-# Copia CSS compilado do estágio de assets (overwrite caso exista)
-# Copia apenas se foi gerado (multi-stage garante, mas evita falha em build parcial)
+# Copia CSS compilado do estágio de assets
 COPY --from=assets /build/perdcomp/static/css/app.css ./perdcomp/static/css/app.css
 RUN chmod +x /app/entrypoint.sh || true
 
