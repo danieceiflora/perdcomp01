@@ -10,9 +10,12 @@ venv/
 
 node_modules/
 
-# Ignore media and static files
+# Ignore media files but keep source static files
 media/
-static/
+# Only ignore collected static files, not source files
+staticfiles/
+# Ignore compiled CSS but keep source
+perdcomp/static/css/app.css
 
 # Ignore IDE and editor files
 .vscode/

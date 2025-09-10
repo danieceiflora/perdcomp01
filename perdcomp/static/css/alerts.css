@@ -1,0 +1,10 @@
+/* Reusable alert styles with light/dark support */
+.alert{border-width:1px;border-radius:0.5rem;padding:1rem;display:block}
+.alert-icon{line-height:1}
+.alert-warning{background:#fff7ed;border-color:#fdba74;color:#7c2d12}
+.alert-danger{background:#fef2f2;border-color:#fca5a5;color:#7f1d1d}
+@media (prefers-color-scheme: dark){
+  .alert-warning{background:rgba(146,64,14,0.28);border-color:rgba(251,146,60,0.45);color:#fed7aa}
+  .alert-danger{background:rgba(127,29,29,0.30);border-color:rgba(248,113,113,0.45);color:#fecaca}
+  .alert strong{color:inherit}
+}
