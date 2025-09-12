@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load format_helpers %}
 
 {% block title %}Detalhe do Cliente{% endblock %}
 
@@ -70,7 +71,7 @@
             <span class="font-medium">Razão Social:</span><br>
             {{ cliente.id_company_vinculada.razao_social }}
           </p>
-          <p><span class="font-medium text-muted-foreground">CNPJ:</span> {{ cliente.id_company_vinculada.cnpj }}</p>
+          <p><span class="font-medium text-muted-foreground">CNPJ:</span> {{ cliente.id_company_vinculada.cnpj|format_cnpj }}</p>
           <p><span class="font-medium text-muted-foreground">Data Início:</span> {{ cliente.data_inicio_parceria|date:'d/m/Y' }}</p>
           <p class="flex items-center gap-2">
             <span class="font-medium text-muted-foreground">Status:</span>
@@ -130,7 +131,7 @@
                 <div class="space-y-1 text-sm">
                   {% if c.telefone %}
                     <p class="flex items-center gap-2 text-muted-foreground">
-                      <i class="bi bi-telephone"></i>{{ c.telefone }}
+                      <i class="bi bi-telephone"></i>{{ c.telefone|format_phone }}
                     </p>
                   {% endif %}
                   {% if c.email %}

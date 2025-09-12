@@ -1,5 +1,6 @@
 ﻿{% extends 'base.html' %}
 {% load static %}
+{% load format_helpers %}
 
 {% block title %}Lista de Clientes{% endblock %}
 
@@ -65,7 +66,7 @@
     <!-- Clients Table -->
     <div class="card">
         <div class="p-6">
-            <h3 class="text-lg font-semibold mb-4">Clientes ({{ clientes_parceiros|length }})</h3>
+            <h3 class="text-lg font-semibold mb-4">Clientes ({{ page_obj.paginator.count }})</h3>
             
             <div class="overflow-x-auto">
                 <table class="w-full border-collapse">
@@ -79,7 +80,7 @@
                         </tr>
                     </thead>
                 <tbody class="divide-y">
-                    {% for cliente_parceiro in clientes_parceiros %}
+                    {% for cliente_parceiro in page_obj %}
                     <tr class="hover:bg-muted/50 transition-colors">
                         <td class="py-3">
                             <div class="flex items-center gap-3">
@@ -93,12 +94,8 @@
                                 </div>
                                 {% endif %}
                                 <div>
-                                    <div class="font-medium text-foreground">
-                                        {{ cliente_parceiro.id_company_vinculada.nome_fantasia|default:cliente_parceiro.id_company_vinculada.razao_social }}
-                                    </div>
-                                    <div class="text-sm text-muted-foreground">
-                                        {{ cliente_parceiro.id_company_vinculada.cnpj }}
-                                    </div>
+                                    <div class="font-medium text-foreground">{{ cliente_parceiro.id_company_vinculada.nome_fantasia|default:cliente_parceiro.id_company_vinculada.razao_social }}</div>
+                                    <div class="text-sm text-muted-foreground font-mono">{{ cliente_parceiro.id_company_vinculada.cnpj|format_cnpj }}</div>
                                 </div>
                             </div>
                         </td>
@@ -107,7 +104,7 @@
                                 {{ cliente_parceiro.id_company_base.nome_fantasia|default:cliente_parceiro.id_company_base.razao_social }}
                             </div>
                             <div class="text-sm text-muted-foreground">
-                                {{ cliente_parceiro.id_company_base.cnpj }}
+                                {{ cliente_parceiro.id_company_base.cnpj|format_cnpj }}
                             </div>
                         </td>
                         <td class="py-3">
