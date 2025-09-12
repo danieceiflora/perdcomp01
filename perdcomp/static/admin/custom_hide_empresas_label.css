@@ -1,0 +1,4 @@
+.form-row.field-empresas > div > label {display:none !important;}
+.inline-group .form-row.field-empresas h2 {display:none !important;}
+/* Ajuste de espaçamento se necessário */
+.form-row.field-empresas {margin-top:8px;}
