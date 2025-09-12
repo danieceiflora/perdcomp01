@@ -132,6 +132,28 @@ class Adesao(models.Model):
         null=True
     )
 
+    # Campos específicos para Restituição (apenas informativos)
+    selic_acumulada = models.FloatField(
+        verbose_name='SELIC Acumulada (%)',
+        help_text='Taxa SELIC acumulada para cálculo de correção - apenas informativo',
+        blank=True,
+        null=True
+    )
+
+    valor_correcao = models.FloatField(
+        verbose_name='Valor da Correção',
+        help_text='Valor da correção monetária aplicada - apenas informativo',
+        blank=True,
+        null=True
+    )
+
+    valor_total_corrigido = models.FloatField(
+        verbose_name='Valor Total Corrigido',
+        help_text='Valor principal + correção monetária - apenas informativo',
+        blank=True,
+        null=True
+    )
+
     # Audit trail
     historico = HistoricalRecords()
     

@@ -15,8 +15,8 @@ class Lancamentos(models.Model):
     )
     
     data_lancamento = models.DateTimeField(
-        verbose_name='Data do Lançamento',
-        help_text='Data em que o lançamento foi realizado'
+        verbose_name='Data do pedido',
+        help_text='Data em que o pedido foi realizado'
     )
     
     valor = models.FloatField(

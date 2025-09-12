@@ -65,24 +65,32 @@
                             </div>
                         {% endif %}
                     </div>
-                    
-                    <div class="flex items-center space-x-2">
-                        {{ form.corrige|add_class:"peer h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground" }}
-                        {{ form.corrige.label_tag|add_class:"text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" }}
-                        {% if form.corrige.errors %}
-                            <div class="text-sm text-destructive">
-                                {{ form.corrige.errors }}
-                            </div>
-                        {% endif %}
-                    </div>
+                </div>
+                
+                <div class="flex items-center justify-between pt-6">
+                    <a href="{% url 'correcao:tese_credito_list' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
+                        <i class="bi bi-arrow-left mr-2"></i>Cancelar
+                    </a>
+                    <button type="submit" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
+                        <i class="bi bi-check mr-2"></i>{% if object %}Atualizar{% else %}Criar{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
-                    <!-- Dropdown de Correção (Índice) no final do formulário; aparece apenas se "Aplicar correção" estiver marcado -->
-                    <div id="correcao-group" class="space-y-2 hidden">
-                        {{ form.id_correcao.label_tag|add_class:"text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" }}
-                        {{ form.id_correcao|add_class:"flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" }}
-                        {% if form.id_correcao.errors %}
-                            <div class="text-sm text-destructive">
-                                {{ form.id_correcao.errors }}
+<div class="container mx-auto px-4 py-6">
+    <div class="max-w-4xl mx-auto">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="grid grid-cols-1 gap-4">
+                <div>
+                    {{ form.id_correcao.label_tag|add_class:"text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" }}
+                    {{ form.id_correcao|add_class:"flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" }}
+                    {% if form.id_correcao.errors %}
+                        <div class="text-sm text-destructive">
+                            {{ form.id_correcao.errors }}
                             </div>
                         {% endif %}
                     </div>

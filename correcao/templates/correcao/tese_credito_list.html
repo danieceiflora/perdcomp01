@@ -39,8 +39,6 @@
                                 <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">Tipo de Tese</th>
                                 <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">Código Origem</th>
                                 <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">Descrição</th>
-                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">Aplica Correção</th>
-                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">Valor Correção</th>
                                 <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">Ações</th>
                             </tr>
                         </thead>
@@ -64,20 +62,6 @@
                                     <div class="max-w-xs">
                                         <p class="text-foreground truncate" title="{{ tese.descricao }}">{{ tese.descricao }}</p>
                                     </div>
-                                </td>
-                                <td class="p-4 align-middle [&:has([role=checkbox])]:pr-0">
-                                    {% if tese.corrige %}
-                                        <span class="inline-flex items-center rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:text-green-300">
-                                            <i class="bi bi-check-circle mr-1"></i>Sim
-                                        </span>
-                                    {% else %}
-                                        <span class="inline-flex items-center rounded-full bg-red-500/10 px-2.5 py-0.5 text-xs font-medium text-red-700 dark:text-red-300">
-                                            <i class="bi bi-x-circle mr-1"></i>Não
-                                        </span>
-                                    {% endif %}
-                                </td>
-                                <td class="p-4 align-middle [&:has([role=checkbox])]:pr-0">
-                                    <span class="text-foreground">{{ tese.correcao|default_if_none:"--" }}</span>
                                 </td>
                                 <td class="p-4 align-middle [&:has([role=checkbox])]:pr-0">
                                     <div class="flex items-center gap-2">

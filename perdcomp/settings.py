@@ -37,7 +37,6 @@ if _extra_csrf:
 # Application definition
 
 INSTALLED_APPS = [
-    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -83,6 +82,7 @@ MIDDLEWARE = [
     # Adiciona WhiteNoise (se instalado) para servir estáticos de forma segura em produção
     # 'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',  # Middleware para tradução
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -163,6 +163,16 @@ TIME_ZONE = 'America/Sao_Paulo'
 USE_I18N = True
 USE_TZ = True
 
+# Configurações de localização
+LANGUAGES = [
+    ('pt-br', 'Português')
+]
+
+# Diretório para arquivos de tradução (se necessário criar traduções customizadas)
+LOCALE_PATHS = [
+    BASE_DIR / 'locale',
+]
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
@@ -185,81 +195,6 @@ MEDIA_URL = '/media/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-JAZZMIN_SETTINGS = {
-    "site_title": "PERDCOMP Admin",
-    "site_header": "PERDCOMP Administration",
-    "site_brand": "PERDCOMP",
-    "welcome_sign": "Bem-vindo ao painel de administração do PERDCOMP",
-    "usermenu_links": [
-        {
-            "name": "Token JWT",
-            "url": "token-jwt",
-            "new_window": True,
-            "icon": "fas fa-key",
-        },
-        {
-          "name": "Site",
-          "url": "/",
-          "icon": "fas fa-home"
-        }
-    ],
-    "icons":
-        {
-            "clientes_parceiros.ClientesParceiros": "fas fa-users",
-            "clientes_parceiros.TipoRelacionamento": "fa-solid fa-tag",
-            "empresas.Empresa": "fas fa-building",
-            "contatos.Contatos": "fas fa-address-book",
-            "correcao.TeseCredito": "fas fa-balance-scale",
-            "correcao.TipoTese": "fa-solid fa-tag",
-            "adesao.Adesao": "fas fa-handshake",
-            "lancamentos.Lancamentos": "fas fa-file-invoice-dollar",
-            "correcao.Correcao": "fas fa-tools",
-            "auth.User": "fas fa-user",
-            "auth.Group": "fas fa-users-cog",
-            "accounts.UserProfile": "fas fa-user-cog",
-            "lancamentos.Anexos": "fas fa-paperclip",
-        },
-    "changeform_format": "single",  # <- Exibe tudo junto, sem abas nem colapsáveis
-    "changeform_format_overrides": {
-        "auth.user": "single",  # <- Garante isso no admin do User também
-        "auth.group": "single",  # (opcional)
-    },
-    "show_ui_builder": True  # <- Desativa o construtor de UI
-    
-}
-
-JAZZMIN_UI_TWEAKS = {
-    "navbar_small_text": False,
-    "footer_small_text": False,
-    "body_small_text": False,
-    "brand_small_text": False,
-    "brand_colour": "navbar-teal",
-    "accent": "accent-teal",
-    "navbar": "navbar-white navbar-light",
-    "no_navbar_border": False,
-    "navbar_fixed": False,
-    "layout_boxed": False,
-    "footer_fixed": False,
-    "sidebar_fixed": False,
-    "sidebar": "sidebar-dark-teal",
-    "sidebar_nav_small_text": False,
-    "sidebar_disable_expand": False,
-    "sidebar_nav_child_indent": False,
-    "sidebar_nav_compact_style": False,
-    "sidebar_nav_legacy_style": False,
-    "sidebar_nav_flat_style": False,
-    "theme": "spacelab",
-    "dark_mode_theme": "darkly",
-    "button_classes": {
-        "primary": "btn-outline-primary",
-        "secondary": "btn-outline-secondary",
-        "info": "btn-info",
-        "warning": "btn-warning",
-        "danger": "btn-danger",
-        "success": "btn-success"
-    }
-}
 
 # ======= Segurança adicional (apenas se DEBUG False) =======
 if not DEBUG:

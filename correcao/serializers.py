@@ -1,10 +1,6 @@
 from rest_framework import serializers
-from .models import Correcao, tipoTese, TeseCredito
+from .models import tipoTese, TeseCredito
 
-class CorrecaoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Correcao
-        fields = ['id', 'descricao', 'fonte_correcao', 'cod_origem']
 
 class TipoTeseSerializer(serializers.ModelSerializer):
     class Meta:
@@ -12,7 +8,6 @@ class TipoTeseSerializer(serializers.ModelSerializer):
         fields = ['id', 'descricao', 'periodicidade']
 
 class TeseCreditoSerializer(serializers.ModelSerializer):
-    id_correcao = serializers.PrimaryKeyRelatedField(queryset=Correcao.objects.all(), required=False, allow_null=True)
     id_tipo_tese = serializers.PrimaryKeyRelatedField(queryset=tipoTese.objects.all())
 
     class Meta:
