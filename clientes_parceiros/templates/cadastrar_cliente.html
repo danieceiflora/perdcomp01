@@ -204,6 +204,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://unpkg.com/imask"></script>
 <script>
 // Add class helper for Django forms with Tailwind
 document.addEventListener('DOMContentLoaded', function() {
@@ -214,7 +215,31 @@ document.addEventListener('DOMContentLoaded', function() {
             input.classList.add('input');
         }
     });
+
+    // Apply masks
+    applyMasks(document);
 });
+
+function applyMasks(container) {
+    // CNPJ Mask
+    const cnpjField = container.querySelector('input[data-mask="cnpj"]');
+    if (cnpjField) {
+        IMask(cnpjField, {
+            mask: '00.000.000/0000-00'
+        });
+    }
+
+    // Phone masks
+    const phoneFields = container.querySelectorAll('input[name$="telefone"]');
+    phoneFields.forEach(field => {
+        IMask(field, {
+            mask: [
+                { mask: '(00) 0000-0000' },
+                { mask: '(00) 00000-0000' }
+            ]
+        });
+    });
+}
 
 // Initialize contact form index from management form
 let contactFormIndex = parseInt('{{ contato_formset.total_form_count|default:0 }}', 10);
@@ -261,6 +286,9 @@ function addContactForm() {
     
     // Add new form
     contactForms.appendChild(newForm);
+
+    // Apply mask to the new phone field
+    applyMasks(newForm);
     
     // Increment counters
     contactFormIndex++;
@@ -268,6 +296,7 @@ function addContactForm() {
 }
 
 function removeContactForm(button) {
+// ... (o resto da função continua igual)
     const contactForm = button.closest('.contact-form');
     const contactForms = document.getElementById('contato-forms');
     const managementForm = contactForms.querySelector('input[name$="TOTAL_FORMS"]');
@@ -288,6 +317,7 @@ function removeContactForm(button) {
 }
 
 function renumberContactForms() {
+// ... (o resto da função continua igual)
     const contactForms = document.querySelectorAll('.contact-form');
     contactForms.forEach((form, index) => {
         const inputs = form.querySelectorAll('input, select');
@@ -305,6 +335,7 @@ function renumberContactForms() {
 
 // Form validation
 document.getElementById('clienteForm').addEventListener('submit', function(e) {
+// ... (o resto da função continua igual)
     const parceiro = document.getElementById('id_parceiro').value;
     if (!parceiro) {
         e.preventDefault();

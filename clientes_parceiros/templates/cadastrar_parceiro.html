@@ -179,6 +179,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://unpkg.com/imask"></script>
 <script>
 // Add class helper for Django forms with Tailwind
 document.addEventListener('DOMContentLoaded', function() {
@@ -189,7 +190,31 @@ document.addEventListener('DOMContentLoaded', function() {
             input.classList.add('input');
         }
     });
+
+    // Apply masks
+    applyMasks(document);
 });
+
+function applyMasks(container) {
+    // CNPJ Mask
+    const cnpjField = container.querySelector('input[data-mask="cnpj"]');
+    if (cnpjField) {
+        IMask(cnpjField, {
+            mask: '00.000.000/0000-00'
+        });
+    }
+
+    // Phone masks
+    const phoneFields = container.querySelectorAll('input[name$="telefone"]');
+    phoneFields.forEach(field => {
+        IMask(field, {
+            mask: [
+                { mask: '(00) 0000-0000' },
+                { mask: '(00) 00000-0000' }
+            ]
+        });
+    });
+}
 
 let contactFormIndex = parseInt('{{ contato_formset.total_form_count|default:0 }}');
 
@@ -231,6 +256,9 @@ function addContactForm() {
     
     // Add new form
     contactForms.appendChild(newForm);
+
+    // Apply masks to new fields
+    applyMasks(newForm);
     
     // Increment counters
     contactFormIndex++;
