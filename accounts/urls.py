@@ -13,6 +13,7 @@ urlpatterns = [
 
     # Novo dashboard unificado
     path('dashboard/', views.UnifiedDashboardView.as_view(), name='dashboard'),
+    path('dashboard/metrics/', views.DashboardMetricsView.as_view(), name='dashboard_metrics'),
     
     # Login administrativo
     path('admin-login/', views.AdminLoginView.as_view(), name='admin_login'),

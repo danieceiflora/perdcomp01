@@ -6,7 +6,8 @@ from django.urls import reverse_lazy
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import UserProfile
-from utils.dashboard_access import build_dashboard_context
+from utils.dashboard_access import build_dashboard_context, metricas_por_empresa
+from django.http import JsonResponse, HttpResponseBadRequest
 
 class AdminLoginView(LoginView):
     """
@@ -146,6 +147,26 @@ class UnifiedDashboardView(LoginRequiredMixin, TemplateView):
             'parceiro_base': ctx.get('parceiro_base'),
         })
         return context
+
+class DashboardMetricsView(LoginRequiredMixin, TemplateView):
+    def get(self, request, *args, **kwargs):
+        profile = request.user.profile
+        empresa_id = request.GET.get('empresa')
+        # Coleta empresas acessíveis (exceto parceiro-base)
+        ctx = build_dashboard_context(profile)
+        acessiveis_ids = {item['empresa'].id for item in ctx['empresas_info']}
+        if empresa_id and empresa_id.isdigit():
+            empresa_id_int = int(empresa_id)
+            if empresa_id_int not in acessiveis_ids:
+                return HttpResponseBadRequest('Empresa não acessível.')
+            m = metricas_por_empresa(empresa_id_int)
+            return JsonResponse(m)
+        # Sem empresa: retorna agregadas já calculadas
+        return JsonResponse({
+            'credito_recuperado': ctx['credito_recuperado'],
+            'credito_utilizado': ctx['credito_utilizado'],
+            'saldo_credito': ctx['saldo_credito']
+        })
 
 class ClienteDashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'accounts/cliente/dashboard.html'

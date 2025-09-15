@@ -98,3 +98,27 @@ def build_dashboard_context(profile):
         'empresas_info': empresas_info,
         **agregados,
     }
+
+
+def metricas_por_empresa(empresa_id: int):
+    """Calcula métricas (crédito recuperado, utilizado, saldo) apenas para uma empresa cliente específica.
+    Retorna dicionário com valores float.
+    """
+    vinculos = ClientesParceiros.objects.filter(
+        id_company_vinculada_id=empresa_id,
+        tipo_parceria='cliente',
+        ativo=True
+    )
+    if not vinculos.exists():
+        return {'credito_recuperado': 0.0, 'credito_utilizado': 0.0, 'saldo_credito': 0.0}
+    adesoes = Adesao.objects.filter(cliente__in=vinculos)
+    from django.db.models import Sum
+    credito_recuperado = adesoes.aggregate(total=Sum('saldo'))['total'] or 0
+    saldo_credito = adesoes.aggregate(total=Sum('saldo_atual'))['total'] or 0
+    lanc_debitos = Lancamentos.objects.filter(id_adesao__in=adesoes, sinal='-').aggregate(total=Sum('valor'))['total'] or 0
+    credito_utilizado = abs(lanc_debitos or 0)
+    return {
+        'credito_recuperado': float(credito_recuperado or 0),
+        'credito_utilizado': float(credito_utilizado or 0),
+        'saldo_credito': float(saldo_credito or 0)
+    }

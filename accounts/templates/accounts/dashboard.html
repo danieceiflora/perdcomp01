@@ -5,6 +5,19 @@
 
 {% block stat_cards %}
 <div class="mb-6">
+  <div class="flex items-center justify-end mb-4 gap-4">
+    {% if empresas_info and empresas_info|length > 1 %}
+    <div class="flex items-center gap-2">
+      <label for="filtro-empresa" class="text-sm text-muted-foreground">Filtrar Empresa:</label>
+      <select id="filtro-empresa" class="border rounded px-2 py-1 bg-background text-sm">
+        <option value="">Todas</option>
+        {% for item in empresas_info %}
+        <option value="{{ item.empresa.id }}">{{ item.empresa.nome_fantasia|default:item.empresa.razao_social }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+  </div>
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="stat-card rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-lg transition-all">
             <div class="p-6 flex items-center">
@@ -13,7 +26,7 @@
                 </div>
                 <div>
                     <h3 class="text-sm font-medium text-muted-foreground">Crédito Recuperado</h3>
-                    <p class="text-3xl font-bold mt-1 text-foreground">R$ {{ credito_recuperado|floatformat:2 }}</p>
+                    <p id="metrica-credito-recuperado" class="text-3xl font-bold mt-1 text-foreground">R$ {{ credito_recuperado|floatformat:2 }}</p>
                     <p class="text-xs text-muted-foreground mt-1">Total das adesões</p>
                 </div>
             </div>
@@ -25,7 +38,7 @@
                 </div>
                 <div>
                     <h3 class="text-sm font-medium text-muted-foreground">Crédito Utilizado</h3>
-                    <p class="text-3xl font-bold mt-1 text-foreground">R$ {{ credito_utilizado|floatformat:2 }}</p>
+                    <p id="metrica-credito-utilizado" class="text-3xl font-bold mt-1 text-foreground">R$ {{ credito_utilizado|floatformat:2 }}</p>
                     <p class="text-xs text-muted-foreground mt-1">Total de lançamentos</p>
                 </div>
             </div>
@@ -37,7 +50,7 @@
                 </div>
                 <div>
                     <h3 class="text-sm font-medium text-muted-foreground">Saldo de Crédito</h3>
-                    <p class="text-3xl font-bold mt-1 text-foreground">R$ {{ saldo_credito|floatformat:2 }}</p>
+                    <p id="metrica-saldo-credito" class="text-3xl font-bold mt-1 text-foreground">R$ {{ saldo_credito|floatformat:2 }}</p>
                     <p class="text-xs text-muted-foreground mt-1">Disponível atual</p>
                 </div>
             </div>
@@ -79,4 +92,38 @@
     <p class="text-muted-foreground text-sm">Nenhuma empresa vinculada.</p>
   {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+function formatBRL(valor){
+  return 'R$ ' + (valor||0).toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  const select = document.getElementById('filtro-empresa');
+  if(!select) return;
+  const recEl = document.getElementById('metrica-credito-recuperado');
+  const utiEl = document.getElementById('metrica-credito-utilizado');
+  const salEl = document.getElementById('metrica-saldo-credito');
+
+  async function atualizar(){
+    const emp = select.value;
+    const url = new URL(window.location.origin + '/accounts/dashboard/metrics/');
+    if(emp) url.searchParams.set('empresa', emp);
+    try {
+      const resp = await fetch(url, {headers:{'X-Requested-With':'XMLHttpRequest'}});
+      if(!resp.ok) throw new Error('Falha ao carregar métricas');
+      const data = await resp.json();
+      recEl.textContent = formatBRL(data.credito_recuperado);
+      utiEl.textContent = formatBRL(data.credito_utilizado);
+      salEl.textContent = formatBRL(data.saldo_credito);
+    } catch(e){
+      console.error(e);
+    }
+  }
+  select.addEventListener('change', atualizar);
+});
+</script>
 {% endblock %}
