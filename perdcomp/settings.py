@@ -196,6 +196,11 @@ MEDIA_URL = '/media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Autenticação / Redirects
+LOGIN_URL = 'accounts:login'
+LOGIN_REDIRECT_URL = 'accounts:dashboard'
+LOGOUT_REDIRECT_URL = 'accounts:login'
+
 # ======= Segurança adicional (apenas se DEBUG False) =======
 if not DEBUG:
     SESSION_COOKIE_SECURE = False  # Manter False até HTTPS

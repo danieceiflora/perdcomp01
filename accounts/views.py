@@ -6,6 +6,7 @@ from django.urls import reverse_lazy
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import UserProfile
+from utils.dashboard_access import build_dashboard_context
 
 class AdminLoginView(LoginView):
     """
@@ -115,6 +116,36 @@ class CustomLogoutView(LogoutView):
 
 class LoginSelectorView(TemplateView):
     template_name = 'accounts/login_selector.html'
+
+class UnifiedLoginView(LoginView):
+    template_name = 'accounts/login.html'
+
+    def get_success_url(self):
+        return reverse_lazy('accounts:dashboard')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Login efetuado com sucesso.')
+        return super().form_valid(form)
+
+class UnifiedDashboardView(LoginRequiredMixin, TemplateView):
+    template_name = 'accounts/dashboard.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        profile = self.request.user.profile
+        ctx = build_dashboard_context(profile)
+        context.update({
+            'profile': profile,
+            'tipo_usuario': ctx['tipo_usuario'],
+            'tipo_acesso': ctx['tipo_usuario'],
+            'empresas_total': ctx['empresas_total'],
+            'credito_recuperado': ctx['credito_recuperado'],
+            'credito_utilizado': ctx['credito_utilizado'],
+            'saldo_credito': ctx['saldo_credito'],
+            'empresas_info': ctx['empresas_info'],
+            'parceiro_base': ctx.get('parceiro_base'),
+        })
+        return context
 
 class ClienteDashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'accounts/cliente/dashboard.html'
