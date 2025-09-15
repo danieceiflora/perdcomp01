@@ -32,10 +32,6 @@ def root_view(request: HttpRequest):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
-    # Redireciona /home para /admin-login/
-    path('home/', RedirectView.as_view(pattern_name='admin-login', permanent=False), name='home'),
-    # Alias amigável que leva à tela de login do admin
-    path('admin-login/', RedirectView.as_view(url='/accounts/admin-login'), name='admin-login'),
     path('', root_view, name='root'),
     path('empresas/', include('empresas.urls')),
     path('contatos/', include('contatos.urls')),

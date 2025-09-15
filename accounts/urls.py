@@ -16,12 +16,10 @@ urlpatterns = [
     path('dashboard/metrics/', views.DashboardMetricsView.as_view(), name='dashboard_metrics'),
     
     # Rotas antigas apontando para login unificado (compatibilidade)
-    path('admin-login/', lambda r: redirect('accounts:login'), name='admin_login'),
-    path('cliente/login/', lambda r: redirect('accounts:login'), name='cliente_login'),
-    path('parceiro/login/', lambda r: redirect('accounts:login'), name='parceiro_login'),
+    # Legacy login redirects (to be removed after unification)
     
     
     # Perfil e logout
     path('profile/', views.user_profile_view, name='profile'),
-    path('logout/', views.CustomLogoutView.as_view(), name='logout'),
+    path('logout/', views.logout_view, name='logout'),
 ]
