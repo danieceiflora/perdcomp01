@@ -72,7 +72,7 @@ class AdesaoClienteViewOnlyMixin(AdesaoPermissionMixin):
                 from django.contrib import messages
                 from django.shortcuts import redirect
                 messages.error(request, "Clientes têm permissão apenas para visualização.")
-                return redirect('accounts:cliente_dashboard')
+                return redirect('accounts:dashboard')
         return super().dispatch(request, *args, **kwargs)
 
 # Mantém o nome antigo por compatibilidade

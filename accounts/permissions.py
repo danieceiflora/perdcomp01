@@ -102,5 +102,5 @@ class ClienteViewOnlyMixin(ClienteRequiredMixin):
         # Permite apenas métodos GET (visualização)
         if request.method != 'GET':
             messages.error(request, self.permission_denied_message)
-            return redirect('accounts:cliente_dashboard')
+            return redirect('accounts:dashboard')
         return super().dispatch(request, *args, **kwargs)

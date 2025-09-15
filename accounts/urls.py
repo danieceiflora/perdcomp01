@@ -20,9 +20,6 @@ urlpatterns = [
     path('cliente/login/', lambda r: redirect('accounts:login'), name='cliente_login'),
     path('parceiro/login/', lambda r: redirect('accounts:login'), name='parceiro_login'),
     
-    # Dashboards antigos (temporário: redirecionar para unificado)
-    path('cliente/dashboard/', lambda r: redirect('accounts:dashboard'), name='cliente_dashboard'),
-    path('parceiro/dashboard/', lambda r: redirect('accounts:dashboard'), name='parceiro_dashboard'),
     
     # Perfil e logout
     path('profile/', views.user_profile_view, name='profile'),
