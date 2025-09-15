@@ -6,87 +6,10 @@ from django.urls import reverse_lazy
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import UserProfile
-from utils.dashboard_access import build_dashboard_context, metricas_por_empresa
+from utils.dashboard_access import build_dashboard_context, metricas_por_empresa, admin_counts, admin_metricas_globais
 from django.http import JsonResponse, HttpResponseBadRequest
 
-class AdminLoginView(LoginView):
-    """
-    View de login para usuários administrativos (staff/superuser)
-    """
-    template_name = 'accounts/admin_login_tailwind.html'
-    
-    def get_success_url(self):
-        # Redireciona para o dashboard administrativo ou home
-        return reverse_lazy('dashboard:dashboard')  # ou 'home' se preferir
-    
-    def form_valid(self, form):
-        user = form.get_user()
-        
-        # Verificar se usuário é staff ou superuser
-        if not (user.is_staff or user.is_superuser):
-            messages.error(self.request, 'Acesso negado. Este login é restrito a administradores do sistema.')
-            return self.form_invalid(form)
-        
-        messages.success(self.request, f'Bem-vindo ao painel administrativo, {user.first_name or user.username}!')
-        return super().form_valid(form)
-    
-    def form_invalid(self, form):
-        messages.error(self.request, 'Usuário ou senha inválidos.')
-        return super().form_invalid(form)
-    
-    def dispatch(self, request, *args, **kwargs):
-        # Se já está logado e é admin, redireciona para dashboard
-        if request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser):
-            return redirect(self.get_success_url())
-        return super().dispatch(request, *args, **kwargs)
-
-class ClienteLoginView(LoginView):
-    template_name = 'accounts/cliente/login.html'
-    
-    def get_success_url(self):
-        return reverse_lazy('accounts:cliente_dashboard')
-    
-    def form_valid(self, form):
-        user = form.get_user()
-        # Verificar se usuário tem perfil de cliente
-        try:
-            profile = user.profile
-            if not profile.eh_cliente:
-                messages.error(self.request, 'Este usuário não tem permissão de cliente.')
-                return self.form_invalid(form)
-        except UserProfile.DoesNotExist:
-            messages.error(self.request, 'Perfil de usuário não encontrado.')
-            return self.form_invalid(form)
-        
-        return super().form_valid(form)
-    
-    def form_invalid(self, form):
-        messages.error(self.request, 'Usuário ou senha inválidos.')
-        return super().form_invalid(form)
-
-class ParceiroLoginView(LoginView):
-    template_name = 'accounts/parceiro/login.html'
-    
-    def get_success_url(self):
-        return reverse_lazy('accounts:parceiro_dashboard')
-    
-    def form_valid(self, form):
-        user = form.get_user()
-        # Verificar se usuário tem perfil de parceiro
-        try:
-            profile = user.profile
-            if not profile.eh_parceiro:
-                messages.error(self.request, 'Este usuário não tem permissão de parceiro.')
-                return self.form_invalid(form)
-        except UserProfile.DoesNotExist:
-            messages.error(self.request, 'Perfil de usuário não encontrado.')
-            return self.form_invalid(form)
-        
-        return super().form_valid(form)
-    
-    def form_invalid(self, form):
-        messages.error(self.request, 'Usuário ou senha inválidos.')
-        return super().form_invalid(form)
+## Legacy login views removidas em favor de login unificado
 
 
 class CustomLogoutView(LogoutView):
@@ -119,13 +42,21 @@ class LoginSelectorView(TemplateView):
     template_name = 'accounts/login_selector.html'
 
 class UnifiedLoginView(LoginView):
-    template_name = 'accounts/login.html'
+    template_name = 'accounts/admin_login_tailwind.html'
 
     def get_success_url(self):
+        user = self.request.user
+        if user.is_staff or user.is_superuser:
+            # Pode redirecionar direto para /admin/ ou para dashboard unificado; opção: admin.
+            return '/admin/'
         return reverse_lazy('accounts:dashboard')
 
     def form_valid(self, form):
-        messages.success(self.request, 'Login efetuado com sucesso.')
+        user = form.get_user()
+        if user.is_staff or user.is_superuser:
+            messages.success(self.request, f'Acesso administrativo: {user.username}')
+        else:
+            messages.success(self.request, 'Login efetuado com sucesso.')
         return super().form_valid(form)
 
 class UnifiedDashboardView(LoginRequiredMixin, TemplateView):
@@ -133,40 +64,108 @@ class UnifiedDashboardView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        profile = self.request.user.profile
-        ctx = build_dashboard_context(profile)
-        context.update({
-            'profile': profile,
-            'tipo_usuario': ctx['tipo_usuario'],
-            'tipo_acesso': ctx['tipo_usuario'],
-            'empresas_total': ctx['empresas_total'],
-            'credito_recuperado': ctx['credito_recuperado'],
-            'credito_utilizado': ctx['credito_utilizado'],
-            'saldo_credito': ctx['saldo_credito'],
-            'empresas_info': ctx['empresas_info'],
-            'parceiro_base': ctx.get('parceiro_base'),
-        })
+        user = self.request.user
+        try:
+            profile = user.profile
+        except Exception:
+            profile = None
+
+        if profile:
+            ctx = build_dashboard_context(profile)
+            context.update({
+                'profile': profile,
+                'tipo_usuario': ctx['tipo_usuario'],
+                'tipo_acesso': ctx['tipo_usuario'],
+                'empresas_total': ctx['empresas_total'],
+                'credito_recuperado': ctx['credito_recuperado'],
+                'credito_utilizado': ctx['credito_utilizado'],
+                'saldo_credito': ctx['saldo_credito'],
+                'empresas_info': ctx['empresas_info'],
+                'parceiro_base': ctx.get('parceiro_base'),
+            })
+        else:
+            # Fallback para superuser/staff sem profile: visão administrativa genérica
+            if user.is_superuser or user.is_staff:
+                counts = admin_counts()
+                metricas = admin_metricas_globais()
+                # Coleta todas as empresas clientes distintas para permitir filtro
+                from clientes_parceiros.models import ClientesParceiros
+                clientes_ids = ClientesParceiros.objects.filter(
+                    tipo_parceria='cliente', ativo=True
+                ).values_list('id_company_vinculada_id', flat=True).distinct()
+                from empresas.models import Empresa
+                clientes_empresas = Empresa.objects.filter(id__in=clientes_ids)
+                empresas_info = [
+                    {'empresa': e, 'origem': 'cliente-global', 'is_base': False}
+                    for e in clientes_empresas
+                ]
+                context.update({
+                    'profile': None,
+                    'tipo_usuario': 'Administrador',
+                    'tipo_acesso': 'Administrador',
+                    'empresas_total': counts['total_clientes'],
+                    'credito_recuperado': metricas['credito_recuperado'],
+                    'credito_utilizado': metricas['credito_utilizado'],
+                    'saldo_credito': metricas['saldo_credito'],
+                    'empresas_info': empresas_info,
+                    'parceiro_base': None,
+                    'total_parceiros': counts['total_parceiros'],
+                    'total_clientes': counts['total_clientes'],
+                })
+            else:
+                context.update({
+                    'profile': None,
+                    'tipo_usuario': 'Usuário',
+                    'tipo_acesso': 'Usuário',
+                    'empresas_total': 0,
+                    'credito_recuperado': 0,
+                    'credito_utilizado': 0,
+                    'saldo_credito': 0,
+                    'empresas_info': [],
+                    'parceiro_base': None,
+                })
         return context
 
 class DashboardMetricsView(LoginRequiredMixin, TemplateView):
     def get(self, request, *args, **kwargs):
-        profile = request.user.profile
+        try:
+            profile = request.user.profile
+        except Exception:
+            profile = None
         empresa_id = request.GET.get('empresa')
-        # Coleta empresas acessíveis (exceto parceiro-base)
-        ctx = build_dashboard_context(profile)
-        acessiveis_ids = {item['empresa'].id for item in ctx['empresas_info']}
-        if empresa_id and empresa_id.isdigit():
-            empresa_id_int = int(empresa_id)
-            if empresa_id_int not in acessiveis_ids:
-                return HttpResponseBadRequest('Empresa não acessível.')
-            m = metricas_por_empresa(empresa_id_int)
-            return JsonResponse(m)
-        # Sem empresa: retorna agregadas já calculadas
-        return JsonResponse({
-            'credito_recuperado': ctx['credito_recuperado'],
-            'credito_utilizado': ctx['credito_utilizado'],
-            'saldo_credito': ctx['saldo_credito']
-        })
+        if profile:
+            ctx = build_dashboard_context(profile)
+            acessiveis_ids = {item['empresa'].id for item in ctx['empresas_info']}
+            if empresa_id and empresa_id.isdigit():
+                empresa_id_int = int(empresa_id)
+                if empresa_id_int not in acessiveis_ids:
+                    return HttpResponseBadRequest('Empresa não acessível.')
+                m = metricas_por_empresa(empresa_id_int)
+                return JsonResponse(m)
+            return JsonResponse({
+                'credito_recuperado': ctx['credito_recuperado'],
+                'credito_utilizado': ctx['credito_utilizado'],
+                'saldo_credito': ctx['saldo_credito']
+            })
+        # Sem profile: admin genérico ou usuário sem perfil -> métricas globais (se admin) ou zeros
+        user = request.user
+        if user.is_superuser or user.is_staff:
+            from clientes_parceiros.models import ClientesParceiros
+            if empresa_id and empresa_id.isdigit():
+                empresa_id_int = int(empresa_id)
+                # Verifica se é uma empresa cliente válida
+                valido = ClientesParceiros.objects.filter(
+                    id_company_vinculada_id=empresa_id_int,
+                    tipo_parceria='cliente',
+                    ativo=True
+                ).exists()
+                if not valido:
+                    return HttpResponseBadRequest('Empresa não acessível.')
+                m = metricas_por_empresa(empresa_id_int)
+                return JsonResponse(m)
+            metricas = admin_metricas_globais()
+            return JsonResponse(metricas)
+        return JsonResponse({'credito_recuperado': 0, 'credito_utilizado': 0, 'saldo_credito': 0})
 
 class ClienteDashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'accounts/cliente/dashboard.html'

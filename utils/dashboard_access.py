@@ -122,3 +122,30 @@ def metricas_por_empresa(empresa_id: int):
         'credito_utilizado': float(credito_utilizado or 0),
         'saldo_credito': float(saldo_credito or 0)
     }
+
+
+# ================== Helpers para visão administrativa (superuser sem profile) ==================
+def admin_counts():
+    """Retorna total de parceiros e total de clientes (distintos)."""
+    qs = ClientesParceiros.objects.filter(ativo=True)
+    parceiros = qs.filter(tipo_parceria='parceiro').values_list('id_company_vinculada_id', flat=True).distinct().count()
+    clientes = qs.filter(tipo_parceria='cliente').values_list('id_company_vinculada_id', flat=True).distinct().count()
+    return {'total_parceiros': parceiros, 'total_clientes': clientes}
+
+
+def admin_metricas_globais():
+    """Agrega métricas de todas as empresas que são clientes em quaisquer vínculos ativos."""
+    vinculos_clientes = ClientesParceiros.objects.filter(tipo_parceria='cliente', ativo=True)
+    if not vinculos_clientes.exists():
+        return {'credito_recuperado': 0.0, 'credito_utilizado': 0.0, 'saldo_credito': 0.0}
+    adesoes = Adesao.objects.filter(cliente__in=vinculos_clientes)
+    from django.db.models import Sum
+    credito_recuperado = adesoes.aggregate(total=Sum('saldo'))['total'] or 0
+    saldo_credito = adesoes.aggregate(total=Sum('saldo_atual'))['total'] or 0
+    lanc_debitos = Lancamentos.objects.filter(id_adesao__in=adesoes, sinal='-').aggregate(total=Sum('valor'))['total'] or 0
+    credito_utilizado = abs(lanc_debitos or 0)
+    return {
+        'credito_recuperado': float(credito_recuperado or 0),
+        'credito_utilizado': float(credito_utilizado or 0),
+        'saldo_credito': float(saldo_credito or 0)
+    }

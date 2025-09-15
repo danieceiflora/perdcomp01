@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
+from django.shortcuts import redirect
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -10,7 +11,23 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, Sp
 from perdcomp.views import token_jwt_view
 from django.conf import settings
 from django.conf.urls.static import static
-from accounts.views import LoginView
+from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import login_required
+from django.http import HttpRequest
+
+# Ajusta o link "Ver o site" do admin para levar ao dashboard unificado
+admin.site.site_url = '/accounts/dashboard/'
+
+def root_view(request: HttpRequest):
+    """Rota raiz:
+    - Usuário autenticado (não staff): dashboard unificado
+    - Usuário staff/superuser: permanece no admin se veio de lá, mas se acessa '/', envia ao dashboard (pode ajustar se preferir admin)
+    - Anônimo: login unificado
+    """
+    if request.user.is_authenticated:
+        # Se desejar que staff vá para /admin/ em vez de dashboard, trocar linha abaixo
+        return redirect('accounts:dashboard')
+    return redirect('accounts:login')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -19,7 +36,7 @@ urlpatterns = [
     path('home/', RedirectView.as_view(pattern_name='admin-login', permanent=False), name='home'),
     # Alias amigável que leva à tela de login do admin
     path('admin-login/', RedirectView.as_view(url='/accounts/admin-login'), name='admin-login'),
-    path('', RedirectView.as_view(pattern_name='admin-login', permanent=False)),
+    path('', root_view, name='root'),
     path('empresas/', include('empresas.urls')),
     path('contatos/', include('contatos.urls')),
     path('clientes-parceiros/', include('clientes_parceiros.urls')),

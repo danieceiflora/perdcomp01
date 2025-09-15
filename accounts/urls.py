@@ -15,12 +15,10 @@ urlpatterns = [
     path('dashboard/', views.UnifiedDashboardView.as_view(), name='dashboard'),
     path('dashboard/metrics/', views.DashboardMetricsView.as_view(), name='dashboard_metrics'),
     
-    # Login administrativo
-    path('admin-login/', views.AdminLoginView.as_view(), name='admin_login'),
-    
-    # Login específico por tipo
-    path('cliente/login/', views.ClienteLoginView.as_view(), name='cliente_login'),
-    path('parceiro/login/', views.ParceiroLoginView.as_view(), name='parceiro_login'),
+    # Rotas antigas apontando para login unificado (compatibilidade)
+    path('admin-login/', lambda r: redirect('accounts:login'), name='admin_login'),
+    path('cliente/login/', lambda r: redirect('accounts:login'), name='cliente_login'),
+    path('parceiro/login/', lambda r: redirect('accounts:login'), name='parceiro_login'),
     
     # Dashboards antigos (temporário: redirecionar para unificado)
     path('cliente/dashboard/', lambda r: redirect('accounts:dashboard'), name='cliente_dashboard'),

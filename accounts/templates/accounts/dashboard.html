@@ -18,7 +18,33 @@
     </div>
     {% endif %}
   </div>
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    {% if tipo_usuario == 'Administrador' %}
+    <div class="stat-card rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-lg transition-all">
+      <div class="p-6 flex items-center">
+        <div class="flex items-center justify-center w-16 h-16 bg-orange-500/10 rounded-full mr-4">
+          <i class="bi bi-diagram-3 text-2xl text-orange-600 dark:text-orange-500"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-medium text-muted-foreground">Total de Parceiros</h3>
+          <p class="text-3xl font-bold mt-1 text-foreground">{{ total_parceiros|default:0 }}</p>
+          <p class="text-xs text-muted-foreground mt-1">Vínculos ativos</p>
+        </div>
+      </div>
+    </div>
+    <div class="stat-card rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-lg transition-all">
+      <div class="p-6 flex items-center">
+        <div class="flex items-center justify-center w-16 h-16 bg-cyan-500/10 rounded-full mr-4">
+          <i class="bi bi-people text-2xl text-cyan-600 dark:text-cyan-500"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-medium text-muted-foreground">Total de Clientes</h3>
+          <p class="text-3xl font-bold mt-1 text-foreground">{{ total_clientes|default:0 }}</p>
+          <p class="text-xs text-muted-foreground mt-1">Empresas clientes</p>
+        </div>
+      </div>
+    </div>
+    {% endif %}
         <div class="stat-card rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-lg transition-all">
             <div class="p-6 flex items-center">
                 <div class="flex items-center justify-center w-16 h-16 bg-green-500/10 rounded-full mr-4">

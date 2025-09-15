@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PERDCOMP - Login Administrativo</title>
+  <title>PERDCOMP - Login</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -21,8 +21,10 @@
 <body class="min-h-full flex items-center justify-center bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-100 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4">
   <div class="w-full max-w-md">
     <div class="card overflow-hidden backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-slate-900/60 bg-white/80 dark:bg-slate-900/70 border border-slate-200/70 dark:border-slate-800 shadow-xl">
-      <div class="card-header relative pb-4">
-        <span class="badge absolute top-4 right-4 bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30">Admin</span>
+    <div class="card-header relative pb-4">
+  {% if request.user.is_authenticated and request.user.is_staff %}
+  <span class="badge absolute top-4 right-4 bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30">Admin</span>
+  {% endif %}
         <div class="flex flex-col items-center text-center">
           <div class="relative mb-4">
             <div class="w-20 h-20 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-primary shadow-inner">
@@ -85,13 +87,9 @@
       </div>
       <div class="card-footer flex-col gap-4">
         <div class="flex w-full gap-2 max-sm:flex-col">
-          <a href="{% url 'accounts:cliente_login' %}" class="flex-1 inline-flex items-center justify-center rounded-md border bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 transition">Cliente</a>
-          <a href="{% url 'accounts:parceiro_login' %}" class="flex-1 inline-flex items-center justify-center rounded-md border bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 transition">Parceiro</a>
+          <span class="flex-1 inline-flex items-center justify-center rounded-md border bg-white/60 dark:bg-slate-800/60 dark:border-slate-700 px-3 py-2 text-xs font-medium text-slate-400 dark:text-slate-500 cursor-not-allowed select-none">Login Unificado</span>
         </div>
-        <p class="w-full text-center text-[11px] text-muted-foreground flex items-center justify-center gap-1">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 11v3m0 4h.01m6.938-9A7.5 7.5 0 105.06 8.999 7.5 7.5 0 0018.938 9z" /></svg>
-          Acesso restrito a administradores do sistema
-        </p>
+        <p class="w-full text-center text-[11px] text-muted-foreground">Use suas credenciais para acessar o sistema.</p>
         <button type="button" id="toggle-theme" class="text-xs text-muted-foreground hover:text-foreground transition">
           Alternar tema
         </button>
