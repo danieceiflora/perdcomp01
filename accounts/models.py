@@ -16,12 +16,14 @@ class UserProfile(models.Model):
         help_text='Empresas que o usuário pode visualizar e gerenciar.',
         blank=True
     )
-    empresas_parceiras = models.ManyToManyField(
+    empresa_parceira = models.ForeignKey(
         Empresa,
-        verbose_name='Empresas Parceiras Acessíveis',
-        help_text='Empresas (parceiros) que o usuário pode visualizar e gerenciar.',
+        verbose_name='Empresa Parceira',
+        help_text='Se definido, o usuário atua como parceiro e não pode ter empresas clientes.',
         blank=True,
-        related_name='usuarios_parceiros'
+        null=True,
+        related_name='usuarios_parceiros',
+        on_delete=models.SET_NULL
     )
     telefone = models.CharField(
         max_length=20,
@@ -64,12 +66,44 @@ class UserProfile(models.Model):
         if self.user.is_superuser:
             from empresas.models import Empresa
             return Empresa.objects.all()
-        # Union manual + via sócio
+        # Se for parceiro (empresa_parceira definida) ignora lista de clientes
+        if self.empresa_parceira_id:
+            from empresas.models import Empresa
+            return Empresa.objects.filter(id=self.empresa_parceira_id)
+        # Union manual (clientes) + via sócio
         ids_manual = self.empresas.values_list('id', flat=True)
-        ids_parceiras = self.empresas_parceiras.values_list('id', flat=True)
         ids_socio = self.empresas_via_socio.values_list('id', flat=True)
         from empresas.models import Empresa
-        return Empresa.objects.filter(id__in=list(set(ids_manual) | set(ids_parceiras) | set(ids_socio)))
+        return Empresa.objects.filter(id__in=list(set(ids_manual) | set(ids_socio)))
+
+    @property
+    def is_parceiro(self):
+        return bool(self.empresa_parceira_id)
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        # Regra: ou parceiro único OU múltiplos clientes (não ambos)
+        if self.empresa_parceira_id and self.empresas.exists():
+            raise ValidationError('Usuário parceiro não pode ter empresas clientes atribuídas.')
+        # Se empresa_parceira definida, validar que ela é realmente um parceiro
+        if self.empresa_parceira_id:
+            if not ClientesParceiros.objects.filter(id_company_vinculada=self.empresa_parceira, tipo_parceria='parceiro').exists():
+                raise ValidationError('A empresa selecionada não está classificada como parceiro.')
+
+    @property
+    def tipo_usuario(self):
+        if self.is_parceiro:
+            return 'Parceiro'
+        # Considera qualquer empresa cliente manual ou via sócio como cliente
+        if self.empresas.exists() or self.empresas_via_socio.exists():
+            return 'Cliente'
+        return 'Indefinido'
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Se virou parceiro, garante limpeza das empresas clientes (caso tenha sido setado via script, sem form)
+        if self.empresa_parceira_id and self.empresas.exists():
+            self.empresas.clear()
     
     class Meta:
         verbose_name = 'Perfil de Usuário'

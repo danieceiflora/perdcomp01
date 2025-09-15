@@ -14,22 +14,29 @@ class UserProfileInlineForm(forms.ModelForm):
         required=False,
         label=''  # remove label ao lado do widget
     )
-    empresas_parceiras = forms.ModelMultipleChoiceField(
+    empresa_parceira = forms.ModelChoiceField(
         queryset=Empresa.objects.filter(clientes_parceiros_vinculada__tipo_parceria='parceiro').distinct(),
-        widget=admin.widgets.FilteredSelectMultiple('Empresas Parceiras', is_stacked=False),
         required=False,
-        label=''  # remove label
+        label='Empresa Parceira'
     )
 
     class Meta:
         model = UserProfile
-        fields = ('telefone', 'ativo', 'empresas', 'empresas_parceiras')
+        fields = ('telefone', 'ativo', 'empresas', 'empresa_parceira')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Garante ausência de help-text redundante
         self.fields['empresas'].help_text = ''
-        self.fields['empresas_parceiras'].help_text = ''
+        self.fields['empresa_parceira'].help_text = 'Se selecionar uma empresa parceira, a lista de clientes será ignorada.'
+
+    def clean(self):
+        cleaned = super().clean()
+        empresas = cleaned.get('empresas')
+        empresa_parceira = cleaned.get('empresa_parceira')
+        if empresa_parceira and empresas and empresas.count() > 0:
+            raise forms.ValidationError('Não é permitido definir empresas clientes e empresa parceira simultaneamente.')
+        return cleaned
 
     class Media:
         css = {
@@ -50,7 +57,7 @@ class UserProfileInline(admin.StackedInline):
             'fields': (('telefone', 'ativo'),)
         }),
         (None, {  # sem título/legend para não gerar texto extra
-            'fields': ('empresas', 'empresas_parceiras'),
+            'fields': ('empresas', 'empresa_parceira'),
             'description': ''
         }),
     )
@@ -60,8 +67,8 @@ class UserAdmin(BaseUserAdmin):
     inlines = [UserProfileInline]
     
     list_display = (
-        'username', 'get_full_name', 'email', 
-        'display_empresas', 'is_active', 'date_joined'
+        'username', 'get_full_name', 'email',
+        'display_tipo_usuario', 'display_empresas', 'is_active', 'date_joined'
     )
     list_filter = ('is_active', 'is_staff', 'date_joined', 'profile__ativo')
     search_fields = (
@@ -88,19 +95,26 @@ class UserAdmin(BaseUserAdmin):
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('profile').prefetch_related('profile__empresas')
 
+    def display_tipo_usuario(self, obj):
+        try:
+            return obj.profile.tipo_usuario
+        except UserProfile.DoesNotExist:
+            return '-'
+    display_tipo_usuario.short_description = 'Tipo'
+
 # Desregistra o UserAdmin padrão e registra o customizado
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'telefone', 'ativo', 'display_empresas')
+    list_display = ('user', 'telefone', 'ativo', 'display_tipo', 'display_empresas')
     search_fields = (
         'user__username', 'user__first_name', 'user__email',
-        'empresas__razao_social', 'empresas_parceiras__razao_social'
+        'empresas__razao_social', 'empresa_parceira__razao_social'
     )
-    list_filter = ('ativo', 'empresas', 'empresas_parceiras')
-    filter_horizontal = ('empresas', 'empresas_parceiras')
+    list_filter = ('ativo', 'empresas', 'empresa_parceira')
+    filter_horizontal = ('empresas',)
 
     def display_empresas(self, obj):
         empresas = obj.empresas_todas
@@ -111,3 +125,7 @@ class UserProfileAdmin(admin.ModelAdmin):
             return f"{count} empresas"
         return ", ".join([e.nome_fantasia or e.razao_social for e in empresas])
     display_empresas.short_description = 'Empresas (Total)'
+
+    def display_tipo(self, obj):
+        return obj.tipo_usuario
+    display_tipo.short_description = 'Tipo'
