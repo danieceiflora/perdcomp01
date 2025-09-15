@@ -52,7 +52,7 @@
                 </div>
                 <div>
                     <h3 class="text-sm font-medium text-muted-foreground">Crédito Recuperado</h3>
-                    <p id="metrica-credito-recuperado" class="text-3xl font-bold mt-1 text-foreground">R$ {{ credito_recuperado|floatformat:2 }}</p>
+                    <p id="metrica-credito-recuperado" class="text-3xl font-bold mt-1 text-foreground">R$ {{ credito_recuperado|brl }}</p>
                     <p class="text-xs text-muted-foreground mt-1">Total das adesões</p>
                 </div>
             </div>
@@ -64,7 +64,7 @@
                 </div>
                 <div>
                     <h3 class="text-sm font-medium text-muted-foreground">Crédito Utilizado</h3>
-                    <p id="metrica-credito-utilizado" class="text-3xl font-bold mt-1 text-foreground">R$ {{ credito_utilizado|floatformat:2 }}</p>
+                    <p id="metrica-credito-utilizado" class="text-3xl font-bold mt-1 text-foreground">R$ {{ credito_utilizado|brl }}</p>
                     <p class="text-xs text-muted-foreground mt-1">Total de lançamentos</p>
                 </div>
             </div>
@@ -76,7 +76,7 @@
                 </div>
                 <div>
                     <h3 class="text-sm font-medium text-muted-foreground">Saldo de Crédito</h3>
-                    <p id="metrica-saldo-credito" class="text-3xl font-bold mt-1 text-foreground">R$ {{ saldo_credito|floatformat:2 }}</p>
+                    <p id="metrica-saldo-credito" class="text-3xl font-bold mt-1 text-foreground">R$ {{ saldo_credito|brl }}</p>
                     <p class="text-xs text-muted-foreground mt-1">Disponível atual</p>
                 </div>
             </div>

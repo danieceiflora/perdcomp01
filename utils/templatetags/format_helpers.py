@@ -37,3 +37,25 @@ def format_phone(phone):
         return f"({phone_clean[0:2]}) {phone_clean[2:6]}-{phone_clean[6:10]}"
     
     return phone
+
+@register.filter(name='brl')
+def brl(valor):
+    """Formata número em Real brasileiro (sem símbolo): 1.234,56."""
+    if valor in (None, ""):
+        return "0,00"
+    from decimal import Decimal, InvalidOperation
+    try:
+        if isinstance(valor, str):
+            # Normaliza vírgula decimal caso já venha formatado parcialmente
+            valor_norm = valor.replace(' ', '').replace('.', '').replace(',', '.')
+            valor = Decimal(valor_norm)
+        else:
+            valor = Decimal(str(valor))
+        quant = valor.quantize(Decimal('0.01'))
+        # Usa formatação padrão en-US com vírgula para milhar, ponto decimal e substitui
+        base = f"{quant:,.2f}"  # ex: 1,234,567.89
+        parte_int, parte_dec = base.split('.')
+        parte_int = parte_int.replace(',', '.')  # vira 1.234.567
+        return f"{parte_int},{parte_dec}"
+    except (InvalidOperation, ValueError):
+        return "0,00"
