@@ -16,6 +16,13 @@ class UserProfile(models.Model):
         help_text='Empresas que o usuário pode visualizar e gerenciar.',
         blank=True
     )
+    empresas_parceiras = models.ManyToManyField(
+        Empresa,
+        verbose_name='Empresas Parceiras Acessíveis',
+        help_text='Empresas (parceiros) que o usuário pode visualizar e gerenciar.',
+        blank=True,
+        related_name='usuarios_parceiros'
+    )
     telefone = models.CharField(
         max_length=20,
         blank=True,
@@ -42,6 +49,27 @@ class UserProfile(models.Model):
             empresa_id = int(empresa_id)
             
         return self.empresas.filter(id=empresa_id).exists()
+
+    @property
+    def empresas_via_socio(self):
+        if hasattr(self.user, 'socio') and self.user.socio:
+            from empresas.models import Empresa  # import local para evitar ciclos na migração
+            ids = self.user.socio.participacoes.filter(ativo=True).values_list('empresa_id', flat=True)
+            return Empresa.objects.filter(id__in=ids)
+        from empresas.models import Empresa
+        return Empresa.objects.none()
+
+    @property
+    def empresas_todas(self):
+        if self.user.is_superuser:
+            from empresas.models import Empresa
+            return Empresa.objects.all()
+        # Union manual + via sócio
+        ids_manual = self.empresas.values_list('id', flat=True)
+        ids_parceiras = self.empresas_parceiras.values_list('id', flat=True)
+        ids_socio = self.empresas_via_socio.values_list('id', flat=True)
+        from empresas.models import Empresa
+        return Empresa.objects.filter(id__in=list(set(ids_manual) | set(ids_parceiras) | set(ids_socio)))
     
     class Meta:
         verbose_name = 'Perfil de Usuário'

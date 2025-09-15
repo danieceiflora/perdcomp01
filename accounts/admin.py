@@ -14,15 +14,22 @@ class UserProfileInlineForm(forms.ModelForm):
         required=False,
         label=''  # remove label ao lado do widget
     )
+    empresas_parceiras = forms.ModelMultipleChoiceField(
+        queryset=Empresa.objects.filter(clientes_parceiros_vinculada__tipo_parceria='parceiro').distinct(),
+        widget=admin.widgets.FilteredSelectMultiple('Empresas Parceiras', is_stacked=False),
+        required=False,
+        label=''  # remove label
+    )
 
     class Meta:
         model = UserProfile
-        fields = ('telefone', 'ativo', 'empresas')
+        fields = ('telefone', 'ativo', 'empresas', 'empresas_parceiras')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Garante ausência de help-text redundante
         self.fields['empresas'].help_text = ''
+        self.fields['empresas_parceiras'].help_text = ''
 
     class Media:
         css = {
@@ -43,7 +50,7 @@ class UserProfileInline(admin.StackedInline):
             'fields': (('telefone', 'ativo'),)
         }),
         (None, {  # sem título/legend para não gerar texto extra
-            'fields': ('empresas',),
+            'fields': ('empresas', 'empresas_parceiras'),
             'description': ''
         }),
     )
@@ -66,7 +73,7 @@ class UserAdmin(BaseUserAdmin):
     def display_empresas(self, obj):
         try:
             profile = obj.profile
-            empresas = profile.empresas.all()
+            empresas = profile.empresas_todas
             if not empresas:
                 return "Nenhuma empresa"
             
@@ -88,15 +95,19 @@ admin.site.register(User, UserAdmin)
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = ('user', 'telefone', 'ativo', 'display_empresas')
-    search_fields = ('user__username', 'user__first_name', 'user__email', 'empresas__razao_social')
-    list_filter = ('ativo', 'empresas')
-    filter_horizontal = ('empresas',)
+    search_fields = (
+        'user__username', 'user__first_name', 'user__email',
+        'empresas__razao_social', 'empresas_parceiras__razao_social'
+    )
+    list_filter = ('ativo', 'empresas', 'empresas_parceiras')
+    filter_horizontal = ('empresas', 'empresas_parceiras')
 
     def display_empresas(self, obj):
-        count = obj.empresas.count()
+        empresas = obj.empresas_todas
+        count = empresas.count()
         if count == 0:
             return "Nenhuma"
         if count > 3:
             return f"{count} empresas"
-        return ", ".join([e.nome_fantasia or e.razao_social for e in obj.empresas.all()])
-    display_empresas.short_description = 'Empresas'
+        return ", ".join([e.nome_fantasia or e.razao_social for e in empresas])
+    display_empresas.short_description = 'Empresas (Total)'
