@@ -11,60 +11,10 @@ from django.utils.timezone import localtime
 from django.views.decorators.http import require_GET
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
-from .forms import tipoTeseForm, TeseCreditoForm
+from .forms import TeseCreditoForm
 from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
 from django.contrib.auth.decorators import login_required, permission_required
 
-# OBS: Substituímos AdminRequiredMixin (que restringia a staff/superuser) por controle
-# baseado em permissões nativas do Django para permitir delegação granular.
-
-# Views para tipoTese
-class tipoTeseListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
-    model = tipoTese
-    template_name = 'correcao/tipo_tese_list.html'
-    context_object_name = 'tipos_tese'
-    paginate_by = 10
-    permission_required = 'correcao.view_tipotese'
-    raise_exception = True
-
-class tipoTeseCreateView(PermissionRequiredMixin, CreateView):
-    model = tipoTese
-    form_class = tipoTeseForm
-    template_name = 'correcao/tipo_tese_form.html'
-    success_url = reverse_lazy('correcao:tipo_tese_list')
-    permission_required = 'correcao.add_tipotese'
-    raise_exception = True
-    
-    def form_valid(self, form):
-        messages.success(self.request, 'Tipo de tese cadastrado com sucesso!')
-        return super().form_valid(form)
-
-class tipoTeseUpdateView(PermissionRequiredMixin, UpdateView):
-    model = tipoTese
-    form_class = tipoTeseForm
-    template_name = 'correcao/tipo_tese_form.html'
-    success_url = reverse_lazy('correcao:tipo_tese_list')
-    permission_required = 'correcao.change_tipotese'
-    raise_exception = True
-    
-    def form_valid(self, form):
-        messages.success(self.request, 'Tipo de tese atualizado com sucesso!')
-        return super().form_valid(form)
-
-class tipoTeseDeleteView(PermissionRequiredMixin, DeleteView):
-    model = tipoTese
-    template_name = 'correcao/tipo_tese_confirm_delete.html'
-    success_url = reverse_lazy('correcao:tipo_tese_list')
-    permission_required = 'correcao.delete_tipotese'
-    raise_exception = True
-    
-    def delete(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        if self.object.tesecredito_set.exists():
-            messages.error(self.request, 'Não é possível excluir: existem teses de crédito vinculadas.')
-            return redirect(self.success_url)
-        messages.success(self.request, 'Tipo de tese excluído com sucesso!')
-        return super().delete(request, *args, **kwargs)
 
 # Views para TeseCredito
 class TeseCreditoListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):

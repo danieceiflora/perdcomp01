@@ -1,24 +1,6 @@
 from django import forms
-from .models import tipoTese, TeseCredito
+from .models import TeseCredito
 
-class tipoTeseForm(forms.ModelForm):
-    class Meta:
-        model = tipoTese
-        fields = ['descricao', 'periodicidade']
-        widgets = {
-            'descricao': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Descrição do tipo de tese'
-            }),
-            'periodicidade': forms.Select(attrs={
-                'class': 'form-select',
-                'placeholder': 'Selecione'
-            }),  
-        }
-        labels = {
-            'descricao': 'Descrição',
-            'periodicidade': 'Periodicidade'
-        }
 
 class TeseCreditoForm(forms.ModelForm):
     class Meta:

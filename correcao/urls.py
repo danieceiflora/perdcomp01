@@ -5,12 +5,6 @@ app_name = 'correcao'
 
 urlpatterns = [
        
-    # URLs para tipoTese
-    path('tipo-tese/', views.tipoTeseListView.as_view(), name='tipo_tese_list'),
-    path('tipo-tese/novo/', views.tipoTeseCreateView.as_view(), name='tipo_tese_create'),
-    path('tipo-tese/editar/<int:pk>/', views.tipoTeseUpdateView.as_view(), name='tipo_tese_update'),
-    path('tipo-tese/excluir/<int:pk>/', views.tipoTeseDeleteView.as_view(), name='tipo_tese_delete'),
-    path('tipo-tese/historico/<int:pk>/', views.tipo_tese_history_json, name='tipo_tese_history_json'),
     
     # URLs para TeseCredito
     path('tese-credito/', views.TeseCreditoListView.as_view(), name='tese_credito_list'),
