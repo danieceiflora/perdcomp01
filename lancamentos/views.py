@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.db import transaction
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
+from utils.access import get_empresas_ids_for_cliente, get_clientes_ids_for_parceiro
 from django.contrib.auth.mixins import LoginRequiredMixin
 from accounts.decorators import cliente_can_view_lancamento, admin_required
 from django.core.exceptions import ValidationError
@@ -44,21 +45,11 @@ def exportar_lancamentos_xlsx(request):
     elif hasattr(user, 'profile'):
         profile = user.profile
         if profile.eh_cliente:
-            empresas_ids = set(profile.empresas.values_list('id', flat=True)) | set(profile.empresas_via_socio.values_list('id', flat=True))
-            if empresas_ids:
-                queryset = base.filter(id_adesao__cliente__id_company_vinculada_id__in=empresas_ids)
-            else:
-                queryset = base.none()
-        elif profile.eh_parceiro and profile.empresa_parceira_id:
-            from clientes_parceiros.models import ClientesParceiros
-            clientes_ids = ClientesParceiros.objects.filter(
-                id_company_base_id=profile.empresa_parceira_id,
-                tipo_parceria='cliente'
-            ).values_list('id_company_vinculada_id', flat=True)
-            if clientes_ids:
-                queryset = base.filter(id_adesao__cliente__id_company_vinculada_id__in=clientes_ids)
-            else:
-                queryset = base.none()
+            empresas_ids = get_empresas_ids_for_cliente(profile)
+            queryset = base.filter(id_adesao__cliente__id_company_vinculada_id__in=empresas_ids) if empresas_ids else base.none()
+        elif profile.eh_parceiro:
+            clientes_ids = get_clientes_ids_for_parceiro(profile)
+            queryset = base.filter(id_adesao__cliente__id_company_vinculada_id__in=clientes_ids) if clientes_ids else base.none()
         else:
             queryset = base.none()
     else:
@@ -137,16 +128,12 @@ class LancamentosListView(LancamentoClienteViewOnlyMixin, ListView):
                 return base.none()
             profile = user.profile
             if profile.eh_cliente:
-                empresas_ids = set(profile.empresas.values_list('id', flat=True)) | set(profile.empresas_via_socio.values_list('id', flat=True))
+                empresas_ids = get_empresas_ids_for_cliente(profile)
                 if not empresas_ids:
                     return base.none()
                 qs = base.filter(id_adesao__cliente__id_company_vinculada_id__in=empresas_ids)
-            elif profile.eh_parceiro and profile.empresa_parceira_id:
-                from clientes_parceiros.models import ClientesParceiros
-                clientes_ids = ClientesParceiros.objects.filter(
-                    id_company_base_id=profile.empresa_parceira_id,
-                    tipo_parceria='cliente'
-                ).values_list('id_company_vinculada_id', flat=True)
+            elif profile.eh_parceiro:
+                clientes_ids = get_clientes_ids_for_parceiro(profile)
                 if not clientes_ids:
                     return base.none()
                 qs = base.filter(id_adesao__cliente__id_company_vinculada_id__in=clientes_ids)
@@ -182,19 +169,11 @@ class LancamentoDetailView(LoginRequiredMixin, DetailView):
             return base.none()
         profile = user.profile
         if profile.eh_cliente:
-            empresas_ids = set(profile.empresas.values_list('id', flat=True)) | set(profile.empresas_via_socio.values_list('id', flat=True))
-            if not empresas_ids:
-                return base.none()
-            return base.filter(id_adesao__cliente__id_company_vinculada_id__in=empresas_ids)
-        if profile.eh_parceiro and profile.empresa_parceira_id:
-            from clientes_parceiros.models import ClientesParceiros
-            clientes_ids = ClientesParceiros.objects.filter(
-                id_company_base_id=profile.empresa_parceira_id,
-                tipo_parceria='cliente'
-            ).values_list('id_company_vinculada_id', flat=True)
-            if not clientes_ids:
-                return base.none()
-            return base.filter(id_adesao__cliente__id_company_vinculada_id__in=clientes_ids)
+            empresas_ids = get_empresas_ids_for_cliente(profile)
+            return base.filter(id_adesao__cliente__id_company_vinculada_id__in=empresas_ids) if empresas_ids else base.none()
+        if profile.eh_parceiro:
+            clientes_ids = get_clientes_ids_for_parceiro(profile)
+            return base.filter(id_adesao__cliente__id_company_vinculada_id__in=clientes_ids) if clientes_ids else base.none()
         return base.none()
 
     def get(self, request, *args, **kwargs):
