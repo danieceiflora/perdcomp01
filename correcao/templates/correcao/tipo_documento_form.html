@@ -15,7 +15,7 @@
                     {% if object %}
                         <i class="bi bi-pencil mr-2"></i>Editar Tese de Crédito
                     {% else %}
-                        <i class="bi bi-plus mr-2"></i>Nova Tese de Crédito
+                        <i class="bi bi-plus mr-2"></i>Adicionar tipo de documento
                     {% endif %}
                 </h3>
             </div>
@@ -68,7 +68,7 @@
                 </div>
                 
                 <div class="flex items-center justify-between pt-6">
-                    <a href="{% url 'correcao:tese_credito_list' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
+                    <a href="{% url 'correcao:tipo_documento_list' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
                         <i class="bi bi-arrow-left mr-2"></i>Cancelar
                     </a>
                     <button type="submit" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
@@ -100,7 +100,7 @@
                     <button type="submit" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
                         <i class="bi bi-check-lg mr-2"></i>Salvar
                     </button>
-                    <a href="{% url 'correcao:tese_credito_list' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
+                    <a href="{% url 'correcao:tipo_documento_list' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
                         <i class="bi bi-arrow-left mr-2"></i>Voltar
                     </a>
                 </div>

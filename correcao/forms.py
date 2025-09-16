@@ -2,14 +2,12 @@ from django import forms
 from .models import TeseCredito
 
 
+
 class TeseCreditoForm(forms.ModelForm):
     class Meta:
         model = TeseCredito
-        fields = ['id_tipo_tese', 'cod_origem', 'descricao', 'jurisprudencia']
+        fields = ['cod_origem', 'descricao', 'jurisprudencia']
         widgets = {
-            'id_tipo_tese': forms.Select(attrs={
-                'class': 'form-select',
-            }),
             'cod_origem': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Código de origem'

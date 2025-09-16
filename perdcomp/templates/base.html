@@ -94,10 +94,10 @@
                             <div class="absolute left-0 mt-2 w-48 origin-top-left rounded-md border bg-white shadow-lg ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 dark:bg-slate-900 dark:border-slate-700 z-10">
                                 <div class="py-1">
                                     {% if perms.correcao.view_tesecredito %}
-                                    <a href="{% url 'correcao:tese_credito_list' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"><i class="bi bi-list mr-2"></i>Listar</a>
+                                    <a href="{% url 'correcao:tipo_documento_list' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"><i class="bi bi-list mr-2"></i>Listar</a>
                                     {% endif %}
                                     {% if perms.correcao.add_tesecredito %}
-                                    <a href="{% url 'correcao:tese_credito_create' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"><i class="bi bi-plus mr-2"></i>Nova</a>
+                                    <a href="{% url 'correcao:tipo_documento_create' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"><i class="bi bi-plus mr-2"></i>Nova</a>
                                     {% endif %}
                                     
                                 </div>
@@ -247,10 +247,10 @@
                     </button>
                     <div class="hidden flex-col gap-1 px-2 pb-2" data-mobile-submenu="teses">
                         {% if perms.correcao.view_tesecredito %}
-                        <a href="{% url 'correcao:tese_credito_list' %}" class="flex items-center gap-2 px-2 py-2 rounded text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-list"></i> Teses</a>
+                        <a href="{% url 'correcao:tipo_documento_list' %}" class="flex items-center gap-2 px-2 py-2 rounded text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-list"></i> Teses</a>
                         {% endif %}
                         {% if perms.correcao.add_tesecredito %}
-                        <a href="{% url 'correcao:tese_credito_create' %}" class="flex items-center gap-2 px-2 py-2 rounded text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-plus"></i> Nova Tese</a>
+                        <a href="{% url 'correcao:tipo_documento_create' %}" class="flex items-center gap-2 px-2 py-2 rounded text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-plus"></i> Nova Tese</a>
                         {% endif %}
                         
                     </div>
