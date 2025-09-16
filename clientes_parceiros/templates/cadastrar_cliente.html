@@ -14,7 +14,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <!-- Page Header -->
     <div class="mb-8">
         <h1 class="text-2xl font-bold text-foreground flex items-center gap-2">
@@ -67,7 +67,7 @@
                     </div>
                 {% endif %}
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     {% for field in empresa_form %}
                         <div class="{% if field.name == 'razao_social' or field.name == 'nome_fantasia' %}md:col-span-2{% endif %}">
                             <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-foreground mb-2">
@@ -94,50 +94,71 @@
         </div>
 
         <!-- Sócios Section -->
-        <div class="card">
-            <div class="card-header flex items-center justify-between">
-                <h3 class="text-lg font-semibold flex items-center gap-2">
-                    <i class="bi bi-people"></i>
-                    3. Sócios da Empresa
-                    <!-- Debug Info -->
-                    <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded ml-2">
-                        Debug: {{ socios_existentes|length }} sócios | {{ socios_entries|length }} entries | {{ participacoes_total|default:"?" }} participações
-                    </span>
-                </h3>
-                <button type="button" id="addSocioBtn" class="btn-primary text-sm"><i class="bi bi-plus-lg mr-2"></i>Adicionar Sócio</button>
-            </div>
-                        <div class="card-content" id="sociosContainer">
-                            {% for entry in socios_entries %}
-                            <div class="socio-item border border-border rounded-md p-4 space-y-4">
-                                <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-foreground mb-2">Sócio Existente</label>
-                                        <select name="existing_socio_{{ entry.index }}" class="input">
-                                            <option value="">-- Selecionar --</option>
-                                            {% for s in socios_existentes %}
-                                                <option value="{{ s.id }}" {% if entry.existing|default:'' == s.id|stringformat:'s' %}selected{% endif %}>{{ s.nome }} ({{ s.cpf }})</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                    <div class="md:col-span-2">
-                                        <label class="block text-sm font-medium text-foreground mb-2">Nome Novo</label>
-                                        <input type="text" name="nome_novo_{{ entry.index }}" value="{{ entry.nome }}" placeholder="Cadastrar novo" class="input" />
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-foreground mb-2">CPF Novo</label>
-                                        <input type="text" name="cpf_novo_{{ entry.index }}" value="{{ entry.cpf }}" placeholder="Somente dígitos" class="input" />
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-foreground mb-2">Percentual (%)</label>
-                                        <input type="text" name="percentual_{{ entry.index }}" value="{{ entry.percentual }}" placeholder="Opcional" class="input" />
-                                    </div>
+        <div class="space-y-4">
+            <!-- Sócios Existentes -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-lg font-semibold flex items-center gap-2">
+                        <i class="bi bi-person-check"></i>
+                        3a. Sócios Atuais da Empresa
+                        <!-- Debug Info -->
+                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded ml-2">
+                            {{ participacoes_total|default:"0" }} participação(ões)
+                        </span>
+                    </h3>
+                </div>
+                <div class="card-content" id="sociosExistentesContainer">
+                    {% for entry in socios_entries %}
+                        {% if entry.existing %}
+                        <div class="socio-existente-item border border-border rounded-md p-4 space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+                                <div>
+                                    <label class="block text-sm font-medium text-foreground mb-2">Sócio Vinculado</label>
+                                    <select name="existing_socio_{{ entry.index }}" class="input">
+                                        <option value="">-- Remover Vínculo --</option>
+                                        {% for s in socios_existentes %}
+                                            <option value="{{ s.id }}" {% if entry.existing|default:'' == s.id|stringformat:'s' %}selected{% endif %}>{{ s.nome }} ({{ s.cpf }})</option>
+                                        {% endfor %}
+                                    </select>
                                 </div>
                                 <div>
-                                    <button type="button" class="btn-remove-socio inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-destructive hover:text-destructive-foreground"><i class="bi bi-trash mr-1"></i>Remover</button>
+                                    <label class="block text-sm font-medium text-foreground mb-2">Percentual (%)</label>
+                                    <input type="text" name="percentual_{{ entry.index }}" value="{{ entry.percentual }}" placeholder="Ex: 50.00" class="input" />
+                                    <input type="hidden" name="nome_novo_{{ entry.index }}" value="">
+                                    <input type="hidden" name="cpf_novo_{{ entry.index }}" value="">
                                 </div>
                             </div>
-                            {% endfor %}
                         </div>
+                        {% endif %}
+                    {% empty %}
+                    <div class="text-sm text-muted-foreground text-center py-4">
+                        Nenhum sócio vinculado a esta empresa.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Adicionar Novos Sócios -->
+            <div class="card">
+                <div class="card-header flex items-center justify-between">
+                    <h3 class="text-lg font-semibold flex items-center gap-2">
+                        <i class="bi bi-person-plus"></i>
+                        3b. Adicionar Sócios
+                        <!-- Debug Info -->
+                        <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded ml-2">
+                            {{ socios_existentes|length }} sócios disponíveis
+                        </span>
+                    </h3>
+                    <button type="button" id="addSocioBtn" class="btn-primary text-sm"><i class="bi bi-plus-lg mr-2"></i>Adicionar Sócio</button>
+                </div>
+                <div class="card-content" id="sociosNovosContainer">
+                    <!-- Novos sócios serão adicionados aqui dinamicamente -->
+                    <div class="text-sm text-muted-foreground text-center py-4">
+                        Use o botão "Adicionar Sócio" para vincular sócios existentes ou cadastrar novos.
+                    </div>
+                </div>
+            </div>
+        </div>
                         <input type="hidden" name="socio_count" id="socioCount" value="{{ socios_entries|length }}" />
         </div>
 
@@ -150,7 +171,7 @@
                 </h3>
             </div>
             <div class="card-content">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
                         <label for="{{ form.nome_referencia.id_for_label }}" class="block text-sm font-medium text-foreground mb-2 required-field">
                             {{ form.nome_referencia.label }}
@@ -199,7 +220,7 @@
                                             <i class="bi bi-x mr-1"></i>Remover
                                         </button>
                                     {% endif %}
-                                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                                         <div>
                                             <label class="block text-sm font-medium text-foreground mb-2">Tipo de Contato</label>
                                             {{ form_contato.tipo_contato|add_class:"input" }}
@@ -267,58 +288,66 @@ document.addEventListener('DOMContentLoaded', function() {
     // Apply masks
     applyMasks(document);
     // Sócios dynamic setup
-    const sociosContainer = document.getElementById('sociosContainer');
+    const sociosNovosContainer = document.getElementById('sociosNovosContainer');
     const socioCountInput = document.getElementById('socioCount');
     const addSocioBtn = document.getElementById('addSocioBtn');
+    
     function bindRemoveSocios(){
         document.querySelectorAll('.btn-remove-socio').forEach(btn => {
             btn.onclick = function(){
-                const items = document.querySelectorAll('.socio-item');
-                if(items.length > 1){
-                    this.closest('.socio-item').remove();
-                    socioCountInput.value = document.querySelectorAll('.socio-item').length;
-                } else {
-                    alert('Mantenha pelo menos um bloco (pode ficar em branco).');
-                }
+                this.closest('.socio-novo-item').remove();
+                updateSocioCount();
             }
         });
     }
+    
+    function updateSocioCount() {
+        const existingCount = document.querySelectorAll('.socio-existente-item').length;
+        const newCount = document.querySelectorAll('.socio-novo-item').length;
+        socioCountInput.value = existingCount + newCount;
+    }
+    
     bindRemoveSocios();
+    
     if(addSocioBtn){
         addSocioBtn.addEventListener('click', function(){
+            // Remove placeholder text
+            const placeholder = sociosNovosContainer.querySelector('.text-center');
+            if(placeholder) placeholder.remove();
+            
             let current = parseInt(socioCountInput.value || '0');
             const newIndex = current + 1;
             const socioHTML = `
-            <div class=\"socio-item border border-border rounded-md p-4 space-y-4\">
-                <div class=\"grid grid-cols-1 md:grid-cols-5 gap-4\">
+            <div class=\"socio-novo-item border border-border rounded-md p-4 space-y-4\">
+                <div class=\"grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6\">
                     <div>
                         <label class=\"block text-sm font-medium text-foreground mb-2\">Sócio Existente</label>
                         <select name=\"existing_socio_${newIndex}\" class=\"input\">
-                            <option value=\"\">-- Selecionar --</option>
+                            <option value=\"\">-- Selecionar ou cadastrar novo --</option>
                             {% for s in socios_existentes %}
                                 <option value=\"{{ s.id }}\">{{ s.nome }} ({{ s.cpf }})</option>
                             {% endfor %}
                         </select>
                     </div>
-                    <div class=\"md:col-span-2\">
+                    <div>
                         <label class=\"block text-sm font-medium text-foreground mb-2\">Nome Novo</label>
-                        <input type=\"text\" name=\"nome_novo_${newIndex}\" placeholder=\"Cadastrar novo\" class=\"input\" />
+                        <input type=\"text\" name=\"nome_novo_${newIndex}\" placeholder=\"Se não selecionou acima\" class=\"input\" />
                     </div>
                     <div>
                         <label class=\"block text-sm font-medium text-foreground mb-2\">CPF Novo</label>
-                        <input type=\"text\" name=\"cpf_novo_${newIndex}\" placeholder=\"Somente dígitos\" class=\"input\" />
+                        <input type=\"text\" name=\"cpf_novo_${newIndex}\" placeholder=\"Se novo sócio\" class=\"input\" />
                     </div>
                     <div>
                         <label class=\"block text-sm font-medium text-foreground mb-2\">Percentual (%)</label>
-                        <input type=\"text\" name=\"percentual_${newIndex}\" placeholder=\"Opcional\" class=\"input\" />
+                        <input type=\"text\" name=\"percentual_${newIndex}\" placeholder=\"Ex: 25.50\" class=\"input\" />
                     </div>
                 </div>
                 <div>
                     <button type=\"button\" class=\"btn-remove-socio inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-destructive hover:text-destructive-foreground\"><i class=\"bi bi-trash mr-1\"></i>Remover</button>
                 </div>
             </div>`;
-            sociosContainer.insertAdjacentHTML('beforeend', socioHTML);
-            socioCountInput.value = newIndex;
+            sociosNovosContainer.insertAdjacentHTML('beforeend', socioHTML);
+            updateSocioCount();
             bindRemoveSocios();
         });
     }
