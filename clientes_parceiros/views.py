@@ -23,7 +23,7 @@ from django.contrib.auth.decorators import login_required
 from .models import ClientesParceiros
 from .forms import NovoClienteForm, ContatoFormSet, NovoParceiroForm
 from empresas.forms import EmpresaForm
-from empresas.models import Empresa
+from empresas.models import Empresa, Socio, ParticipacaoSocietaria
 from contatos.models import Contatos
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -64,11 +64,60 @@ class EditarClienteView(LoginRequiredMixin, UpdateView):
             contatos_qs = cliente_parceiro.id_company_vinculada.empresa_base_contato.all()
             initial = [{'tipo_contato': c.tipo_contato, 'telefone': c.telefone, 'email': c.email, 'site': c.site} for c in contatos_qs] or [{}]
             context['contato_formset'] = ContatoFormSet(initial=initial)
+        
         # Empresa base: apenas a vinculada ao usuário logado
         empresa_vinculada = None
         if hasattr(self.request.user, 'profile'):
             empresa_vinculada = self.request.user.profile.empresa_vinculada
         context['parceiros'] = Empresa.objects.filter(id=empresa_vinculada.id) if empresa_vinculada else Empresa.objects.none()
+        
+        # ===== Sócios logic - similar to EmpresaUpdateView =====
+        from empresas.models import Socio, ParticipacaoSocietaria
+        
+        # Lista todos os sócios para o select
+        context['socios_existentes'] = Socio.objects.all().order_by('nome')
+        
+        # Empresa a ser editada (a vinculada, que é o "cliente")
+        empresa_cliente = cliente_parceiro.id_company_vinculada
+        
+        if self.request.method == 'POST':
+            try:
+                socio_count = int(self.request.POST.get('socio_count', '0') or 0)
+            except ValueError:
+                socio_count = 0
+            socio_entries = []
+            for i in range(1, socio_count + 1):
+                socio_entries.append({
+                    'existing': self.request.POST.get(f'existing_socio_{i}', ''),
+                    'nome': self.request.POST.get(f'nome_novo_{i}', ''),
+                    'cpf': self.request.POST.get(f'cpf_novo_{i}', ''),
+                    'percentual': self.request.POST.get(f'percentual_{i}', ''),
+                    'index': i
+                })
+            if not socio_entries:
+                socio_entries = [{'existing':'','nome':'','cpf':'','percentual':'','index':1}]
+            context['socios_entries'] = socio_entries
+        else:
+            # Carrega participações atuais da empresa cliente
+            participacoes = ParticipacaoSocietaria.objects.filter(empresa=empresa_cliente).select_related('socio')
+            socio_entries = []
+            idx = 1
+            for p in participacoes:
+                socio_entries.append({
+                    'existing': str(p.socio.id),
+                    'nome': '',
+                    'cpf': '',
+                    'percentual': p.percentual if p.percentual is not None else '',
+                    'index': idx
+                })
+                idx += 1
+            if not socio_entries:
+                socio_entries = [{'existing':'','nome':'','cpf':'','percentual':'','index':1}]
+            context['socios_entries'] = socio_entries
+            
+        # Debug info
+        context['participacoes_total'] = ParticipacaoSocietaria.objects.filter(empresa=empresa_cliente).count()
+        
         return context
 
     def get_form_kwargs(self):
@@ -108,6 +157,57 @@ class EditarClienteView(LoginRequiredMixin, UpdateView):
                 try:
                     # Atualiza empresa vinculada
                     empresa = empresa_form.save()
+                    
+                    # ===== Sócios processing (similar to EmpresaUpdateView) =====
+                    from empresas.models import Socio, ParticipacaoSocietaria
+                    from decimal import Decimal
+                    
+                    try:
+                        socio_count = int(self.request.POST.get('socio_count', '0') or 0)
+                    except ValueError:
+                        socio_count = 0
+                    
+                    socios_processados = set()
+                    for i in range(1, socio_count + 1):
+                        existing_id = self.request.POST.get(f'existing_socio_{i}')
+                        novo_nome = self.request.POST.get(f'nome_novo_{i}', '').strip()
+                        novo_cpf = self.request.POST.get(f'cpf_novo_{i}', '').strip()
+                        percentual_raw = self.request.POST.get(f'percentual_{i}', '').strip()
+                        
+                        socio_obj = None
+                        if existing_id:
+                            try:
+                                socio_obj = Socio.objects.get(id=existing_id)
+                            except Socio.DoesNotExist:
+                                socio_obj = None
+                        elif novo_cpf and novo_nome:
+                            cpf_digits = ''.join(ch for ch in novo_cpf if ch.isdigit())
+                            if cpf_digits:
+                                socio_obj, _created = Socio.objects.get_or_create(cpf=cpf_digits, defaults={'nome': novo_nome})
+                        
+                        percentual = None
+                        if percentual_raw:
+                            pr = percentual_raw.replace('%','').replace(',','.')
+                            try:
+                                percentual = Decimal(pr)
+                            except Exception:
+                                percentual = None
+                        
+                        if socio_obj:
+                            socios_processados.add(socio_obj.id)
+                            part, created_part = ParticipacaoSocietaria.objects.get_or_create(
+                                empresa=empresa, 
+                                socio=socio_obj, 
+                                defaults={'percentual': percentual}
+                            )
+                            if not created_part and percentual is not None and part.percentual != percentual:
+                                part.percentual = percentual
+                                part.save()
+                    
+                    # Remove participações não enviadas
+                    if socio_count >= 0:
+                        ParticipacaoSocietaria.objects.filter(empresa=empresa).exclude(socio_id__in=socios_processados).delete()
+                    
                     # Atualiza vínculo - mantém parceiro original
                     # Não usa form.cleaned_data['parceiro'] porque o campo está disabled
                     # cliente_parceiro.id_company_base não muda - mantém o parceiro original
@@ -163,6 +263,27 @@ class NovoClienteView(UserPassesTestMixin, LoginRequiredMixin, CreateView):
             context['contato_formset'] = ContatoFormSet(initial=[{}])
         # Só mostra a empresa vinculada ao usuário
         context['parceiros'] = Empresa.objects.filter(id=empresa_vinculada.id) if empresa_vinculada else Empresa.objects.none()
+        # Sócios existentes ativos para seleção
+        context['socios_existentes'] = Socio.objects.filter(ativo=True).order_by('nome')
+        if self.request.method == 'POST':
+            try:
+                socio_count = int(self.request.POST.get('socio_count', '0') or 0)
+            except ValueError:
+                socio_count = 0
+            socio_entries = []
+            for i in range(1, socio_count + 1):
+                socio_entries.append({
+                    'existing': self.request.POST.get(f'existing_socio_{i}', ''),
+                    'nome': self.request.POST.get(f'nome_novo_{i}', ''),
+                    'cpf': self.request.POST.get(f'cpf_novo_{i}', ''),
+                    'percentual': self.request.POST.get(f'percentual_{i}', ''),
+                    'index': i
+                })
+            if not socio_entries:
+                socio_entries = [{'existing':'','nome':'','cpf':'','percentual':'','index':1}]
+            context['socios_entries'] = socio_entries
+        else:
+            context['socios_entries'] = [{'existing':'','nome':'','cpf':'','percentual':'','index':1}]
         return context
     
     def get_form_kwargs(self):
@@ -189,6 +310,40 @@ class NovoClienteView(UserPassesTestMixin, LoginRequiredMixin, CreateView):
                 try:
                     # Salvar nova empresa
                     nova_empresa = empresa_form.save()
+                    # ================= Sócios =================
+                    socio_count = int(self.request.POST.get('socio_count', 0))
+                    for i in range(1, socio_count + 1):
+                        existing_id = self.request.POST.get(f'existing_socio_{i}')
+                        novo_nome = self.request.POST.get(f'nome_novo_{i}', '').strip()
+                        novo_cpf = self.request.POST.get(f'cpf_novo_{i}', '').strip()
+                        percentual_raw = self.request.POST.get(f'percentual_{i}', '').strip()
+                        socio_obj = None
+                        if existing_id:
+                            try:
+                                socio_obj = Socio.objects.get(id=existing_id)
+                            except Socio.DoesNotExist:
+                                socio_obj = None
+                        elif novo_cpf and novo_nome:
+                            cpf_digits = ''.join(ch for ch in novo_cpf if ch.isdigit())
+                            if cpf_digits:
+                                socio_obj, _created = Socio.objects.get_or_create(cpf=cpf_digits, defaults={'nome': novo_nome})
+                        percentual = None
+                        if percentual_raw:
+                            pr = percentual_raw.replace('%','').replace(',','.')
+                            try:
+                                from decimal import Decimal
+                                percentual = Decimal(pr)
+                            except Exception:
+                                percentual = None
+                        if socio_obj:
+                            part, created_part = ParticipacaoSocietaria.objects.get_or_create(
+                                empresa=nova_empresa,
+                                socio=socio_obj,
+                                defaults={'percentual': percentual}
+                            )
+                            if not created_part and percentual is not None and part.percentual != percentual:
+                                part.percentual = percentual
+                                part.save()
                     # Pegar os dados do formulário principal
                     parceiro = form.cleaned_data['parceiro']
                     cliente = nova_empresa

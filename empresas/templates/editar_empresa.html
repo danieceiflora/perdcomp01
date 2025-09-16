@@ -105,10 +105,65 @@
           </div>
         </div>
         {% endfor %}
-      </div>
     </div>
     
     <input type="hidden" name="contact_count" id="contactCount" value="{{ contatos|length }}">
+
+    <!-- Sócios Section -->
+    <div class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+      <div class="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <i class="bi bi-people"></i>
+          Sócios
+          <!-- Debug Info -->
+          <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded ml-2">
+            Debug: {{ socios_existentes|length }} sócios | {{ socios_entries|length }} entries | {{ participacoes_total|default:"?" }} participações
+          </span>
+        </h3>
+        <button type="button" id="addSocioBtn" class="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary/90 transition-colors">
+          <i class="bi bi-plus-circle"></i>
+          Adicionar Sócio
+        </button>
+      </div>
+      <div class="px-6 py-6" id="sociosContainer">
+        {% for entry in socios_entries %}
+        <div class="socio-item border-b border-slate-200 dark:border-slate-700 last:border-b-0 pb-6 mb-6 last:mb-0 last:pb-0">
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+            <div class="space-y-2 md:col-span-1">
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Sócio Existente</label>
+              <select name="existing_socio_{{ entry.index }}" class="block w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
+                <option value="">-- Selecionar --</option>
+                {% for s in socios_existentes %}
+                  <option value="{{ s.id }}" {% if entry.existing|default:'' == s.id|stringformat:'s' %}selected{% endif %}>{{ s.nome }} ({{ s.cpf }})</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="space-y-2 md:col-span-2">
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Nome Novo</label>
+              <input type="text" name="nome_novo_{{ entry.index }}" value="{{ entry.nome }}" placeholder="Cadastrar novo" class="block w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+            </div>
+            <div class="space-y-2 md:col-span-1">
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">CPF Novo</label>
+              <input type="text" name="cpf_novo_{{ entry.index }}" value="{{ entry.cpf }}" placeholder="Somente dígitos" class="cpf-field block w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+            </div>
+            <div class="space-y-2 md:col-span-1">
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Percentual (%)</label>
+              <input type="text" name="percentual_{{ entry.index }}" value="{{ entry.percentual }}" placeholder="Opcional" class="percent-field block w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+            </div>
+          </div>
+          <div class="mt-4">
+            <button type="button" class="remove-socio inline-flex items-center gap-2 rounded-lg bg-red-100 dark:bg-red-900/50 px-3 py-2 text-sm font-medium text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900 transition-colors">
+              <i class="bi bi-trash"></i>
+              Remover
+            </button>
+          </div>
+        </div>
+        {% empty %}
+        <div class="text-sm text-slate-500 dark:text-slate-400">Nenhum sócio cadastrado. Utilize "Adicionar Sócio".</div>
+        {% endfor %}
+      </div>
+    </div>
+    <input type="hidden" name="socio_count" id="socioCount" value="{{ socios_entries|length }}" />
     
     <!-- Actions -->
     <div class="flex items-center justify-between pt-6">
@@ -130,6 +185,7 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // ===== Contatos dynamic =====
         // Add new contact button
         document.getElementById('addContactBtn').addEventListener('click', function() {
             const contactsContainer = document.getElementById('contactsContainer');
@@ -196,78 +252,69 @@
         
         // Initialize remove buttons
         setupRemoveButtons();
-    });
-</script>
-{% endblock %}
 
-{% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Add new contact button
-        document.getElementById('addContactBtn').addEventListener('click', function() {
-            const contactsContainer = document.getElementById('contactsContainer');
-            const contactCount = document.getElementById('contactCount');
-            const newIndex = parseInt(contactCount.value) + 1;
-            
-            // Create new contact form
-            const newContactHTML = `
-                <div class="contact-item border-bottom pb-3 mb-3">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Tipo de Contato</label>
-                            <select name="tipo_contato_${newIndex}" class="form-select">
-                                {% for value, text in tipo_contato_options %}
-                                    <option value="{{ value }}">{{ text }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Telefone</label>
-                            <input type="text" name="telefone_${newIndex}" class="form-control">
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Email</label>
-                            <input type="email" name="email_${newIndex}" class="form-control">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Site</label>
-                            <input type="url" name="site_${newIndex}" class="form-control">
-                        </div>
-                    </div>
-                    <button type="button" class="btn btn-sm btn-danger remove-contact">
-                        <i class="bi bi-trash"></i> Remover
-                    </button>
+        // ===== Sócios dynamic =====
+        const sociosContainer = document.getElementById('sociosContainer');
+        const socioCountInput = document.getElementById('socioCount');
+        const addSocioBtn = document.getElementById('addSocioBtn');
+        
+        function bindRemoveSocios(){
+          document.querySelectorAll('.remove-socio').forEach(btn => {
+            btn.onclick = function(){
+              const items = document.querySelectorAll('.socio-item');
+              if(items.length>1){
+                this.closest('.socio-item').remove();
+                socioCountInput.value = document.querySelectorAll('.socio-item').length;
+              } else {
+                alert('Mantenha pelo menos um bloco (pode ficar vazio).');
+              }
+            }
+          });
+        }
+        
+        bindRemoveSocios();
+        
+        if(addSocioBtn){
+          addSocioBtn.addEventListener('click', function(){
+            let current = parseInt(socioCountInput.value||'0');
+            const newIndex = current + 1;
+            const socioHTML = `
+            <div class="socio-item border-b border-slate-200 dark:border-slate-700 last:border-b-0 pb-6 mb-6 last:mb-0 last:pb-0">
+              <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+                <div class="space-y-2 md:col-span-1">
+                  <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Sócio Existente</label>
+                  <select name="existing_socio_${newIndex}" class="block w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
+                    <option value="">-- Selecionar --</option>
+                    {% for s in socios_existentes %}
+                      <option value="{{ s.id }}">{{ s.nome }} ({{ s.cpf }})</option>
+                    {% endfor %}
+                  </select>
                 </div>
-            `;
-            
-            // Add to DOM
-            contactsContainer.insertAdjacentHTML('beforeend', newContactHTML);
-            contactCount.value = newIndex;
-            
-            // Add event listener to the new remove button
-            setupRemoveButtons();
-        });
-        
-        // Setup remove contact buttons
-        function setupRemoveButtons() {
-            document.querySelectorAll('.remove-contact').forEach(button => {
-                button.addEventListener('click', function() {
-                    this.closest('.contact-item').remove();
-                    updateContactCount();
-                });
-            });
+                <div class="space-y-2 md:col-span-2">
+                  <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Nome Novo</label>
+                  <input type="text" name="nome_novo_${newIndex}" placeholder="Cadastrar novo" class="block w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                </div>
+                <div class="space-y-2 md:col-span-1">
+                  <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">CPF Novo</label>
+                  <input type="text" name="cpf_novo_${newIndex}" placeholder="Somente dígitos" class="cpf-field block w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                </div>
+                <div class="space-y-2 md:col-span-1">
+                  <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Percentual (%)</label>
+                  <input type="text" name="percentual_${newIndex}" placeholder="Opcional" class="percent-field block w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                </div>
+              </div>
+              <div class="mt-4">
+                <button type="button" class="remove-socio inline-flex items-center gap-2 rounded-lg bg-red-100 dark:bg-red-900/50 px-3 py-2 text-sm font-medium text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900 transition-colors">
+                  <i class="bi bi-trash"></i>
+                  Remover
+                </button>
+              </div>
+            </div>`;
+            sociosContainer.insertAdjacentHTML('beforeend', socioHTML);
+            socioCountInput.value = newIndex;
+            bindRemoveSocios();
+          });
         }
-        
-        // Update contact count
-        function updateContactCount() {
-            const count = document.querySelectorAll('.contact-item').length;
-            document.getElementById('contactCount').value = count;
-        }
-        
-        // Initialize remove buttons
-        setupRemoveButtons();
     });
 </script>
 {% endblock %}
