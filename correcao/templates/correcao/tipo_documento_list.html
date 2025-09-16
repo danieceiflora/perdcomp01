@@ -12,23 +12,23 @@
                 <div>
                     <h1 class="text-2xl font-bold text-foreground flex items-center gap-2">
                         <i class="bi bi-file-earmark-text"></i>
-                        Lista de Teses de Crédito
+                        Tipos de documento
                     </h1>
-                    <p class="text-muted-foreground mt-1">Gerenciar teses de crédito e suas correções</p>
+                    <p class="text-muted-foreground mt-1">Gerenciar tipos de documento e suas correções</p>
                 </div>
                 {% if perms.correcao.add_tesecredito %}
                 <a href="{% url 'correcao:tipo_documento_create' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
-                    <i class="bi bi-plus-lg mr-2"></i>Nova Tese de Crédito
+                    <i class="bi bi-plus-lg mr-2"></i>Adicionar novo
                 </a>
                 {% endif %}
             </div>
         </div>
 
-        {% if teses_credito %}
+        {% if tipos_documento %}
         <!-- Teses de Crédito Table -->
         <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
             <div class="flex flex-col space-y-1.5 p-6 border-b">
-                <h3 class="text-lg font-semibold">Teses de Crédito ({{ teses_credito|length }})</h3>
+                <h3 class="text-lg font-semibold">Documentos ({{ tipos_documento|length }})</h3>
             </div>
             <div class="p-6">
                 <div class="overflow-x-auto">
@@ -43,7 +43,7 @@
                             </tr>
                         </thead>
                         <tbody class="[&_tr:last-child]:border-0">
-                            {% for tese in teses_credito %}
+                            {% for tese in tipos_documento %}
                             <tr class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
                                 <td class="p-4 align-middle [&:has([role=checkbox])]:pr-0">
                                     <span class="font-medium text-foreground">{{ tese.id }}</span>

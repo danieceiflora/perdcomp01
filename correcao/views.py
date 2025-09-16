@@ -20,7 +20,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 class TeseCreditoListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     model = TeseCredito
     template_name = 'correcao/tipo_documento_list.html'
-    context_object_name = 'teses_credito'
+    context_object_name = 'tipos_documento'
     paginate_by = 10
     permission_required = 'correcao.view_tesecredito'
     raise_exception = True
