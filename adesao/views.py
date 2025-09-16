@@ -30,8 +30,8 @@ class AdesaoListView(AdesaoClienteViewOnlyMixin, ListView):
     paginate_by = 10
     
     def get_queryset(self):
-        queryset = super().get_queryset().select_related('cliente__id_company_vinculada', 'tese_credito_id')
-        return queryset
+        # Usa filtragem centralizada do mixin e apenas otimiza relações
+        return super().get_queryset().select_related('cliente__id_company_vinculada', 'tese_credito_id')
 
 class AdesaoCreateView(AdminRequiredMixin, CreateView):
     model = Adesao
@@ -53,28 +53,31 @@ class AdesaoUpdateView(AdminRequiredMixin, UpdateView):
         messages.success(self.request, 'Adesão atualizada com sucesso!')
         return super().form_valid(form)
 
-class AdesaoDetailView(LoginRequiredMixin, DetailView):
+class AdesaoDetailView(AdesaoClienteViewOnlyMixin, DetailView):
     model = Adesao
     template_name = 'adesao/adesao_detail.html'
     context_object_name = 'adesao'
 
     def get_queryset(self):
-        base = Adesao.objects.select_related('cliente__id_company_vinculada', 'tese_credito_id')
-        user = self.request.user
-        if user.is_superuser or user.is_staff:
-            return base
-        # Usuário comum: filtra pelas empresas acessíveis se houver profile
-        if hasattr(user, 'profile'):
-            try:
-                profile = user.profile
-                if getattr(profile, 'eh_cliente', False) and getattr(profile, 'empresa_vinculada', None):
-                    return base.filter(cliente__id_company_vinculada=profile.empresa_vinculada)
-                empresas = profile.get_empresas_acessiveis() if hasattr(profile, 'get_empresas_acessiveis') else []
-                if empresas:
-                    return base.filter(cliente__id_company_vinculada__in=empresas)
-            except Exception:
-                return base.none()
-        return base.none()
+        # Delega filtragem ao mixin (AdesaoPermissionMixin) e otimiza relações
+        return super().get_queryset().select_related('cliente__id_company_vinculada', 'tese_credito_id')
+
+    def get(self, request, *args, **kwargs):
+        pk = kwargs.get(self.pk_url_kwarg)
+        queryset = self.get_queryset()
+        try:
+            self.object = queryset.get(pk=pk)
+        except self.model.DoesNotExist:
+            # Se existe mas fora do escopo => 403
+            if self.model.objects.filter(pk=pk).exists():
+                messages.error(request, "Você não tem permissão para visualizar esta adesão.")
+                from django.shortcuts import render
+                return render(request, 'forbidden.html', {
+                    'message': "Você não tem permissão para visualizar esta adesão."
+                }, status=403)
+            raise Http404(f"Adesão com ID {pk} não encontrada.")
+        context = self.get_context_data(object=self.object)
+        return self.render_to_response(context)
 
 
 @login_required

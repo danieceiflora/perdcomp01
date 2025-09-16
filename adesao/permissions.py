@@ -14,39 +14,38 @@ class AdesaoPermissionMixin(EmpresaAccessMixin):
     permission_denied_message = "Você só tem permissão para visualizar adesões permitidas para seu perfil."
     
     def get_queryset(self):
-        """Filtra o queryset baseado no tipo de usuário (cliente ou parceiro)"""
-        queryset = super().get_queryset()
-        
-        # Se é superuser ou staff, tem acesso a tudo
-        if self.request.user.is_superuser or self.request.user.is_staff:
-            return queryset
-            
-        # Se não tem perfil, nega acesso
+        """Filtra queryset conforme papel do usuário.
+        - Admin/staff: tudo
+        - Cliente: empresas diretas + via sócio
+        - Parceiro: clientes vinculados à empresa_parceira (ClientesParceiros com tipo_parceria='cliente')
+        """
+        base = super().get_queryset()
+        user = self.request.user
+        if user.is_superuser or user.is_staff:
+            return base
         try:
-            profile = self.request.user.profile
+            profile = user.profile
         except (AttributeError, ObjectDoesNotExist):
-            return queryset.none()
-        empresas_acessiveis = profile.get_empresas_acessiveis()
-        empresa_ids = [empresa.id for empresa in empresas_acessiveis]
-        
-        # Se não tem empresas acessíveis, nega acesso
-        if not empresa_ids:
-            return queryset.none()
-            
-        # Filtrar baseado no campo de empresa no modelo
-        # Verifica diferentes possíveis campos de relacionamento com empresa
-        if hasattr(queryset.model, 'cliente'):
-            # Assumindo que adesão tem um campo 'cliente' que se relaciona com empresa
-            # Filtra por empresa do cliente da adesão
-            queryset = queryset.filter(cliente__id_company_vinculada__id__in=empresa_ids)
-        elif hasattr(queryset.model, 'empresa_vinculada'):
-            queryset = queryset.filter(empresa_vinculada__id__in=empresa_ids)
-        elif hasattr(queryset.model, 'empresa'):
-            queryset = queryset.filter(empresa__id__in=empresa_ids)
-        elif hasattr(queryset.model, 'id_company_vinculada'):
-            queryset = queryset.filter(id_company_vinculada__id__in=empresa_ids)
-                
-        return queryset
+            return base.none()
+        # Cliente
+        if profile.eh_cliente:
+            empresas_ids = set(profile.empresas.values_list('id', flat=True)) | set(profile.empresas_via_socio.values_list('id', flat=True))
+            if not empresas_ids:
+                return base.none()
+            if hasattr(base.model, 'cliente'):
+                return base.filter(cliente__id_company_vinculada_id__in=empresas_ids)
+            return base.none()
+        # Parceiro
+        if profile.eh_parceiro and profile.empresa_parceira_id:
+            from clientes_parceiros.models import ClientesParceiros
+            clientes_ids = ClientesParceiros.objects.filter(
+                id_company_base_id=profile.empresa_parceira_id,
+                tipo_parceria='cliente'
+            ).values_list('id_company_vinculada_id', flat=True)
+            if not clientes_ids:
+                return base.none()
+            return base.filter(cliente__id_company_vinculada_id__in=clientes_ids)
+        return base.none()
 
 class AdesaoClienteViewOnlyMixin(AdesaoPermissionMixin):
     """

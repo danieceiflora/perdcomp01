@@ -104,44 +104,44 @@ class LancamentosListView(LancamentoClienteViewOnlyMixin, ListView):
     paginate_by = 10
     
     def get_queryset(self):
+        """Filtra lançamentos conforme escopo de acesso do usuário.
+        Regras:
+        - Admin/staff: tudo
+        - Cliente: lançamentos de adesões cujas empresas estão em (empresas diretas + via sócio)
+        - Parceiro: lançamentos de adesões de clientes vinculados à sua empresa_parceira
         """
-        Filtra os lançamentos por permissões e permite busca por PERDCOMP.
-        """
-        queryset = super().get_queryset().select_related('id_adesao').order_by('-data_lancamento')
-        
-        # Filtragem por permissões
-        if self.request.user.is_superuser or self.request.user.is_staff:
-            # Admins veem tudo
-            pass
-        elif hasattr(self.request.user, 'profile'):
-            profile = self.request.user.profile
-            
-            # Para clientes, filtra diretamente pela empresa vinculada
-            if profile.eh_cliente and profile.empresa_vinculada:
-                queryset = queryset.filter(
-                    id_adesao__cliente__id_company_vinculada=profile.empresa_vinculada
-                )
-                
-            # Para parceiros, filtra pelas empresas acessíveis
-            elif not profile.eh_cliente:
-                empresas_acessiveis = profile.get_empresas_acessiveis()
-                if empresas_acessiveis:
-                    queryset = queryset.filter(
-                        id_adesao__cliente__id_company_vinculada__in=empresas_acessiveis
-                    )
-                else:
-                    return queryset.none()
-            else:
-                return queryset.none()
+        from django.db.models import Count
+        base = super().get_queryset().select_related(
+            'id_adesao', 'id_adesao__cliente', 'id_adesao__cliente__id_company_vinculada'
+        ).annotate(num_anexos=Count('anexos')).order_by('-data_lancamento')
+        user = self.request.user
+        if user.is_superuser or user.is_staff:
+            qs = base
         else:
-            return queryset.none()
-        
-        # Filtro por PERDCOMP
+            if not hasattr(user, 'profile'):
+                return base.none()
+            profile = user.profile
+            if profile.eh_cliente:
+                empresas_ids = set(profile.empresas.values_list('id', flat=True)) | set(profile.empresas_via_socio.values_list('id', flat=True))
+                if not empresas_ids:
+                    return base.none()
+                qs = base.filter(id_adesao__cliente__id_company_vinculada_id__in=empresas_ids)
+            elif profile.eh_parceiro and profile.empresa_parceira_id:
+                from clientes_parceiros.models import ClientesParceiros
+                clientes_ids = ClientesParceiros.objects.filter(
+                    id_company_base_id=profile.empresa_parceira_id,
+                    tipo_parceria='cliente'
+                ).values_list('id_company_vinculada_id', flat=True)
+                if not clientes_ids:
+                    return base.none()
+                qs = base.filter(id_adesao__cliente__id_company_vinculada_id__in=clientes_ids)
+            else:
+                return base.none()
+
         perdcomp = self.request.GET.get('perdcomp')
         if perdcomp:
-            queryset = queryset.filter(id_adesao__perdcomp__icontains=perdcomp)
-            
-        return queryset
+            qs = qs.filter(id_adesao__perdcomp__icontains=perdcomp)
+        return qs
         
     def get_context_data(self, **kwargs):
         """
@@ -186,40 +186,30 @@ class LancamentoDetailView(LancamentoClienteViewOnlyMixin, DetailView):
         # Se chegou aqui, não tem acesso a nada
         return queryset.none()
     
-    def get_object(self, queryset=None):
-        """
-        Verifica se o objeto existe no queryset filtrado.
-        Se existir, permite o acesso. Caso contrário, mostra página de acesso negado.
-        """
-        if queryset is None:
-            queryset = self.get_queryset()
-            
-        # Obtém o ID do objeto
-        pk = self.kwargs.get(self.pk_url_kwarg)
-        
-        try:
-            # Tenta obter o objeto do queryset filtrado
-            obj = queryset.get(pk=pk)
-            return obj
-        except self.model.DoesNotExist:
-            # Verifica se o objeto existe no banco, mas o usuário não tem permissão
-            if self.model.objects.filter(pk=pk).exists():
-                from django.shortcuts import render
-                messages.error(self.request, "Você não tem permissão para visualizar este lançamento.")
-                return render(
-                    self.request, 
-                    'forbidden.html', 
-                    {'message': "Você não tem permissão para visualizar este lançamento."},
-                    status=403
-                )
-            else:
-                # Se não existe no banco, é um 404 legítimo
-                raise Http404(f"Lançamento com ID {pk} não encontrado.")
+    # Remove implementação anterior de get_object que retornava HttpResponse.
+    # Usaremos a lógica de permissão diretamente em get().
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['anexos'] = self.object.anexos.all()
         return context
+
+    def get(self, request, *args, **kwargs):
+        pk = kwargs.get(self.pk_url_kwarg)
+        queryset = self.get_queryset()
+        try:
+            self.object = queryset.get(pk=pk)
+        except self.model.DoesNotExist:
+            # Se existe no banco mas fora do queryset filtrado => forbidden
+            if self.model.objects.filter(pk=pk).exists():
+                messages.error(request, "Você não tem permissão para visualizar este lançamento.")
+                from django.shortcuts import render
+                return render(request, 'forbidden.html', {
+                    'message': "Você não tem permissão para visualizar este lançamento."
+                }, status=403)
+            raise Http404(f"Lançamento com ID {pk} não encontrado.")
+        context = self.get_context_data(object=self.object)
+        return self.render_to_response(context)
         
 class LancamentoCreateView(AdminRequiredMixin, CreateView):
     model = Lancamentos
