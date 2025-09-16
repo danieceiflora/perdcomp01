@@ -65,11 +65,16 @@
                         </div>
                     </div>
 
-                    <div class="mt-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                         <div class="space-y-2">
                             <label for="{{ form.data_inicio.id_for_label }}" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{{ form.data_inicio.label }}:</label>
                             {{ form.data_inicio }}
                             {% if form.data_inicio.errors %}<div class="text-sm text-destructive">{{ form.data_inicio.errors }}</div>{% endif %}
+                        </div>
+                        <div class="space-y-2">
+                            <label for="{{ form.data_arrecadacao.id_for_label }}" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{{ form.data_arrecadacao.label }}:</label>
+                            {{ form.data_arrecadacao }}
+                            {% if form.data_arrecadacao.errors %}<div class="text-sm text-destructive">{{ form.data_arrecadacao.errors }}</div>{% endif %}
                         </div>
                     </div>
 

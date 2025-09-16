@@ -16,7 +16,8 @@ class AdesaoForm(forms.ModelForm):
             'periodo_apuracao_credito', 'periodo_apuracao_debito', 'tipo_credito',
             'codigo_receita', 'codigo_receita_denominacao', 'valor_do_principal',
             'credito_original_utilizado', 'total',
-            'saldo', 'saldo_atual', 'selic_acumulada', 'valor_correcao', 'valor_total_corrigido'
+            'saldo', 'saldo_atual', 'selic_acumulada', 'valor_correcao', 'valor_total_corrigido',
+            'data_arrecadacao'
         ]
         widgets = {
             'cliente': forms.Select(attrs={
@@ -104,6 +105,11 @@ class AdesaoForm(forms.ModelForm):
                 'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
                 'placeholder': 'Valor Total Corrigido',
                 'step': '0.01'
+            })
+            ,
+            'data_arrecadacao': forms.DateInput(attrs={
+                'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+                'type': 'date'
             })
         }
     

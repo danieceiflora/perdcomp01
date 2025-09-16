@@ -154,6 +154,13 @@ class Adesao(models.Model):
         null=True
     )
 
+    data_arrecadacao = models.DateField(
+        verbose_name='Data de Arrecadação',
+        help_text='Data em que ocorreu a arrecadação relacionada',
+        blank=True,
+        null=True
+    )
+
     # Audit trail
     historico = HistoricalRecords()
     

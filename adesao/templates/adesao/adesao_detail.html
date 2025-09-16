@@ -74,6 +74,10 @@
               <div class="font-medium leading-relaxed">{{ adesao.data_inicio|date:'d/m/Y' }}</div>
             </div>
             <div class="space-y-1">
+              <div class="text-xs uppercase tracking-wide text-muted-foreground">Data Arrecadação</div>
+              <div class="font-medium leading-relaxed">{% if adesao.data_arrecadacao %}{{ adesao.data_arrecadacao|date:'d/m/Y' }}{% else %}--{% endif %}</div>
+            </div>
+            <div class="space-y-1">
               <div class="text-xs uppercase tracking-wide text-muted-foreground">Tipo de Crédito</div>
               <div class="font-medium leading-relaxed">{{ adesao.tipo_credito|default:'--' }}</div>
             </div>
