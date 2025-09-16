@@ -53,14 +53,36 @@ class AdesaoUpdateView(AdminRequiredMixin, UpdateView):
         messages.success(self.request, 'Adesão atualizada com sucesso!')
         return super().form_valid(form)
 
-class AdesaoDetailView(AdesaoClienteViewOnlyMixin, DetailView):
+class AdesaoDetailView(LoginRequiredMixin, DetailView):
     model = Adesao
     template_name = 'adesao/adesao_detail.html'
     context_object_name = 'adesao'
 
     def get_queryset(self):
-        # Delega filtragem ao mixin (AdesaoPermissionMixin) e otimiza relações
-        return super().get_queryset().select_related('cliente__id_company_vinculada', 'tese_credito_id')
+        base = Adesao.objects.select_related('cliente__id_company_vinculada', 'tese_credito_id')
+        user = self.request.user
+        if user.is_superuser or user.is_staff:
+            return base
+        if not hasattr(user, 'profile'):
+            return base.none()
+        profile = user.profile
+        # Cliente: união empresas diretas + via sócio
+        if profile.eh_cliente:
+            empresas_ids = set(profile.empresas.values_list('id', flat=True)) | set(profile.empresas_via_socio.values_list('id', flat=True))
+            if not empresas_ids:
+                return base.none()
+            return base.filter(cliente__id_company_vinculada_id__in=empresas_ids)
+        # Parceiro: clientes vinculados à empresa_parceira
+        if profile.eh_parceiro and profile.empresa_parceira_id:
+            from clientes_parceiros.models import ClientesParceiros
+            clientes_ids = ClientesParceiros.objects.filter(
+                id_company_base_id=profile.empresa_parceira_id,
+                tipo_parceria='cliente'
+            ).values_list('id_company_vinculada_id', flat=True)
+            if not clientes_ids:
+                return base.none()
+            return base.filter(cliente__id_company_vinculada_id__in=clientes_ids)
+        return base.none()
 
     def get(self, request, *args, **kwargs):
         pk = kwargs.get(self.pk_url_kwarg)
@@ -68,7 +90,6 @@ class AdesaoDetailView(AdesaoClienteViewOnlyMixin, DetailView):
         try:
             self.object = queryset.get(pk=pk)
         except self.model.DoesNotExist:
-            # Se existe mas fora do escopo => 403
             if self.model.objects.filter(pk=pk).exists():
                 messages.error(request, "Você não tem permissão para visualizar esta adesão.")
                 from django.shortcuts import render
