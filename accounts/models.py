@@ -99,6 +99,31 @@ class UserProfile(models.Model):
             return 'Cliente'
         return 'Indefinido'
 
+    # --- Propriedades de compatibilidade legada ---
+    @property
+    def eh_parceiro(self):
+        """Compatibilidade com código legado que usava 'eh_parceiro'."""
+        return self.is_parceiro
+
+    @property
+    def eh_cliente(self):
+        """Compatibilidade com código legado que usava 'eh_cliente'.
+        Define cliente como qualquer perfil que não seja parceiro e tenha empresas
+        associadas (diretas ou via participação como sócio)."""
+        return (not self.is_parceiro) and (self.empresas.exists() or self.empresas_via_socio.exists())
+
+    @property
+    def empresa_vinculada(self):
+        """Compatibilidade: retorna uma única empresa 'principal' quando possível.
+        - Se for parceiro: retorna empresa_parceira
+        - Se tiver exatamente uma empresa cliente associada: retorna essa
+        - Caso contrário: None (evita ambiguidade)"""
+        if self.is_parceiro:
+            return self.empresa_parceira
+        if self.empresas.count() == 1:
+            return self.empresas.first()
+        return None
+
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         # Se virou parceiro, garante limpeza das empresas clientes (caso tenha sido setado via script, sem form)

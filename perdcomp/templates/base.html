@@ -113,8 +113,8 @@
                         <a href="{% url 'accounts:dashboard' %}" class="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 transition-colors"><i class="bi bi-speedometer2 mr-2"></i>Dashboard</a>
                         {% endif %}
 
-                        {% if user.is_authenticated and perms.adesao %}
-                        <!-- Adesões Dropdown (para não-clientes) -->
+                        {% if user.is_authenticated %}
+                        <!-- Adesões Dropdown (liberado para qualquer autenticado; criação só para staff/superuser) -->
                         <div class="relative group">
                             <button type="button" class="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 group-hover:bg-slate-100 dark:group-hover:bg-slate-800 transition-colors">
                                 <i class="bi bi-file-earmark-plus mr-2"></i>
@@ -125,20 +125,16 @@
                             </button>
                             <div class="absolute left-0 mt-2 w-48 origin-top-left rounded-md border bg-white shadow-lg ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 dark:bg-slate-900 dark:border-slate-700 z-10">
                                 <div class="py-1">
-                                    <a href="{% url 'adesao:list' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
-                                        <i class="bi bi-list mr-2"></i>Listar Adesões
-                                    </a>
-                                    {% if user.is_superuser or user.is_staff %}
-                                    <a href="{% url 'adesao:create' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
-                                        <i class="bi bi-plus mr-2"></i>Nova Adesão
-                                    </a>
+                                    <a href="{% url 'adesao:list' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"><i class="bi bi-list mr-2"></i>Listar Adesões</a>
+                                    {% if user.is_superuser or user.is_staff or perms.adesao.add_adesao %}
+                                    <a href="{% url 'adesao:create' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"><i class="bi bi-plus mr-2"></i>Nova Adesão</a>
                                     {% endif %}
                                 </div>
                             </div>
                         </div>
                         {% endif %}
-                        {% if user.is_authenticated and perms.lancamentos.view_lancamentos %}
-                        <!-- Compensações Dropdown (único / somente com permissão) -->
+                        {% if user.is_authenticated %}
+                        <!-- Compensações Dropdown (liberado para qualquer autenticado; criação restrita) -->
                         <div class="relative group">
                             <button type="button" class="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 group-hover:bg-slate-100 dark:group-hover:bg-slate-800 transition-colors">
                                 <i class="bi bi-arrow-left-right mr-2"></i>
@@ -149,37 +145,16 @@
                             </button>
                             <div class="absolute left-0 mt-2 w-48 origin-top-left rounded-md border bg-white shadow-lg ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 dark:bg-slate-900 dark:border-slate-700 z-10">
                                 <div class="py-1">
-                                    <a href="{% url 'lancamentos:list' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
-                                        <i class="bi bi-list mr-2"></i>Listar Declarações
-                                    </a>
+                                    <a href="{% url 'lancamentos:list' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"><i class="bi bi-list mr-2"></i>Listar Declarações</a>
                                     {% if user.is_superuser or user.is_staff or perms.lancamentos.add_lancamentos %}
-                                    <a href="{% url 'lancamentos:create' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
-                                        <i class="bi bi-plus mr-2"></i>Nova Declaração
-                                    </a>
+                                    <a href="{% url 'lancamentos:create' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"><i class="bi bi-plus mr-2"></i>Nova Declaração</a>
                                     {% endif %}
                                 </div>
                             </div>
                         </div>
                         {% endif %}
                         
-                        {% if user.is_authenticated and user.profile.eh_cliente %}
-                        <!-- Menu Cliente: Adesões e Declarações (apenas visualização) -->
-                        <div class="relative group">
-                            <button type="button" class="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 group-hover:bg-slate-100 dark:group-hover:bg-slate-800 transition-colors">
-                                <i class="bi bi-file-earmark-plus mr-2"></i>
-                                Adesões
-                            </button>
-                            <div class="absolute left-0 mt-2 w-48 origin-top-left rounded-md border bg-white shadow-lg ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 dark:bg-slate-900 dark:border-slate-700 z-10">
-                                <div class="py-1">
-                                    <a href="{% url 'adesao:list' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
-                                        <i class="bi bi-list mr-2"></i>Listar Adesões
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                        
-                       
-                        {% endif %}
+                        {# Bloco específico de cliente removido porque agora menu Adesões é universal #}
 
 
                         
@@ -284,7 +259,7 @@
                 
                 {% endif %}
 
-                {% if user.is_authenticated and user.profile and not user.profile.eh_cliente %}
+                {% if user.is_authenticated %}
                 <div class="border border-slate-200 dark:border-slate-700 rounded-md">
                     <button type="button" class="w-full flex items-center justify-between px-3 py-2 rounded-md font-medium text-left text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800" data-mobile-toggle="adesoes" aria-expanded="false">
                         <span class="flex items-center gap-2"><i class="bi bi-file-earmark-plus"></i> Adesões</span>
@@ -292,14 +267,14 @@
                     </button>
                     <div class="hidden flex-col gap-1 px-2 pb-2" data-mobile-submenu="adesoes">
                         <a href="{% url 'adesao:list' %}" class="flex items-center gap-2 px-2 py-2 rounded text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-list"></i> Listar Adesões</a>
-                        {% if user.is_superuser or user.is_staff %}
+                        {% if user.is_superuser or user.is_staff or perms.adesao.add_adesao %}
                         <a href="{% url 'adesao:create' %}" class="flex items-center gap-2 px-2 py-2 rounded text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-plus"></i> Nova Adesão</a>
                         {% endif %}
                     </div>
                 </div>
                 {% endif %}
 
-                {% if perms.lancamentos.view_lancamentos %}
+                {% if user.is_authenticated %}
                 <div class="border border-slate-200 dark:border-slate-700 rounded-md">
                     <button type="button" class="w-full flex items-center justify-between px-3 py-2 rounded-md font-medium text-left text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800" data-mobile-toggle="compensacoes" aria-expanded="false">
                         <span class="flex items-center gap-2"><i class="bi bi-arrow-left-right"></i> Compensações</span>
