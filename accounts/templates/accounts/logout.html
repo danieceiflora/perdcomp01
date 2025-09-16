@@ -17,19 +17,9 @@
                 <p class="text-muted-foreground">Você saiu do sistema com segurança.</p>
                 
                 <div class="space-y-3 pt-4">
-                    <div class="grid grid-cols-2 gap-3">
-                        <a href="{% url 'accounts:cliente_login' %}" 
-                           class="inline-flex items-center justify-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md transition-colors">
-                            <i class="bi bi-building mr-2"></i>Cliente
-                        </a>
-                        <a href="{% url 'accounts:parceiro_login' %}" 
-                           class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors">
-                            <i class="bi bi-briefcase mr-2"></i>Parceiro
-                        </a>
-                    </div>
-                    <a href="{% url 'accounts:login_selector' %}" 
-                       class="inline-flex items-center justify-center w-full px-4 py-2 border border-input bg-background hover:bg-accent text-foreground font-medium rounded-md transition-colors">
-                        <i class="bi bi-arrow-left mr-2"></i>Voltar à tela inicial
+                    <a href="{% url 'accounts:login' %}" 
+                       class="inline-flex items-center justify-center w-full px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-md transition-colors">
+                        <i class="bi bi-box-arrow-in-right mr-2"></i> Fazer login novamente
                     </a>
                 </div>
             </div>

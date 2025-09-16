@@ -6,8 +6,7 @@ app_name = 'accounts'
 
 urlpatterns = [
     # Seletor de login
-    path('', views.LoginSelectorView.as_view(), name='login_selector'),
-
+    
     # Novo login unificado
     path('login/', views.UnifiedLoginView.as_view(), name='login'),
 

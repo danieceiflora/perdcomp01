@@ -32,7 +32,7 @@ class BasePermissionMixin(LoginRequiredMixin):
     
     def handle_no_permission(self):
         messages.error(self.request, self.permission_denied_message)
-        return redirect('accounts:login_selector')
+        return redirect('accounts:login')
 
 class ClienteRequiredMixin(BasePermissionMixin, UserPassesTestMixin):
     """Requer que o usuário seja um cliente"""
