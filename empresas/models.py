@@ -82,3 +82,28 @@ def normalizar_cpf(sender, instance, **kwargs):
     if instance.cpf:
         somente_digitos = ''.join(ch for ch in instance.cpf if ch.isdigit())
         instance.cpf = somente_digitos
+
+
+# Sanitização de campos de Empresa antes de salvar
+@receiver(pre_save, sender=Empresa)
+def sanitizar_empresa(sender, instance, **kwargs):
+    import re
+    # Normaliza CNPJ removendo tudo que não seja letra ou número (validador já confere)
+    if instance.cnpj:
+        instance.cnpj = ''.join(re.findall(r'[0-9A-Za-z]', instance.cnpj)).upper()
+
+    def limpar_texto(valor: str) -> str:
+        if not valor:
+            return valor
+        # Remove caracteres de controle
+        valor = ''.join(ch for ch in valor if ch.isprintable())
+        # Substitui múltiplos espaços por um
+        valor = re.sub(r'\s+', ' ', valor)
+        # Remove caracteres especiais indesejados (mantém letras, números, espaço, pontuação básica)
+        # Aqui decidimos permitir . , - _ / & ()
+        valor = re.sub(r'[^0-9A-Za-zÁÂÃÀÄáâãàäÉÊÈéêèÍÎÌíîìÓÔÕÒÖóôõòöÚÛÙÜúûùüÇç .,_/&()\-]', '', valor)
+        return valor.strip()
+
+    instance.razao_social = limpar_texto(instance.razao_social)
+    instance.nome_fantasia = limpar_texto(instance.nome_fantasia)
+    instance.codigo_origem = limpar_texto(instance.codigo_origem)

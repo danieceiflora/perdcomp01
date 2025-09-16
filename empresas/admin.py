@@ -15,6 +15,28 @@ class EmpresaAdmin(admin.ModelAdmin):
 	search_fields = ('razao_social', 'nome_fantasia', 'cnpj')
 	inlines = [ParticipacaoInline]
 
+	# Remover ação de exclusão em massa
+	def get_actions(self, request):
+		actions = super().get_actions(request)
+		if 'delete_selected' in actions:
+			del actions['delete_selected']
+		return actions
+
+	# Bloqueia permissão de exclusão
+	def has_delete_permission(self, request, obj=None):
+		return False
+
+	# Esconde botão "Excluir" na página de alteração
+	def change_view(self, request, object_id, form_url='', extra_context=None):
+		extra_context = extra_context or {}
+		extra_context['show_delete'] = False
+		return super().change_view(request, object_id, form_url, extra_context=extra_context)
+
+	# Bloqueia acesso à view de deleção direta (via URL)
+	def delete_view(self, request, object_id, extra_context=None):
+		from django.http import HttpResponseForbidden
+		return HttpResponseForbidden("Exclusão de empresas não é permitida para manter a consistência dos dados.")
+
 
 class ParticipacaoInlineForSocio(admin.TabularInline):
 	model = ParticipacaoSocietaria
