@@ -30,25 +30,40 @@ from .models import Lancamentos, Anexos
 from django.contrib.auth.decorators import login_required
 @login_required
 def exportar_lancamentos_xlsx(request):
-    # Filtros iguais à listagem
-    queryset = Lancamentos.objects.select_related('id_adesao', 'id_adesao__cliente', 'id_adesao__cliente__id_company_vinculada').all().order_by('-data_lancamento')
+    """Exporta lançamentos respeitando a mesma lógica de acesso da listagem:
+    - Admin/Staff: todos
+    - Cliente: união (empresas diretas + via sócio)
+    - Parceiro: lançamentos de clientes vinculados à sua empresa_parceira
+    """
+    base = Lancamentos.objects.select_related(
+        'id_adesao', 'id_adesao__cliente', 'id_adesao__cliente__id_company_vinculada'
+    ).order_by('-data_lancamento')
     user = request.user
     if user.is_superuser or user.is_staff:
-        pass
+        queryset = base
     elif hasattr(user, 'profile'):
         profile = user.profile
-        if profile.eh_cliente and profile.empresa_vinculada:
-            queryset = queryset.filter(id_adesao__cliente__id_company_vinculada=profile.empresa_vinculada)
-        elif not profile.eh_cliente:
-            empresas_acessiveis = profile.get_empresas_acessiveis()
-            if empresas_acessiveis:
-                queryset = queryset.filter(id_adesao__cliente__id_company_vinculada__in=empresas_acessiveis)
+        if profile.eh_cliente:
+            empresas_ids = set(profile.empresas.values_list('id', flat=True)) | set(profile.empresas_via_socio.values_list('id', flat=True))
+            if empresas_ids:
+                queryset = base.filter(id_adesao__cliente__id_company_vinculada_id__in=empresas_ids)
             else:
-                queryset = queryset.none()
+                queryset = base.none()
+        elif profile.eh_parceiro and profile.empresa_parceira_id:
+            from clientes_parceiros.models import ClientesParceiros
+            clientes_ids = ClientesParceiros.objects.filter(
+                id_company_base_id=profile.empresa_parceira_id,
+                tipo_parceria='cliente'
+            ).values_list('id_company_vinculada_id', flat=True)
+            if clientes_ids:
+                queryset = base.filter(id_adesao__cliente__id_company_vinculada_id__in=clientes_ids)
+            else:
+                queryset = base.none()
         else:
-            queryset = queryset.none()
+            queryset = base.none()
     else:
-        queryset = queryset.none()
+        queryset = base.none()
+
     perdcomp = request.GET.get('perdcomp')
     if perdcomp:
         queryset = queryset.filter(id_adesao__perdcomp__icontains=perdcomp)
@@ -151,48 +166,36 @@ class LancamentosListView(LancamentoClienteViewOnlyMixin, ListView):
         context['current_filters'] = self.request.GET.dict()
         return context
 
-class LancamentoDetailView(LancamentoClienteViewOnlyMixin, DetailView):
+class LancamentoDetailView(LoginRequiredMixin, DetailView):
     model = Lancamentos
     template_name = 'lancamentos_detail.html'
     context_object_name = 'lancamento'
-    
+
     def get_queryset(self):
-        """
-        Filtra o queryset para que clientes só vejam seus próprios lançamentos.
-        """
-        queryset = super().get_queryset()
-        
-        if self.request.user.is_superuser or self.request.user.is_staff:
-            # Admins veem tudo
-            return queryset
-            
-        if hasattr(self.request.user, 'profile'):
-            profile = self.request.user.profile
-            
-            # Para clientes, filtra diretamente pela empresa vinculada
-            if profile.eh_cliente and profile.empresa_vinculada:
-                return queryset.filter(
-                    id_adesao__cliente__id_company_vinculada=profile.empresa_vinculada
-                )
-                
-            # Para parceiros, filtra pelas empresas acessíveis
-            elif not profile.eh_cliente:
-                empresas_acessiveis = profile.get_empresas_acessiveis()
-                if empresas_acessiveis:
-                    return queryset.filter(
-                        id_adesao__cliente__id_company_vinculada__in=empresas_acessiveis
-                    )
-                    
-        # Se chegou aqui, não tem acesso a nada
-        return queryset.none()
-    
-    # Remove implementação anterior de get_object que retornava HttpResponse.
-    # Usaremos a lógica de permissão diretamente em get().
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['anexos'] = self.object.anexos.all()
-        return context
+        base = super().get_queryset().select_related(
+            'id_adesao', 'id_adesao__cliente', 'id_adesao__cliente__id_company_vinculada'
+        )
+        user = self.request.user
+        if user.is_superuser or user.is_staff:
+            return base
+        if not hasattr(user, 'profile'):
+            return base.none()
+        profile = user.profile
+        if profile.eh_cliente:
+            empresas_ids = set(profile.empresas.values_list('id', flat=True)) | set(profile.empresas_via_socio.values_list('id', flat=True))
+            if not empresas_ids:
+                return base.none()
+            return base.filter(id_adesao__cliente__id_company_vinculada_id__in=empresas_ids)
+        if profile.eh_parceiro and profile.empresa_parceira_id:
+            from clientes_parceiros.models import ClientesParceiros
+            clientes_ids = ClientesParceiros.objects.filter(
+                id_company_base_id=profile.empresa_parceira_id,
+                tipo_parceria='cliente'
+            ).values_list('id_company_vinculada_id', flat=True)
+            if not clientes_ids:
+                return base.none()
+            return base.filter(id_adesao__cliente__id_company_vinculada_id__in=clientes_ids)
+        return base.none()
 
     def get(self, request, *args, **kwargs):
         pk = kwargs.get(self.pk_url_kwarg)
@@ -200,7 +203,6 @@ class LancamentoDetailView(LancamentoClienteViewOnlyMixin, DetailView):
         try:
             self.object = queryset.get(pk=pk)
         except self.model.DoesNotExist:
-            # Se existe no banco mas fora do queryset filtrado => forbidden
             if self.model.objects.filter(pk=pk).exists():
                 messages.error(request, "Você não tem permissão para visualizar este lançamento.")
                 from django.shortcuts import render
@@ -210,6 +212,11 @@ class LancamentoDetailView(LancamentoClienteViewOnlyMixin, DetailView):
             raise Http404(f"Lançamento com ID {pk} não encontrado.")
         context = self.get_context_data(object=self.object)
         return self.render_to_response(context)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['anexos'] = self.object.anexos.all()
+        return context
         
 class LancamentoCreateView(AdminRequiredMixin, CreateView):
     model = Lancamentos
