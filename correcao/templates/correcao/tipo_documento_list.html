@@ -132,10 +132,10 @@
             <div class="flex items-center justify-center p-12">
                 <div class="text-center">
                     <i class="bi bi-info-circle text-4xl text-muted-foreground mb-4"></i>
-                    <p class="text-muted-foreground">Nenhuma tese de crédito cadastrada.</p>
+                    <p class="text-muted-foreground">Nenhum documento cadastrado.</p>
                     {% if perms.correcao.add_tesecredito %}
                     <a href="{% url 'correcao:tipo_documento_create' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 mt-4">
-                        <i class="bi bi-plus mr-2"></i>Nova Tese de Crédito
+                        <i class="bi bi-plus mr-2"></i>Novo Documento
                     </a>
                     {% endif %}
                 </div>
@@ -150,7 +150,7 @@
 <div id="historyModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 hidden z-50" role="dialog" aria-modal="true" aria-labelledby="historyModalTitle">
     <div class="bg-background rounded-lg shadow-xl w-full max-w-md sm:max-w-xl md:max-w-2xl lg:max-w-3xl" style="height: 80vh; display: flex; flex-direction: column;">
         <div class="flex items-center justify-between px-6 py-4 border-b" style="flex-shrink: 0;">
-            <h3 id="historyModalTitle" class="text-lg font-semibold flex items-center gap-2"><i class="bi bi-clock-history"></i>Histórico da Tese de Crédito</h3>
+            <h3 id="historyModalTitle" class="text-lg font-semibold flex items-center gap-2"><i class="bi bi-clock-history"></i>Histórico do Documento</h3>
             <button type="button" class="rounded-md p-2 hover:bg-accent transition-colors" onclick="closeHistoryModal()" aria-label="Fechar modal">
                 <i class="bi bi-x text-xl"></i>
             </button>
