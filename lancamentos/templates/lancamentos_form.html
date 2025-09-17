@@ -176,57 +176,91 @@
                     
                     <div id="anexos-container" class="space-y-4">
                         {% for anexo_form in anexos_formset.forms %}
-                <div class="anexo-form {% if anexo_form.instance.pk and anexo_form.DELETE.value %}delete-form{% endif %} bg-muted/20 border rounded-md p-4" data-initial-form="{{ forloop.first|yesno:'true,false' }}">
-                    <div class="flex items-center justify-between mb-2">
-                        <h5 class="font-medium text-sm">Anexo {% if forloop.counter > 1 %}#{{ forloop.counter }}{% endif %}</h5>
-                        {% if forloop.counter > 1 %}
-                        <button type="button" class="remove-anexo inline-flex items-center justify-center rounded-md border border-destructive bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive hover:bg-destructive/20 transition-colors">
-                            <i class="bi bi-trash mr-1"></i>Remover
-                        </button>
-                        {% endif %}
-                    </div>
-                </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {% if anexo_form.instance.pk %}
-                        <div class="md:col-span-3 text-sm mb-2">
-                            <strong class="font-medium">Anexo atual:</strong> 
-                            {% if anexo_form.instance.arquivo %}
-                                <a href="{{ anexo_form.instance.arquivo.url }}" target="_blank">{{ anexo_form.instance.nome_anexo }}</a>
-                            {% else %}
-                                {{ anexo_form.instance.nome_anexo }}
-                            {% endif %}
-                            
-                           
-                        </div>
-                        {% endif %}                                    <!-- Campos ocultos -->
-                                    {% for hidden in anexo_form.hidden_fields %}
-                                        {{ hidden }}
-                                    {% endfor %}
-                                
-                                                                                                                                                <div>
-                                                                                                                                                                <label for="{{ anexo_form.arquivo.id_for_label }}" class="block text-sm font-medium mb-1">Arquivo</label>
-                                                                                                                                                                <div class="file-field" data-file-wrapper>
-                                                                                                                                                                    {{ anexo_form.arquivo }}
-                                                                                                                                                                    <div class="file-visual">
-                                                                                                                                                                        <span class="file-btn"><i class="bi bi-paperclip text-xs"></i> Selecionar</span>
-                                                                                                                                                                        <span class="file-name" data-file-name> Nenhum arquivo </span>
-                                                                                                                                                                    </div>
-                                                                                                                                                                </div>
-                                                                                                                                                                {% if anexo_form.arquivo.errors %}<div class="text-sm text-destructive mt-1">{{ anexo_form.arquivo.errors }}</div>{% endif %}
-                                                                                                                                                </div>
-                                                                        <div>
-                                                                                <label for="{{ anexo_form.nome_anexo.id_for_label }}" class="block text-sm font-medium mb-1">Nome</label>
-                                                                                {{ anexo_form.nome_anexo }}
-                                                                                {% if anexo_form.nome_anexo.errors %}<div class="text-sm text-destructive mt-1">{{ anexo_form.nome_anexo.errors }}</div>{% endif %}
-                                                                        </div>
-                                                                        <div>
-                                                                                <label for="{{ anexo_form.descricao.id_for_label }}" class="block text-sm font-medium mb-1">Descrição</label>
-                                                                                {{ anexo_form.descricao }}
-                                                                                {% if anexo_form.descricao.errors %}<div class="text-sm text-destructive mt-1">{{ anexo_form.descricao.errors }}</div>{% endif %}
-                                                                        </div>
+                        {% if anexo_form.instance.pk or anexo_form.nome_anexo.value or anexo_form.arquivo.value %}
+                        <div class="anexo-form {% if anexo_form.instance.pk and anexo_form.DELETE.value %}delete-form{% endif %} bg-muted/20 border rounded-md p-4"
+                             data-initial-form="{{ forloop.first|yesno:'true,false' }}">
+                            <div class="flex items-center justify-between mb-2">
+                                <h5 class="font-medium text-sm">Anexo {% if forloop.counter > 1 %}#{{ forloop.counter }}{% endif %}</h5>
+                                <button type="button" class="remove-anexo inline-flex items-center justify-center rounded-md border border-destructive bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive hover:bg-destructive/20 transition-colors">
+                                    <i class="bi bi-trash mr-1"></i>Remover
+                                </button>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {% if anexo_form.instance.pk %}
+                                <div class="md:col-span-3 text-sm mb-2">
+                                    <strong class="font-medium">Anexo atual:</strong>
+                                    {% if anexo_form.instance.arquivo %}
+                                        <a href="{{ anexo_form.instance.arquivo.url }}" target="_blank">{{ anexo_form.instance.nome_anexo }}</a>
+                                    {% else %}
+                                        {{ anexo_form.instance.nome_anexo }}
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                {# Campos ocultos #}
+                                {% for hidden in anexo_form.hidden_fields %}
+                                    {{ hidden }}
+                                {% endfor %}
+                                <div>
+                                    <label for="{{ anexo_form.arquivo.id_for_label }}" class="block text-sm font-medium mb-1">Arquivo</label>
+                                    <div class="file-field" data-file-wrapper>
+                                        {{ anexo_form.arquivo }}
+                                        <div class="file-visual">
+                                            <span class="file-btn"><i class="bi bi-paperclip text-xs"></i> Selecionar</span>
+                                            <span class="file-name" data-file-name>{% if anexo_form.instance.pk %}{{ anexo_form.instance.nome_anexo|default:'Arquivo existente' }}{% else %}Nenhum arquivo{% endif %}</span>
+                                        </div>
+                                    </div>
+                                    {% if anexo_form.arquivo.errors %}<div class="text-sm text-destructive mt-1">{{ anexo_form.arquivo.errors }}</div>{% endif %}
+                                </div>
+                                <div>
+                                    <label for="{{ anexo_form.nome_anexo.id_for_label }}" class="block text-sm font-medium mb-1">Nome</label>
+                                    {{ anexo_form.nome_anexo }}
+                                    {% if anexo_form.nome_anexo.errors %}<div class="text-sm text-destructive mt-1">{{ anexo_form.nome_anexo.errors }}</div>{% endif %}
+                                </div>
+                                <div>
+                                    <label for="{{ anexo_form.descricao.id_for_label }}" class="block text-sm font-medium mb-1">Descrição</label>
+                                    {{ anexo_form.descricao }}
+                                    {% if anexo_form.descricao.errors %}<div class="text-sm text-destructive mt-1">{{ anexo_form.descricao.errors }}</div>{% endif %}
                                 </div>
                             </div>
+                        </div>
+                        {% endif %}
                         {% endfor %}
+                        
+                        <!-- Template form para clonagem via JavaScript (sempre oculto) -->
+                        {% with anexos_formset.empty_form as template_form %}
+                        <div class="anexo-form bg-muted/20 border rounded-md p-4 hidden" id="template-anexo-form" data-template-form="true">
+                            <div class="flex items-center justify-between mb-2">
+                                <h5 class="font-medium text-sm">Anexo</h5>
+                                <button type="button" class="remove-anexo inline-flex items-center justify-center rounded-md border border-destructive bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive hover:bg-destructive/20 transition-colors">
+                                    <i class="bi bi-trash mr-1"></i>Remover
+                                </button>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {# Campos ocultos #}
+                                {% for hidden in template_form.hidden_fields %}
+                                    {{ hidden }}
+                                {% endfor %}
+                                <div>
+                                    <label for="{{ template_form.arquivo.id_for_label }}" class="block text-sm font-medium mb-1">Arquivo</label>
+                                    <div class="file-field" data-file-wrapper>
+                                        {{ template_form.arquivo }}
+                                        <div class="file-visual">
+                                            <span class="file-btn"><i class="bi bi-paperclip text-xs"></i> Selecionar</span>
+                                            <span class="file-name" data-file-name>Nenhum arquivo</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="{{ template_form.nome_anexo.id_for_label }}" class="block text-sm font-medium mb-1">Nome</label>
+                                    {{ template_form.nome_anexo }}
+                                </div>
+                                <div>
+                                    <label for="{{ template_form.descricao.id_for_label }}" class="block text-sm font-medium mb-1">Descrição</label>
+                                    {{ template_form.descricao }}
+                                </div>
+                            </div>
+                        </div>
+                        {% endwith %}
                     </div>
                     
                     
@@ -519,13 +553,11 @@
         
         // Função para atualizar a numeração dos anexos
         function updateAnexoNumbers() {
-            const anexoForms = document.querySelectorAll('.anexo-form');
+            const anexoForms = document.querySelectorAll('.anexo-form:not([data-template-form])');
             anexoForms.forEach((form, index) => {
-                if (index > 0) { // O primeiro anexo é fixo, sem numeração
-                    const heading = form.querySelector('h5');
-                    if (heading) {
-                        heading.textContent = `Anexo #${index + 1}`;
-                    }
+                const heading = form.querySelector('h5');
+                if (heading) {
+                    heading.textContent = `Anexo #${index + 1}`;
                 }
             });
         }
@@ -537,85 +569,59 @@
         function highlight(on){
             if(!dropzone) return; dropzone.classList.toggle('ring-2', on); dropzone.classList.toggle('ring-primary/50', on);
         }
-        function noop(){}
-
-        // Local template (primeiro form vazio) será usado só como base e ocultado se não houver anexos existentes
-        const initialFormEl = anexosContainer.querySelector('.anexo-form[data-initial-form="true"]');
-        let templateFormHTML = null;
-        if(initialFormEl){
-            const hasExistingFile = initialFormEl.querySelector('a[href], input[type="file"][value]');
-            if(!hasExistingFile){
-                templateFormHTML = initialFormEl.outerHTML;
-                initialFormEl.remove();
-                const totalForms = document.getElementById('id_' + prefix + '-TOTAL_FORMS');
-                if(totalForms && parseInt(totalForms.value) > 0){
-                    // Ajusta contagem se removemos o único form vazio
-                    const remaining = anexosContainer.querySelectorAll('.anexo-form').length;
-                    totalForms.value = remaining;
-                }
-            }
-        }
 
         function createFormForFile(file){
-            let formEl;
-            if(templateFormHTML){
-                // Clonar do template HTML e ajustar índices
-                const wrapper = document.createElement('div');
-                wrapper.innerHTML = templateFormHTML.trim();
-                formEl = wrapper.firstElementChild;
-                anexosContainer.appendChild(formEl);
-                // Ajustar índice baseado no TOTAL_FORMS atual
-                const totalForms = document.getElementById('id_' + prefix + '-TOTAL_FORMS');
-                const currentIndex = parseInt(totalForms.value);
-                updateElementIndex(formEl, prefix, currentIndex);
-                totalForms.value = currentIndex + 1;
-                // Garantir botão remover visível para todos exceto possivelmente o primeiro (decidimos permitir remover todos)
-                let removeBtn = formEl.querySelector('.remove-anexo');
-                if(!removeBtn){
-                    const headerDiv = formEl.querySelector('.flex.items-center.justify-between.mb-2');
-                    removeBtn = document.createElement('button');
-                    removeBtn.type='button';
-                    removeBtn.className='remove-anexo inline-flex items-center justify-center rounded-md border border-destructive bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive hover:bg-destructive/20 transition-colors';
-                    removeBtn.innerHTML='<i class="bi bi-trash mr-1"></i>Remover';
-                    headerDiv.appendChild(removeBtn);
-                }
-            } else {
-                // Sem template: clonar um form existente (edição com anexos existentes)
-                const source = anexosContainer.querySelector('.anexo-form');
-                if(source){
-                    const totalForms = document.getElementById('id_' + prefix + '-TOTAL_FORMS');
-                    const currentIndex = parseInt(totalForms.value);
-                    const newForm = source.cloneNode(true);
-                    // limpar valores
-                    newForm.querySelectorAll('input, select, textarea').forEach((input)=>{
-                        if (input.type === 'hidden') {
-                            if (input.name && input.name.includes('-id')) input.value = '';
-                        } else {
-                            input.value = '';
-                        }
-                    });
-                    newForm.classList.remove('delete-form');
-                    anexosContainer.appendChild(newForm);
-                    updateElementIndex(newForm, prefix, currentIndex);
-                    totalForms.value = currentIndex + 1;
-                    formEl = newForm;
-                } else {
-                    return; // nada a fazer
-                }
-            }
-            // localizar input file e nome
+            // Usar o template dedicado
+            const templateForm = document.getElementById('template-anexo-form');
+            if(!templateForm) return;
+            
+            const totalForms = document.getElementById('id_' + prefix + '-TOTAL_FORMS');
+            const currentIndex = parseInt(totalForms.value);
+            
+            // Clonar o template
+            const formEl = templateForm.cloneNode(true);
+            formEl.classList.remove('hidden');
+            formEl.removeAttribute('id');
+            formEl.removeAttribute('data-template-form');
+            
+            // Atualizar índices
+            updateElementIndex(formEl, prefix, currentIndex);
+            totalForms.value = currentIndex + 1;
+            
+            // Anexar ao container
+            anexosContainer.appendChild(formEl);
+            
+            // Configurar o arquivo no input
             const inputFile = formEl.querySelector('input[type="file"]');
             if(inputFile){
                 // Criar um DataTransfer para setar o File (somente navegadores modernos)
                 const dt = new DataTransfer();
                 dt.items.add(file);
                 inputFile.files = dt.files;
+                // Disparar evento change para atualizar qualquer listener e UI
+                try { inputFile.dispatchEvent(new Event('change', { bubbles: true })); } catch(_) {}
             }
+            
+            // Preencher nome do anexo automaticamente
             const nomeInput = formEl.querySelector('input[name$="-nome_anexo"]');
-            if(nomeInput && !nomeInput.value){ nomeInput.value = file.name; }
-            // Atualiza heading
+            if(nomeInput && !nomeInput.value){ 
+                nomeInput.value = file.name; 
+            }
+            
+            // Atualizar o wrapper do arquivo para mostrar o nome do arquivo
+            const fileWrapper = formEl.querySelector('[data-file-wrapper]');
+            if(fileWrapper) {
+                updateSingleWrapper(fileWrapper);
+                const nameSpan = fileWrapper.querySelector('[data-file-name]');
+                if(nameSpan) { nameSpan.textContent = file.name; }
+            }
+            
+            // Atualizar numeração e botões
             updateAnexoNumbers();
             setupRemoveButtons();
+            
+            // Re-bind file wrappers para o novo form
+            bindFileWrappers(formEl);
         }
         function handleFiles(files){
             const added = [];

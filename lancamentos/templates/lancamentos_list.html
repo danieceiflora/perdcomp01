@@ -9,10 +9,10 @@
     <div class="bg-card border rounded-lg shadow-sm mb-6">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-6 border-b">
             <h1 class="text-2xl font-semibold text-card-foreground">Lançamentos</h1>
-            <div class="flex flex-col sm:flex-row gap-3 w-full sm:flex-1">
-                <form method="get" class="flex w-full sm:flex-1">
-                    <div class="flex w-full items-stretch rounded-md border border-input overflow-hidden focus-within:ring-2 focus-within:ring-ring">
-                        <input type="text" name="perdcomp" placeholder="PERDCOMP" value="{{ request.GET.perdcomp|default:'' }}" class="flex-1 min-w-[18rem] md:min-w-[24rem] bg-background px-3 py-2 text-sm outline-none" />
+            <div class="flex flex-col sm:flex-row gap-3 w-full sm:flex-1 items-stretch">
+                <form method="get" class="flex flex-1 min-w-0">
+                    <div class="flex flex-1 min-w-0 items-stretch rounded-md border border-input overflow-hidden focus-within:ring-2 focus-within:ring-ring">
+                        <input type="text" name="perdcomp" placeholder="PERDCOMP" value="{{ request.GET.perdcomp|default:'' }}" class="w-full bg-background px-3 py-2 text-sm outline-none" />
                         <button type="submit" class="inline-flex items-center justify-center bg-muted px-3 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
                             <i class="bi bi-search"></i>
                         </button>
@@ -23,26 +23,24 @@
                         {% endif %}
                     </div>
                 </form>
-                <form method="get" class="flex">
+                <form method="get" class="flex shrink-0" id="statusFilterForm">
                     {% if request.GET.perdcomp %}<input type="hidden" name="perdcomp" value="{{ request.GET.perdcomp }}">{% endif %}
-                    <select name="aprovado" class="input w-full min-w-[12rem]">
+                    <select name="aprovado" class="input w-auto min-w-max whitespace-nowrap">
                         <option value="">Status (todos)</option>
                         <option value="1" {% if request.GET.aprovado == '1' %}selected{% endif %}>Aprovados</option>
                         <option value="0" {% if request.GET.aprovado == '0' %}selected{% endif %}>Não aprovados</option>
                     </select>
-                    <button type="submit" class="ml-2 inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">
-                        <i class="bi bi-funnel mr-2"></i>Filtrar
-                    </button>
                 </form>
-                <form method="get" action="{% url 'lancamentos:exportar_xlsx' %}" class="flex">
+                <form method="get" action="{% url 'lancamentos:exportar_xlsx' %}" class="flex shrink-0">
                     {% if request.GET.perdcomp %}<input type="hidden" name="perdcomp" value="{{ request.GET.perdcomp }}">{% endif %}
+                    {% if request.GET.aprovado %}<input type="hidden" name="aprovado" value="{{ request.GET.aprovado }}">{% endif %}
                     <button type="submit" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">
                         <i class="bi bi-file-earmark-excel mr-2"></i><span>Exportar</span>
                     </button>
                 </form>
                 {% if user.is_staff or user.is_superuser %}
-                <a href="{% url 'lancamentos:create' %}" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors">
-                    <i class="bi bi-plus mr-2"></i>Novo Lançamento
+                <a href="{% url 'lancamentos:create' %}" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors shrink-0">
+                    <i class="bi bi-plus mr-2"></i><span>Adicionar</span>
                 </a>
                 {% endif %}
             </div>
@@ -186,6 +184,16 @@
 </div>
 
 <script>
+// Auto-apply status filter on change
+document.addEventListener('DOMContentLoaded', function(){
+    const form = document.getElementById('statusFilterForm');
+    if(!form) return;
+    const sel = form.querySelector('select[name="aprovado"]');
+    if(!sel) return;
+    sel.addEventListener('change', function(){
+        form.submit();
+    });
+});
 const historyLancModal = document.getElementById('historyLancModal');
 const historyLancBody = document.getElementById('history-lanc-body');
 const historyLancLoading = document.getElementById('history-lanc-loading');

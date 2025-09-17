@@ -38,7 +38,7 @@ def exportar_lancamentos_xlsx(request):
     """
     base = Lancamentos.objects.select_related(
         'id_adesao', 'id_adesao__cliente', 'id_adesao__cliente__id_company_vinculada'
-    ).order_by('-data_lancamento')
+    ).order_by('-data_criacao')
     user = request.user
     if user.is_superuser or user.is_staff:
         queryset = base
@@ -124,7 +124,7 @@ class LancamentosListView(LancamentoClienteViewOnlyMixin, ListView):
         from django.db.models import Count
         base = super().get_queryset().select_related(
             'id_adesao', 'id_adesao__cliente', 'id_adesao__cliente__id_company_vinculada'
-        ).annotate(num_anexos=Count('anexos')).order_by('-data_lancamento')
+        ).annotate(num_anexos=Count('anexos')).order_by('-data_criacao')
         user = self.request.user
         if user.is_superuser or user.is_staff:
             qs = base
