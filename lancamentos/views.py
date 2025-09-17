@@ -4,6 +4,8 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, D
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages
 from django.db import transaction
+from django.db.models import Sum, Case, When, F, FloatField
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from utils.access import get_empresas_ids_for_cliente, get_clientes_ids_for_parceiro
@@ -114,12 +116,9 @@ class LancamentosListView(LancamentoClienteViewOnlyMixin, ListView):
     context_object_name = 'lancamentos'
     paginate_by = 10
     
-    def get_queryset(self):
-        """Filtra lançamentos conforme escopo de acesso do usuário.
-        Regras:
-        - Admin/staff: tudo
-        - Cliente: lançamentos de adesões cujas empresas estão em (empresas diretas + via sócio)
-        - Parceiro: lançamentos de adesões de clientes vinculados à sua empresa_parceira
+    def _get_scoped_base_queryset(self):
+        """Retorna queryset com escopo de acesso aplicado e filtro de perdcomp,
+        mas sem filtrar por status de aprovação. Mantém ordenação e anotação de anexos.
         """
         from django.db.models import Count
         base = super().get_queryset().select_related(
@@ -148,6 +147,16 @@ class LancamentosListView(LancamentoClienteViewOnlyMixin, ListView):
         perdcomp = self.request.GET.get('perdcomp')
         if perdcomp:
             qs = qs.filter(id_adesao__perdcomp__icontains=perdcomp)
+        return qs
+
+    def get_queryset(self):
+        """Filtra lançamentos conforme escopo de acesso do usuário.
+        Regras:
+        - Admin/staff: tudo
+        - Cliente: lançamentos de adesões cujas empresas estão em (empresas diretas + via sócio)
+        - Parceiro: lançamentos de adesões de clientes vinculados à sua empresa_parceira
+        """
+        qs = self._get_scoped_base_queryset()
         aprovado = self.request.GET.get('aprovado')
         if aprovado == '1':
             qs = qs.filter(aprovado=True)
@@ -161,6 +170,27 @@ class LancamentosListView(LancamentoClienteViewOnlyMixin, ListView):
         """
         context = super().get_context_data(**kwargs)
         context['current_filters'] = self.request.GET.dict()
+        # Resumo sintético (ignora filtro de status, respeita escopo/perdcomp)
+        qs_all = self._get_scoped_base_queryset()
+        signed_expr = Case(
+            When(sinal='-', then=Coalesce(F('valor'), 0.0) * -1),
+            default=Coalesce(F('valor'), 0.0),
+            output_field=FloatField()
+        )
+        aprovados_qs = qs_all.filter(aprovado=True)
+        nao_aprov_qs = qs_all.filter(aprovado=False)
+        aprovados_total = aprovados_qs.aggregate(total=Sum(signed_expr))['total'] or 0.0
+        nao_aprov_total = nao_aprov_qs.aggregate(total=Sum(signed_expr))['total'] or 0.0
+        context['resumo'] = {
+            'aprovados': {
+                'qtd': aprovados_qs.count(),
+                'total': aprovados_total,
+            },
+            'nao_aprovados': {
+                'qtd': nao_aprov_qs.count(),
+                'total': nao_aprov_total,
+            }
+        }
         return context
 
 class LancamentoDetailView(LoginRequiredMixin, DetailView):

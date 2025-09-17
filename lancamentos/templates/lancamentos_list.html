@@ -46,6 +46,26 @@
             </div>
         </div>
         <div class="p-6">
+            {% if resumo %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="bg-card border rounded-md p-4">
+                    <div class="text-sm text-muted-foreground">Aprovados — Quantidade</div>
+                    <div class="mt-1 text-2xl font-semibold">{{ resumo.aprovados.qtd }}</div>
+                </div>
+                <div class="bg-card border rounded-md p-4">
+                    <div class="text-sm text-muted-foreground">Aprovados — Total</div>
+                    <div class="mt-1 text-2xl font-semibold text-green-600 dark:text-green-400">{{ resumo.aprovados.total|br_currency }}</div>
+                </div>
+                <div class="bg-card border rounded-md p-4">
+                    <div class="text-sm text-muted-foreground">Não Aprovados — Quantidade</div>
+                    <div class="mt-1 text-2xl font-semibold">{{ resumo.nao_aprovados.qtd }}</div>
+                </div>
+                <div class="bg-card border rounded-md p-4">
+                    <div class="text-sm text-muted-foreground">Não Aprovados — Total</div>
+                    <div class="mt-1 text-2xl font-semibold text-destructive">{{ resumo.nao_aprovados.total|br_currency }}</div>
+                </div>
+            </div>
+            {% endif %}
             <div class="flex items-start gap-3 p-4 mb-6 rounded-md border bg-muted/30 text-sm text-muted-foreground">
                 <i class="bi bi-info-circle text-base"></i>
                 <span>O saldo restante indica o saldo da adesão após cada lançamento confirmado.</span>
