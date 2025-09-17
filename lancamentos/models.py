@@ -130,14 +130,13 @@ class Lancamentos(models.Model):
     def clean(self):
         """
         Validação do modelo para garantir regras de negócio:
-        - Lançamentos de débito não podem deixar o saldo negativo
+        - Lançamentos de débito não podem deixar o saldo negativo quando aprovados
         """
         from django.core.exceptions import ValidationError
         
-        # Se for um novo lançamento de débito, verifica se o saldo ficaria negativo
-        if not self.pk and self.sinal == '-':
+        # Se estiver aprovando (ou já aprovado), valida saldo para débitos
+        if self.aprovado and self.sinal == '-':
             adesao = self.id_adesao
-            # Inicializa saldo_atual se estiver None
             if adesao.saldo_atual is None:
                 adesao.saldo_atual = adesao.saldo or 0
             try:
@@ -172,8 +171,15 @@ class Lancamentos(models.Model):
         from django.core.exceptions import ValidationError
         from django.utils import timezone
 
-        # Verifica se é um novo lançamento
+        # Verifica se é um novo lançamento e captura estado anterior
         is_novo = not self.pk
+        original_aprovado = False
+        if not is_novo:
+            try:
+                original = type(self).objects.get(pk=self.pk)
+                original_aprovado = bool(original.aprovado)
+            except type(self).DoesNotExist:
+                original_aprovado = False
 
         # Regras de aprovação antes de salvar: auto-definir/limpar data
         if self.aprovado and self.data_aprovacao is None:
@@ -183,7 +189,6 @@ class Lancamentos(models.Model):
 
         # Imutabilidade: após criação, apenas campos de aprovação podem mudar
         if not is_novo:
-            original = type(self).objects.get(pk=self.pk)
             allowed = {'aprovado', 'data_aprovacao', 'observacao_aprovacao'}
             changed = set()
             for field in self._meta.fields:
@@ -196,13 +201,23 @@ class Lancamentos(models.Model):
                     changed.add(fname)
             if changed - allowed:
                 raise ValidationError('Após a criação, apenas os campos de aprovação podem ser editados.')
+            # Bloquear mudança de status após aprovado
+            if original_aprovado and self.aprovado is not True:
+                raise ValidationError('Não é permitido alterar o status após aprovado.')
 
         with transaction.atomic():
             # Salva o lançamento
             super().save(*args, **kwargs)
             
-            # Atualiza o saldo apenas para novos lançamentos
-            if is_novo:
+            # Atualiza o saldo apenas quando aprovação ocorre
+            should_update_saldo = False
+            if is_novo and self.aprovado:
+                should_update_saldo = True
+            elif (not is_novo) and (not original_aprovado) and self.aprovado:
+                should_update_saldo = True
+
+            if should_update_saldo:
+                # Validação final do saldo em caso de débito já foi feita em clean(); ainda assim garantir coerência
                 self.atualizar_saldo_adesao()
                 
         return self

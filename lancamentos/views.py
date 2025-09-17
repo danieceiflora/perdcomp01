@@ -58,6 +58,11 @@ def exportar_lancamentos_xlsx(request):
     perdcomp = request.GET.get('perdcomp')
     if perdcomp:
         queryset = queryset.filter(id_adesao__perdcomp__icontains=perdcomp)
+    aprovado = request.GET.get('aprovado')
+    if aprovado == '1':
+        queryset = queryset.filter(aprovado=True)
+    elif aprovado == '0':
+        queryset = queryset.filter(aprovado=False)
 
     # Criação do arquivo XLSX
     wb = openpyxl.Workbook()
@@ -143,6 +148,11 @@ class LancamentosListView(LancamentoClienteViewOnlyMixin, ListView):
         perdcomp = self.request.GET.get('perdcomp')
         if perdcomp:
             qs = qs.filter(id_adesao__perdcomp__icontains=perdcomp)
+        aprovado = self.request.GET.get('aprovado')
+        if aprovado == '1':
+            qs = qs.filter(aprovado=True)
+        elif aprovado == '0':
+            qs = qs.filter(aprovado=False)
         return qs
         
     def get_context_data(self, **kwargs):
@@ -329,6 +339,13 @@ class LancamentoApprovalUpdateView(AdminRequiredMixin, UpdateView):
     def get_queryset(self):
         base = super().get_queryset().select_related('id_adesao', 'id_adesao__cliente', 'id_adesao__cliente__id_company_vinculada')
         return base
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if self.object.aprovado:
+            messages.info(request, 'Este lançamento já está aprovado e não pode ser alterado.')
+            return redirect('lancamentos:detail', pk=self.object.pk)
+        return super().dispatch(request, *args, **kwargs)
 
 @login_required
 @require_GET

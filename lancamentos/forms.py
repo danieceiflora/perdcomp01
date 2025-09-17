@@ -62,6 +62,23 @@ class LancamentosForm(forms.ModelForm):
         label='Saldo Atual da Adesão'
     )
 
+    # Campos de aprovação
+    aprovado = forms.TypedChoiceField(
+        choices=[(True, 'Sim'), (False, 'Não')],
+        coerce=lambda v: True if v in (True, 'True', 'true', '1', 1, 'on') else False,
+        required=False,
+        widget=forms.Select(attrs={'class': 'input w-full'})
+    )
+    data_aprovacao = forms.DateTimeField(
+        required=False,
+        widget=forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'input w-full'}),
+        input_formats=['%Y-%m-%dT%H:%M', '%Y-%m-%d %H:%M:%S']
+    )
+    observacao_aprovacao = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={'class': 'input w-full', 'rows': 3, 'placeholder': 'Observações sobre a aprovação (opcional)'})
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance.pk and self.instance.data_lancamento:
@@ -76,13 +93,17 @@ class LancamentosForm(forms.ModelForm):
                   'lanc_total_credito_original_utilizado', 'lanc_debito', 'lanc_periodo_apuracao',
                   'lanc_debito_r', 'lanc_periodo_apuracao_r', 'lanc_total_r',
                   'metodo', 'total', 'total_credito_original_utilizado', 'periodo_apuracao',
-                  'periodo_apuracao_r', 'debito', 'debito_r']
+                  'periodo_apuracao_r', 'debito', 'debito_r',
+                  'aprovado', 'data_aprovacao', 'observacao_aprovacao']
         widgets = {
             'id_adesao': forms.Select(attrs={'class': 'input w-full'}),
             'data_lancamento': forms.DateInput(attrs={'class': 'input w-full','type': 'date'}),
             'valor': forms.HiddenInput(),
             'tipo': forms.Select(attrs={'class': 'input w-full'}),
             'descricao': forms.Textarea(attrs={'class': 'input w-full','placeholder': 'Observações adicionais','rows': 3}),
+            'aprovado': forms.Select(choices=[(True, 'Sim'), (False, 'Não')], attrs={'class': 'input w-full'}),
+            'data_aprovacao': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'input w-full'}),
+            'observacao_aprovacao': forms.Textarea(attrs={'class': 'input w-full', 'rows': 3}),
         }
 
     def add_error_classes(self):
@@ -146,6 +167,11 @@ class LancamentosForm(forms.ModelForm):
         
         if cleaned.get('valor') in (None, 0):
             self.add_error('valor', 'Valor inválido ou ausente.')
+        # Regras de aprovação na criação/edição
+        aprovado = cleaned.get('aprovado')
+        data_aprovacao = cleaned.get('data_aprovacao')
+        if not aprovado and data_aprovacao is not None:
+            self.add_error('data_aprovacao', 'Informe data apenas quando aprovado = Sim.')
         
         return cleaned
 

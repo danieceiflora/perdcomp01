@@ -140,6 +140,22 @@
                             {{ form.descricao }}
                             {% if form.descricao.errors %}<div class="text-sm text-destructive mt-1">{{ form.descricao.errors }}</div>{% endif %}
                         </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Aprovado</label>
+                            <select name="aprovado" class="input w-full">
+                                <option value="False">Não</option>
+                                <option value="True">Sim</option>
+                            </select>
+                            <p class="text-xs text-muted-foreground mt-1">Se "Sim" for selecionado, o saldo será atualizado no salvamento.</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Data de Aprovação</label>
+                            <input type="datetime-local" name="data_aprovacao" class="input w-full" />
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="block text-sm font-medium mb-1">Observação da Aprovação</label>
+                            <textarea name="observacao_aprovacao" rows="3" class="input w-full" placeholder="Observações sobre a aprovação (opcional)"></textarea>
+                        </div>
                     </div>
                 </div>
                     

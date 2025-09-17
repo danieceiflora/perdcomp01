@@ -23,6 +23,17 @@
                         {% endif %}
                     </div>
                 </form>
+                <form method="get" class="flex">
+                    {% if request.GET.perdcomp %}<input type="hidden" name="perdcomp" value="{{ request.GET.perdcomp }}">{% endif %}
+                    <select name="aprovado" class="input w-full min-w-[12rem]">
+                        <option value="">Status (todos)</option>
+                        <option value="1" {% if request.GET.aprovado == '1' %}selected{% endif %}>Aprovados</option>
+                        <option value="0" {% if request.GET.aprovado == '0' %}selected{% endif %}>Não aprovados</option>
+                    </select>
+                    <button type="submit" class="ml-2 inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">
+                        <i class="bi bi-funnel mr-2"></i>Filtrar
+                    </button>
+                </form>
                 <form method="get" action="{% url 'lancamentos:exportar_xlsx' %}" class="flex">
                     {% if request.GET.perdcomp %}<input type="hidden" name="perdcomp" value="{{ request.GET.perdcomp }}">{% endif %}
                     <button type="submit" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">
@@ -68,7 +79,13 @@
                                 <td class="px-4 py-3 font-semibold {% if lancamento.sinal == '+' %}text-green-600 dark:text-green-400{% else %}text-destructive{% endif %}">{{ lancamento.sinal }} {{ lancamento.valor|br_currency }}</td>
                                 <td class="px-4 py-3 font-semibold">{{ lancamento.saldo_restante|br_currency }}</td>
                                 <td class="px-4 py-3"><span class="inline-flex items-center rounded-md bg-blue-500/10 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-300">{{ lancamento.anexos.count }} anexo(s)</span></td>
-                                <td class="px-4 py-3"><span class="inline-flex items-center rounded-md bg-red-500/10 px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300">Débito</span></td>
+                                <td class="px-4 py-3">
+                                    {% if lancamento.aprovado %}
+                                    <span class="inline-flex items-center rounded-md bg-green-500/10 px-2 py-1 text-xs font-medium text-green-700 dark:text-green-300"><i class="bi bi-check2-circle mr-1"></i>Aprovado</span>
+                                    {% else %}
+                                    <span class="inline-flex items-center rounded-md bg-red-500/10 px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300"><i class="bi bi-x-circle mr-1"></i>Não Aprovado pelo cliente</span>
+                                    {% endif %}
+                                </td>
                                 <td class="px-4 py-3">
                                     <a href="{% url 'lancamentos:detail' lancamento.pk %}" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent hover:text-accent-foreground transition-colors"><i class="bi bi-eye mr-1"></i>Detalhes</a>
                                 </td>
@@ -87,7 +104,11 @@
                 <div class="bg-card border rounded-lg shadow-sm transition hover:shadow-md">
                     <div class="p-4 border-b flex items-center justify-between">
                         <h3 class="font-semibold">Perdcomp: {{ lancamento.id_adesao.perdcomp }}</h3>
-                        <span class="inline-flex items-center rounded-md bg-red-500/10 px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300">Débito</span>
+                        {% if lancamento.aprovado %}
+                        <span class="inline-flex items-center rounded-md bg-green-500/10 px-2 py-1 text-xs font-medium text-green-700 dark:text-green-300"><i class="bi bi-check2-circle mr-1"></i>Aprovado</span>
+                        {% else %}
+                        <span class="inline-flex items-center rounded-md bg-red-500/10 px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300"><i class="bi bi-x-circle mr-1"></i>Não Aprovado pelo cliente</span>
+                        {% endif %}
                     </div>
                     <div class="p-4 space-y-2 text-sm">
                         <div><span class="text-muted-foreground">Cliente:</span> {% if lancamento.id_adesao.cliente.id_company_vinculada %}{{ lancamento.id_adesao.cliente.id_company_vinculada.razao_social }}{% else %}{{ lancamento.id_adesao.cliente }}{% endif %}</div>
@@ -107,11 +128,11 @@
             <nav class="mt-8 flex justify-center" aria-label="Paginação">
                 <div class="flex items-center gap-2">
                     {% if page_obj.has_previous %}
-                    <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.perdcomp %}&perdcomp={{ request.GET.perdcomp }}{% endif %}" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground">Anterior</a>
+                    <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.perdcomp %}&perdcomp={{ request.GET.perdcomp }}{% endif %}{% if request.GET.aprovado %}&aprovado={{ request.GET.aprovado }}{% endif %}" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground">Anterior</a>
                     {% endif %}
                     <span class="px-4 py-2 text-sm text-muted-foreground">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
                     {% if page_obj.has_next %}
-                    <a href="?page={{ page_obj.next_page_number }}{% if request.GET.perdcomp %}&perdcomp={{ request.GET.perdcomp }}{% endif %}" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground">Próximo</a>
+                    <a href="?page={{ page_obj.next_page_number }}{% if request.GET.perdcomp %}&perdcomp={{ request.GET.perdcomp }}{% endif %}{% if request.GET.aprovado %}&aprovado={{ request.GET.aprovado }}{% endif %}" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground">Próximo</a>
                     {% endif %}
                 </div>
             </nav>
