@@ -22,6 +22,10 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="space-y-4">
                         <div>
+                            <div class="text-xs uppercase tracking-wide text-muted-foreground">Empresa Cliente</div>
+                            <div class="font-medium">{% if lancamento.id_adesao.cliente.id_company_vinculada %}{{ lancamento.id_adesao.cliente.id_company_vinculada.razao_social }}{% else %}--{% endif %}</div>
+                        </div>
+                        <div>
                             <div class="text-xs uppercase tracking-wide text-muted-foreground">Perdcomp</div>
                             <div class="font-medium">{{ lancamento.id_adesao.perdcomp|default:'--' }}</div>
                         </div>
@@ -42,6 +46,10 @@
                         <div class="md:col-span-2">
                             <div class="text-xs uppercase tracking-wide text-muted-foreground mb-1">Observação</div>
                             <div class="rounded-md border bg-muted/30 p-3 text-sm leading-relaxed">{{ lancamento.descricao|linebreaks|default:"Nenhuma observação" }}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs uppercase tracking-wide text-muted-foreground">Adesão Relacionada</div>
+                            <div class="font-medium"><a class="text-primary hover:underline" href="{% url 'adesao:detail' lancamento.id_adesao.id %}">{{ lancamento.id_adesao.perdcomp }}</a></div>
                         </div>
                     </div>
                     <div class="space-y-4">
