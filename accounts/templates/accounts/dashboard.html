@@ -18,6 +18,14 @@
     </div>
     {% endif %}
   </div>
+  <!-- Banner: Empresa selecionada -->
+  <div id="empresa-selecionada-banner" class="hidden mb-4">
+    <div class="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary">
+      <i class="bi bi-building"></i>
+      <span>Empresa selecionada:</span>
+      <span id="empresa-selecionada-nome" class="font-semibold"></span>
+    </div>
+  </div>
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     {% if tipo_usuario == 'Administrador' %}
     <div class="stat-card rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-lg transition-all">
@@ -133,6 +141,8 @@ document.addEventListener('DOMContentLoaded', function(){
   const recEl = document.getElementById('metrica-credito-recuperado');
   const utiEl = document.getElementById('metrica-credito-utilizado');
   const salEl = document.getElementById('metrica-saldo-credito');
+  const banner = document.getElementById('empresa-selecionada-banner');
+  const bannerNome = document.getElementById('empresa-selecionada-nome');
 
   async function atualizar(){
     const emp = select.value;
@@ -148,8 +158,20 @@ document.addEventListener('DOMContentLoaded', function(){
     } catch(e){
       console.error(e);
     }
+
+    // Atualiza banner da empresa selecionada
+    const optionText = select.options[select.selectedIndex]?.text || '';
+    if(emp){
+      bannerNome.textContent = optionText;
+      banner.classList.remove('hidden');
+    } else {
+      banner.classList.add('hidden');
+      bannerNome.textContent = '';
+    }
   }
   select.addEventListener('change', atualizar);
+  // Inicializa estado do banner ao carregar
+  atualizar();
 });
 </script>
 {% endblock %}
