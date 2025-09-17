@@ -227,3 +227,33 @@ AnexosFormSet = inlineformset_factory(
     can_delete=True,
     can_delete_extra=True
 )
+
+
+class LancamentoApprovalForm(forms.ModelForm):
+    aprovado = forms.TypedChoiceField(
+        choices=[(True, 'Sim'), (False, 'Não')],
+        coerce=lambda v: True if v in (True, 'True', 'true', '1', 1, 'on') else False,
+        widget=forms.Select(attrs={'class': 'input w-full'})
+    )
+    data_aprovacao = forms.DateTimeField(
+        required=False,
+        widget=forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'input w-full'}),
+        input_formats=['%Y-%m-%dT%H:%M', '%Y-%m-%d %H:%M:%S']
+    )
+    class Meta:
+        model = Lancamentos
+        fields = ['aprovado', 'data_aprovacao', 'observacao_aprovacao']
+        widgets = {
+            'observacao_aprovacao': forms.Textarea(attrs={'class': 'input w-full', 'rows': 3, 'placeholder': 'Observações sobre a aprovação (opcional)'}),
+        }
+
+    def clean(self):
+        cleaned = super().clean()
+        aprovado = cleaned.get('aprovado')
+        data = cleaned.get('data_aprovacao')
+        if aprovado and data is None:
+            # opcionalmente permitir auto-preencher no save; não forçar aqui
+            pass
+        if not aprovado and data is not None:
+            self.add_error('data_aprovacao', 'Informe data apenas quando aprovado = Sim.')
+        return cleaned

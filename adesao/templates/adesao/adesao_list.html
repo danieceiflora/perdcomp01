@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load utils_filters %}
 
 {% block title %}Lista de Adesões{% endblock %}
 
@@ -19,6 +20,59 @@
         </div>
         
         <div class="p-6">
+            <!-- Filtros e Resumo -->
+            <div class="mb-6 space-y-4">
+                <!-- Filtros -->
+                <form method="get" class="flex flex-col sm:flex-row gap-3 w-full">
+                    <div class="flex items-stretch rounded-md border border-input overflow-hidden w-full sm:w-72">
+                        <span class="inline-flex items-center px-3 text-sm text-muted-foreground bg-muted">Empresa</span>
+                        <select name="empresa" class="bg-background px-3 py-2 text-sm outline-none flex-1">
+                            <option value="">Todas</option>
+                            {% for emp in empresas_opcoes %}
+                            <option value="{{ emp.id }}" {% if request.GET.empresa == emp.id|stringformat:'s' %}selected{% endif %}>{{ emp.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="flex items-stretch rounded-md border border-input overflow-hidden w-full sm:flex-1">
+                        <input type="text" name="perdcomp" placeholder="Buscar PERDCOMP" value="{{ request.GET.perdcomp|default:'' }}" class="flex-1 bg-background px-3 py-2 text-sm outline-none min-w-[18rem]" />
+                        <button type="submit" class="inline-flex items-center justify-center bg-muted px-3 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors" title="Buscar">
+                            <i class="bi bi-search"></i>
+                        </button>
+                        {% if request.GET.perdcomp or request.GET.empresa %}
+                        <a href="{{ request.path }}" class="inline-flex items-center justify-center bg-muted px-3 text-sm font-medium text-muted-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors" title="Limpar filtros">
+                            <i class="bi bi-x-lg"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </form>
+                <!-- Resumo Sintético -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+                        <div class="p-4 flex items-center">
+                            <div class="flex items-center justify-center w-12 h-12 bg-blue-500/10 rounded-full mr-3">
+                                <i class="bi bi-collection text-blue-600 dark:text-blue-500"></i>
+                            </div>
+                            <div>
+                                <div class="text-sm text-muted-foreground">Total de Adesões</div>
+                                <div id="metric-total-adesoes" class="text-2xl font-bold">
+                                    {% if is_paginated %}{{ page_obj.paginator.count }}{% else %}{{ adesoes|length }}{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+                        <div class="p-4 flex items-center">
+                            <div class="flex items-center justify-center w-12 h-12 bg-green-500/10 rounded-full mr-3">
+                                <i class="bi bi-wallet2 text-green-600 dark:text-green-500"></i>
+                            </div>
+                            <div>
+                                <div class="text-sm text-muted-foreground">Saldo Restante (Total)</div>
+                                <div id="metric-saldo-restante-total" class="text-2xl font-bold" data-server="1">{{ saldo_restante_total|br_currency }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             {% if adesoes %}
                 <!-- Desktop Table View -->
                 <div class="hidden md:block">
@@ -42,10 +96,10 @@
                                     <td class="p-4 align-middle">{{ adesao.cliente.id_company_vinculada.nome_fantasia|default:adesao.cliente.id_company_vinculada.razao_social }}</td>
                                     <td class="p-4 align-middle">{{ adesao.data_inicio|date:"d/m/Y" }}</td>
                                     <td class="p-4 align-middle font-semibold {% if adesao.saldo > 0 %}text-muted-foreground{% elif adesao.saldo < 0 %}text-destructive{% endif %}">
-                                        R$ {{ adesao.saldo|floatformat:2 }}
+                                        {{ adesao.saldo|br_currency }}
                                     </td>
-                                    <td class="p-4 align-middle font-semibold {% if adesao.saldo_atual > 0 %}text-green-600 dark:text-green-400{% elif adesao.saldo_atual < 0 %}text-destructive{% endif %}">
-                                        R$ {{ adesao.saldo_atual|floatformat:2 }}
+                                    <td class="p-4 align-middle font-semibold {% if adesao.saldo_atual > 0 %}text-green-600 dark:text-green-400{% elif adesao.saldo_atual < 0 %}text-destructive{% endif %} saldo-restante-cell" data-saldo="{{ adesao.saldo_atual|default:0 }}">
+                                        {{ adesao.saldo_atual|br_currency }}
                                     </td>
                                     <td class="p-4 align-middle">
                                         <div class="flex items-center gap-2">
@@ -96,13 +150,13 @@
                             <div>
                                 <span class="text-sm font-medium text-muted-foreground">Saldo Inicial:</span>
                                 <div class="font-semibold {% if adesao.saldo > 0 %}text-muted-foreground{% elif adesao.saldo < 0 %}text-destructive{% endif %}">
-                                    R$ {{ adesao.saldo|floatformat:2 }}
+                                    {{ adesao.saldo|br_currency }}
                                 </div>
                             </div>
                             <div>
                                 <span class="text-sm font-medium text-muted-foreground">Saldo Restante:</span>
-                                <div class="font-semibold {% if adesao.saldo_atual > 0 %}text-green-600 dark:text-green-400{% elif adesao.saldo_atual < 0 %}text-destructive{% endif %}">
-                                    R$ {{ adesao.saldo_atual|floatformat:2 }}
+                                <div class="font-semibold {% if adesao.saldo_atual > 0 %}text-green-600 dark:text-green-400{% elif adesao.saldo_atual < 0 %}text-destructive{% endif %} saldo-restante-cell" data-saldo="{{ adesao.saldo_atual|default:0 }}">
+                                    {{ adesao.saldo_atual|br_currency }}
                                 </div>
                             </div>
                         </div>
@@ -132,7 +186,7 @@
                 <nav class="flex items-center justify-center mt-8" aria-label="Navegação de páginas">
                     <div class="flex items-center gap-2">
                         {% if page_obj.has_previous %}
-                        <a href="?page={{ page_obj.previous_page_number }}" 
+                        <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.empresa %}&empresa={{ request.GET.empresa }}{% endif %}{% if request.GET.perdcomp %}&perdcomp={{ request.GET.perdcomp }}{% endif %}" 
                            class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
                             Anterior
                         </a>
@@ -143,7 +197,7 @@
                         </span>
                         
                         {% if page_obj.has_next %}
-                        <a href="?page={{ page_obj.next_page_number }}" 
+                        <a href="?page={{ page_obj.next_page_number }}{% if request.GET.empresa %}&empresa={{ request.GET.empresa }}{% endif %}{% if request.GET.perdcomp %}&perdcomp={{ request.GET.perdcomp }}{% endif %}" 
                            class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
                             Próximo
                         </a>
@@ -234,6 +288,23 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
         closeModal();
     }
+});
+
+// Compute and display total saldo restante
+function formatBRL(value){
+    try { return (new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })).format(value || 0); } catch { return 'R$ ' + (value||0).toFixed(2); }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const metric = document.getElementById('metric-saldo-restante-total');
+    if(metric && metric.getAttribute('data-server') === '1') return; // keep server-rendered formatting
+    const cells = document.querySelectorAll('.saldo-restante-cell');
+    let total = 0;
+    cells.forEach(c => {
+        const raw = parseFloat(c.getAttribute('data-saldo'));
+        if(!isNaN(raw)) total += raw;
+    });
+    if(metric) metric.textContent = formatBRL(total);
 });
 
 // History button functionality

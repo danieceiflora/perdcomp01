@@ -22,7 +22,7 @@
                 </div>
             </div>
             <div>
-                <a href="{% if profile.eh_cliente %}{% url 'accounts:cliente_dashboard' %}{% elif profile.eh_parceiro %}{% url 'accounts:parceiro_dashboard' %}{% else %}#{% endif %}" 
+                <a href="{% if profile.eh_cliente %}{% url 'accounts:cliente_dashboard' %}{% elif profile.eh_parceiro %}{% url 'accounts:dashboard' %}{% else %}#{% endif %}" 
                    class="inline-flex items-center px-4 py-2 bg-background hover:bg-accent text-foreground border border-input rounded-md transition-colors">
                     <i class="bi bi-arrow-left mr-2"></i>Voltar ao Dashboard
                 </a>

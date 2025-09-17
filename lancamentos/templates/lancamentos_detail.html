@@ -21,6 +21,29 @@
                 <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><i class="bi bi-info-circle"></i> Informações do Lançamento</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="space-y-4">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <div class="text-xs uppercase tracking-wide text-muted-foreground">Aprovação</div>
+                                <div class="font-medium">
+                                    {% if lancamento.aprovado %}
+                                        <span class="inline-flex items-center text-green-600 dark:text-green-400"><i class="bi bi-check2-circle mr-1"></i> Aprovado</span>
+                                        {% if lancamento.data_aprovacao %}<span class="text-muted-foreground text-sm ml-2">em {{ lancamento.data_aprovacao|date:"d/m/Y H:i" }}</span>{% endif %}
+                                    {% else %}
+                                        <span class="inline-flex items-center text-destructive"><i class="bi bi-x-circle mr-1"></i> Não aprovado</span>
+                                    {% endif %}
+                                </div>
+                                {% if lancamento.observacao_aprovacao %}
+                                <div class="mt-1 text-sm text-muted-foreground max-w-prose">{{ lancamento.observacao_aprovacao|linebreaks }}</div>
+                                {% endif %}
+                            </div>
+                            {% if request.user.is_authenticated %}
+                            {% if request.user.is_superuser or request.user.is_staff %}
+                            <a href="{% url 'lancamentos:aprovar' lancamento.pk %}" class="inline-flex items-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent hover:text-accent-foreground">
+                                <i class="bi bi-pencil-square mr-1"></i> Atualizar
+                            </a>
+                            {% endif %}
+                            {% endif %}
+                        </div>
                         <div>
                             <div class="text-xs uppercase tracking-wide text-muted-foreground">Empresa Cliente</div>
                             <div class="font-medium">{% if lancamento.id_adesao.cliente.id_company_vinculada %}{{ lancamento.id_adesao.cliente.id_company_vinculada.razao_social }}{% else %}--{% endif %}</div>
@@ -35,12 +58,12 @@
                         </div>
                         <div>
                             <div class="text-xs uppercase tracking-wide text-muted-foreground">Valor do Lançamento</div>
-                            <div class="font-semibold text-destructive">- R$ {{ lancamento.valor|floatformat:2 }}</div>
+                            <div class="font-semibold {% if lancamento.sinal == '+' %}text-green-600 dark:text-green-400{% else %}text-destructive{% endif %}">{{ lancamento.sinal }} {{ lancamento.valor|br_currency }}</div>
                         </div>
                         <div>
                             <div class="text-xs uppercase tracking-wide text-muted-foreground">Saldo Restante</div>
                             <div class="font-semibold {% if lancamento.saldo_restante > 0 %}text-green-600 dark:text-green-400{% elif lancamento.saldo_restante < 0 %}text-destructive{% endif %}">
-                                {% if lancamento.saldo_restante != None %}R$ {{ lancamento.saldo_restante|floatformat:2 }}{% else %}<span class="text-muted-foreground">Não disponível</span>{% endif %}
+                                {% if lancamento.saldo_restante != None %}{{ lancamento.saldo_restante|br_currency }}{% else %}<span class="text-muted-foreground">Não disponível</span>{% endif %}
                             </div>
                         </div>
                         <div class="md:col-span-2">

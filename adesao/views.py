@@ -4,6 +4,7 @@ from django.urls import reverse_lazy
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import Adesao
+from django.db.models import Sum
 from django.http import JsonResponse, Http404
 from django.utils.dateformat import format as date_format
 from django.utils.timezone import localtime
@@ -30,8 +31,38 @@ class AdesaoListView(AdesaoClienteViewOnlyMixin, ListView):
     paginate_by = 10
     
     def get_queryset(self):
-        # Usa filtragem centralizada do mixin e apenas otimiza relações
-        return super().get_queryset().select_related('cliente__id_company_vinculada', 'tese_credito_id')
+        qs = super().get_queryset().select_related('cliente__id_company_vinculada', 'tese_credito_id')
+        perdcomp = (self.request.GET.get('perdcomp') or '').strip()
+        empresa = (self.request.GET.get('empresa') or '').strip()
+        if perdcomp:
+            qs = qs.filter(perdcomp__icontains=perdcomp)
+        if empresa:
+            qs = qs.filter(cliente__id_company_vinculada_id=empresa)
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Empresas disponíveis (antes de filtros por GET, mas dentro do escopo do usuário)
+        base_scope = super().get_queryset().select_related('cliente__id_company_vinculada')
+        empresas_raw = base_scope.values(
+            'cliente__id_company_vinculada_id',
+            'cliente__id_company_vinculada__nome_fantasia',
+            'cliente__id_company_vinculada__razao_social'
+        ).distinct()
+        empresas_opcoes = []
+        for e in empresas_raw:
+            emp_id = e['cliente__id_company_vinculada_id']
+            if emp_id is None:
+                continue
+            nome = e['cliente__id_company_vinculada__nome_fantasia'] or e['cliente__id_company_vinculada__razao_social']
+            empresas_opcoes.append({'id': emp_id, 'nome': nome})
+        empresas_opcoes.sort(key=lambda x: (x['nome'] or '').upper())
+        context['empresas_opcoes'] = empresas_opcoes
+        # Total de saldo restante considerando filtros aplicados
+        filtered_qs = self.get_queryset()
+        agg = filtered_qs.aggregate(total=Sum('saldo_atual'))
+        context['saldo_restante_total'] = agg.get('total') or 0
+        return context
 
 class AdesaoCreateView(AdminRequiredMixin, CreateView):
     model = Adesao

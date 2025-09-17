@@ -11,7 +11,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from accounts.decorators import cliente_can_view_lancamento, admin_required
 from django.core.exceptions import ValidationError
 from .models import Lancamentos, Anexos
-from .forms import LancamentosForm, AnexosFormSet
+from .forms import LancamentosForm, AnexosFormSet, LancamentoApprovalForm
 from .permissions import LancamentoPermissionMixin, LancamentoClienteViewOnlyMixin, AdminRequiredMixin
 ## removido import duplicado de Http404/HttpResponse
 import openpyxl
@@ -316,6 +316,19 @@ class AnexosUpdateView(AdminRequiredMixin, UpdateView):
                 self.get_context_data(anexos_formset=anexos_formset)
             )
 
+
+class LancamentoApprovalUpdateView(AdminRequiredMixin, UpdateView):
+    model = Lancamentos
+    form_class = LancamentoApprovalForm
+    template_name = 'lancamentos_approval_form.html'
+
+    def get_success_url(self):
+        messages.success(self.request, 'Status de aprovação atualizado.')
+        return reverse_lazy('lancamentos:detail', kwargs={'pk': self.object.pk})
+
+    def get_queryset(self):
+        base = super().get_queryset().select_related('id_adesao', 'id_adesao__cliente', 'id_adesao__cliente__id_company_vinculada')
+        return base
 
 @login_required
 @require_GET

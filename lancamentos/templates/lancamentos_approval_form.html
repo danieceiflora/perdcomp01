@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Aprovação do Lançamento{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-6">
+  <div class="bg-card border rounded-lg shadow-sm">
+    <div class="flex items-center justify-between p-6 border-b">
+      <div>
+        <h1 class="text-xl font-semibold text-card-foreground">Atualizar Aprovação</h1>
+        <p class="text-sm text-muted-foreground">Defina o status de aprovação deste lançamento.</p>
+      </div>
+      <a href="{% url 'lancamentos:detail' object.pk %}" class="inline-flex items-center rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-accent hover:text-accent-foreground">
+        <i class="bi bi-arrow-left mr-1"></i> Voltar
+      </a>
+    </div>
+
+    <form method="post" class="p-6 space-y-6">
+      {% csrf_token %}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-sm font-medium mb-1">Aprovado</label>
+          {{ form.aprovado }}
+          {% if form.aprovado.errors %}
+            <p class="text-destructive text-xs mt-1">{{ form.aprovado.errors|striptags }}</p>
+          {% endif %}
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Data de Aprovação</label>
+          {{ form.data_aprovacao }}
+          <p class="text-xs text-muted-foreground mt-1">Se aprovado for "Sim" e a data ficar vazia, será preenchida automaticamente.</p>
+          {% if form.data_aprovacao.errors %}
+            <p class="text-destructive text-xs mt-1">{{ form.data_aprovacao.errors|striptags }}</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-1">Observação da Aprovação</label>
+        {{ form.observacao_aprovacao }}
+        {% if form.observacao_aprovacao.errors %}
+          <p class="text-destructive text-xs mt-1">{{ form.observacao_aprovacao.errors|striptags }}</p>
+        {% endif %}
+      </div>
+
+      <div class="flex items-center justify-end gap-3 pt-4 border-t">
+        <a href="{% url 'lancamentos:detail' object.pk %}" class="inline-flex items-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground">Cancelar</a>
+        <button type="submit" class="inline-flex items-center rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:opacity-90">
+          <i class="bi bi-check2-square mr-2"></i>Salvar
+        </button>
+      </div>
+    </form>
+  </div>
+  {% if form.non_field_errors %}
+    <div class="mt-4 rounded-md border bg-muted/30 p-4 text-sm text-destructive">{{ form.non_field_errors }}</div>
+  {% endif %}
+  
+</div>
+{% endblock %}

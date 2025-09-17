@@ -67,6 +67,22 @@ class Lancamentos(models.Model):
         blank=True
     )
 
+    # Campos de aprovação
+    aprovado = models.BooleanField(
+        default=False,
+        verbose_name='Aprovado'
+    )
+    data_aprovacao = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Data de Aprovação'
+    )
+    observacao_aprovacao = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Observação da Aprovação'
+    )
+
     # Campos adicionais para rastrear origem dos valores conforme método
     metodo = models.CharField(
         max_length=60,
@@ -133,6 +149,9 @@ class Lancamentos(models.Model):
                 raise ValidationError({
                     'valor': f"O saldo não pode ficar negativo. Saldo atual: R$ {adesao.saldo_atual}, Valor do débito: R$ {valor_numerico}"
                 })
+        # Regras de aprovação: se não aprovado, não pode ter data; se aprovado sem data, define agora
+        if not self.aprovado and self.data_aprovacao is not None:
+            raise ValidationError({'data_aprovacao': 'Data de aprovação só pode existir quando o lançamento estiver aprovado.'})
             
     def pode_editar_anexos(self):
         """
@@ -150,10 +169,34 @@ class Lancamentos(models.Model):
         sempre que um novo lançamento for adicionado.
         """
         from django.db import transaction
-        
+        from django.core.exceptions import ValidationError
+        from django.utils import timezone
+
         # Verifica se é um novo lançamento
         is_novo = not self.pk
-        
+
+        # Regras de aprovação antes de salvar: auto-definir/limpar data
+        if self.aprovado and self.data_aprovacao is None:
+            self.data_aprovacao = timezone.now()
+        if not self.aprovado:
+            self.data_aprovacao = None
+
+        # Imutabilidade: após criação, apenas campos de aprovação podem mudar
+        if not is_novo:
+            original = type(self).objects.get(pk=self.pk)
+            allowed = {'aprovado', 'data_aprovacao', 'observacao_aprovacao'}
+            changed = set()
+            for field in self._meta.fields:
+                fname = field.name
+                if fname in ('id', 'pk', 'data_criacao'):
+                    continue
+                old_val = getattr(original, fname)
+                new_val = getattr(self, fname)
+                if old_val != new_val:
+                    changed.add(fname)
+            if changed - allowed:
+                raise ValidationError('Após a criação, apenas os campos de aprovação podem ser editados.')
+
         with transaction.atomic():
             # Salva o lançamento
             super().save(*args, **kwargs)
