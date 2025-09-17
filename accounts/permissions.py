@@ -31,8 +31,18 @@ class BasePermissionMixin(LoginRequiredMixin):
     permission_denied_message = "Você não tem permissão para acessar esta página."
     
     def handle_no_permission(self):
+        # Se não autenticado, redireciona para login; caso contrário, retorna 403 amigável
+        if not self.request.user.is_authenticated:
+            messages.error(self.request, "Por favor, faça login para continuar.")
+            return redirect('accounts:login')
+        from django.shortcuts import render
         messages.error(self.request, self.permission_denied_message)
-        return redirect('accounts:login')
+        return render(
+            self.request,
+            'forbidden.html',
+            {'message': self.permission_denied_message},
+            status=403
+        )
 
 class ClienteRequiredMixin(BasePermissionMixin, UserPassesTestMixin):
     """Requer que o usuário seja um cliente"""
@@ -57,13 +67,11 @@ class EmpresaAccessMixin(BasePermissionMixin, UserPassesTestMixin):
     permission_denied_message = "Você não tem permissão para acessar dados desta empresa."
     
     def test_func(self):
-        # Obtém o ID da empresa dos parâmetros da URL
-        empresa_id = self.kwargs.get('empresa_id') or self.kwargs.get('pk')
-        
+        # Obtém explicitamente o ID da empresa se fornecido como tal na URL
+        empresa_id = self.kwargs.get('empresa_id')
         # Se não houver empresa_id na URL, será verificado no get_object()
         if not empresa_id:
             return True
-            
         # Verifica se o usuário tem acesso a esta empresa
         if not hasattr(self.request.user, 'profile'):
             return False

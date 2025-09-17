@@ -1,4 +1,5 @@
 from accounts.permissions import BasePermissionMixin, EmpresaAccessMixin
+from utils.access import get_empresas_ids_for_cliente, get_clientes_ids_for_parceiro
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import redirect
 from django.contrib import messages
@@ -29,7 +30,7 @@ class AdesaoPermissionMixin(EmpresaAccessMixin):
             return base.none()
         # Cliente
         if profile.eh_cliente:
-            empresas_ids = set(profile.empresas.values_list('id', flat=True)) | set(profile.empresas_via_socio.values_list('id', flat=True))
+            empresas_ids = get_empresas_ids_for_cliente(profile)
             if not empresas_ids:
                 return base.none()
             if hasattr(base.model, 'cliente'):
@@ -37,11 +38,7 @@ class AdesaoPermissionMixin(EmpresaAccessMixin):
             return base.none()
         # Parceiro
         if profile.eh_parceiro and profile.empresa_parceira_id:
-            from clientes_parceiros.models import ClientesParceiros
-            clientes_ids = ClientesParceiros.objects.filter(
-                id_company_base_id=profile.empresa_parceira_id,
-                tipo_parceria='cliente'
-            ).values_list('id_company_vinculada_id', flat=True)
+            clientes_ids = get_clientes_ids_for_parceiro(profile)
             if not clientes_ids:
                 return base.none()
             return base.filter(cliente__id_company_vinculada_id__in=clientes_ids)
