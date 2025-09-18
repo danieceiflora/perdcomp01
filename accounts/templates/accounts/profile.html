@@ -93,8 +93,12 @@
                 <div>
                     <p class="text-sm font-medium text-muted-foreground mb-1">Consultoria</p>
                     <div class="text-foreground">
-                        {{ profile.empresa_base.nome_fantasia|default:profile.empresa_base.razao_social }}
-                        <br><small class="text-muted-foreground">{{ profile.empresa_base.cnpj }}</small>
+                        {% if profile.empresa_parceira %}
+                            {{ profile.empresa_parceira.nome_fantasia|default:profile.empresa_parceira.razao_social }}
+                            <br><small class="text-muted-foreground">{{ profile.empresa_parceira.cnpj }}</small>
+                        {% else %}
+                            <span class="text-muted-foreground">—</span>
+                        {% endif %}
                     </div>
                 </div>
                 {% if profile.empresa_vinculada %}
