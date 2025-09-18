@@ -51,7 +51,7 @@
 
                 <!-- Desktop menu -->
                 <div class="hidden md:block">
-                    <div class="ml-10 flex items-baseline space-x-1">
+                    <div class="ml-10 flex items-center space-x-1">
                         {% if user.is_authenticated %}
 
                         {# Vínculos: somente se staff/superuser ou tiver permissões do app clientes_parceiros (ajuste o codename conforme modelos) #}
@@ -157,7 +157,7 @@
                         
                         <!-- Menu de Perfil do Usuário -->
                         {% if user.is_authenticated %}
-                        <div class="relative group">
+                        <div class="relative group flex items-center">
                             <button type="button" class="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 group-hover:bg-slate-100 dark:group-hover:bg-slate-800 transition-colors">
                                 {% if user.is_authenticated and user.profile and user.profile.foto_perfil %}
                                 <img src="{{ user.profile.foto_perfil.url }}" alt="{{ user.get_full_name|default:user.username }}" class="w-6 h-6 rounded-full object-cover border border-slate-200 dark:border-slate-700 mr-2 bg-white" />
@@ -171,7 +171,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
                                 </svg>
                             </button>
-                            <div class="absolute right-0 mt-2 w-48 origin-top-right rounded-md border bg-white shadow-lg ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 dark:bg-slate-900 dark:border-slate-700 z-10">
+                            <div class="absolute right-0 mt-2 w-48 origin-top-right rounded-md border bg-white shadow-lg ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 dark:bg-slate-900 dark:border-slate-700 z-10" style="top: 100%;">
                                 <div class="py-1">
                                     {% if not user.is_superuser and not user.is_staff %}
                                     <a href="{% url 'accounts:profile' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
