@@ -192,4 +192,4 @@ def user_profile_view(request):
         'profile_form': ProfileUpdateForm(instance=profile),
         'password_form': ProfilePasswordChangeForm(user=user),
     }
-    return render(request, 'accounts/profile_new.html', context)
+    return render(request, 'accounts/profile.html', context)

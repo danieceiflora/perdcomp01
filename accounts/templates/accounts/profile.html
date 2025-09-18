@@ -3,45 +3,15 @@
 
 {% block title %}Meu Perfil - PERDCOMP{% endblock %}
 
-{% block content %}
-<div class="bg-card border-b py-8">
-    <div class="container mx-auto px-4">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
-            <div class="flex items-center mb-4 md:mb-0">
-                <div class="mr-4">
-                    {% if profile.foto_perfil %}
-                        <img src="{{ profile.foto_perfil.url }}" alt="Foto de perfil" class="w-16 h-16 rounded-full object-cover border"/>
-                    {% else %}
-                        <div class="w-16 h-16 rounded-full bg-muted flex items-center justify-center border">
-                            <i class="bi bi-person text-2xl text-muted-foreground"></i>
-                        </div>
-                    {% endif %}
-                </div>
-                <div>
-                    <h1 class="text-2xl font-bold text-foreground mb-1">{{ user.get_full_name|default:user.username }}</h1>
-                    <p class="text-muted-foreground">
-                        {% if profile.eh_cliente %}
-                            <i class="bi bi-person mr-1"></i>Cliente
-                        {% elif profile.eh_parceiro %}
-                            <i class="bi bi-briefcase mr-1"></i>Parceiro
-                        {% else %}
-                            <i class="bi bi-question-circle mr-1"></i>Usuário
-                        {% endif %}
-                    </p>
-                </div>
-            </div>
-            <div>
-                <a href="{% if profile.eh_cliente %}{% url 'accounts:cliente_dashboard' %}{% elif profile.eh_parceiro %}{% url 'accounts:dashboard' %}{% else %}#{% endif %}" 
-                   class="inline-flex items-center px-4 py-2 bg-background hover:bg-accent text-foreground border border-input rounded-md transition-colors">
-                    <i class="bi bi-arrow-left mr-2"></i>Voltar ao Dashboard
-                </a>
-            </div>
-        </div>
-    </div>
+{% block page_title %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-foreground">Meu Perfil</h1>
+    <p class="text-muted-foreground">Gerencie suas informações pessoais e de acesso.</p>
 </div>
+{% endblock page_title %}
 
-<div class="container mx-auto px-4 py-6">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Informações Pessoais -->
         <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
             <div class="border-b p-6">
