@@ -1,5 +1,7 @@
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import update_session_auth_hash
+from .forms import UserUpdateForm, ProfileUpdateForm, ProfilePasswordChangeForm
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.urls import reverse_lazy
@@ -155,9 +157,39 @@ class DashboardMetricsView(LoginRequiredMixin, TemplateView):
 @login_required
 def user_profile_view(request):
     """Visualizar perfil do usuário"""
-    profile = request.user.profile
+    user = request.user
+    profile = user.profile
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'update_profile':
+            uform = UserUpdateForm(request.POST, instance=user)
+            pform = ProfileUpdateForm(request.POST, request.FILES, instance=profile)
+            if uform.is_valid() and pform.is_valid():
+                uform.save()
+                pform.save()
+                messages.success(request, 'Perfil atualizado com sucesso.')
+                return redirect('accounts:profile')
+            else:
+                messages.error(request, 'Verifique os campos e tente novamente.')
+        elif action == 'change_password':
+            pwd_form = ProfilePasswordChangeForm(user=user, data=request.POST)
+            if pwd_form.is_valid():
+                pwd_form.save()
+                update_session_auth_hash(request, user)
+                messages.success(request, 'Senha atualizada com sucesso.')
+                return redirect('accounts:profile')
+            else:
+                messages.error(request, 'Não foi possível atualizar a senha. Corrija os erros.')
+        else:
+            messages.error(request, 'Ação inválida.')
+
+    # GET or invalid POST fallthrough: prepare forms with current data
     context = {
         'profile': profile,
-        'user': request.user,
+        'user': user,
+        'user_form': UserUpdateForm(instance=user),
+        'profile_form': ProfileUpdateForm(instance=profile),
+        'password_form': ProfilePasswordChangeForm(user=user),
     }
-    return render(request, 'accounts/profile.html', context)
+    return render(request, 'accounts/profile_new.html', context)

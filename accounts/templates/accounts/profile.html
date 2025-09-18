@@ -8,6 +8,15 @@
     <div class="container mx-auto px-4">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between">
             <div class="flex items-center mb-4 md:mb-0">
+                <div class="mr-4">
+                    {% if profile.foto_perfil %}
+                        <img src="{{ profile.foto_perfil.url }}" alt="Foto de perfil" class="w-16 h-16 rounded-full object-cover border"/>
+                    {% else %}
+                        <div class="w-16 h-16 rounded-full bg-muted flex items-center justify-center border">
+                            <i class="bi bi-person text-2xl text-muted-foreground"></i>
+                        </div>
+                    {% endif %}
+                </div>
                 <div>
                     <h1 class="text-2xl font-bold text-foreground mb-1">{{ user.get_full_name|default:user.username }}</h1>
                     <p class="text-muted-foreground">
@@ -41,22 +50,59 @@
                 </h3>
             </div>
             <div class="p-6 space-y-4">
-                <div>
-                    <p class="text-sm font-medium text-muted-foreground mb-1">Nome de Usuário</p>
-                    <p class="text-foreground">{{ user.username }}</p>
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-muted-foreground mb-1">Nome Completo</p>
-                    <p class="text-foreground">{{ user.get_full_name|default:"Não informado" }}</p>
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-muted-foreground mb-1">Email</p>
-                    <p class="text-foreground">{{ user.email|default:"Não informado" }}</p>
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-muted-foreground mb-1">Telefone</p>
-                    <p class="text-foreground">{{ profile.telefone|default:"Não informado" }}</p>
-                </div>
+                <form method="post" enctype="multipart/form-data" class="space-y-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_profile" />
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-sm font-medium text-muted-foreground">Nome</label>
+                            {{ user_form.first_name }}
+                            {% if user_form.first_name.errors %}
+                            <p class="text-xs text-destructive mt-1">{{ user_form.first_name.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-muted-foreground">Sobrenome</label>
+                            {{ user_form.last_name }}
+                            {% if user_form.last_name.errors %}
+                            <p class="text-xs text-destructive mt-1">{{ user_form.last_name.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="text-sm font-medium text-muted-foreground">Email</label>
+                            {{ user_form.email }}
+                            {% if user_form.email.errors %}
+                            <p class="text-xs text-destructive mt-1">{{ user_form.email.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="text-sm font-medium text-muted-foreground">Telefone</label>
+                            {{ profile_form.telefone }}
+                            {% if profile_form.telefone.errors %}
+                            <p class="text-xs text-destructive mt-1">{{ profile_form.telefone.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="text-sm font-medium text-muted-foreground">Foto de Perfil</label>
+                            <div class="flex items-center gap-4">
+                                <button type="button" id="btn-file-picker" class="inline-flex items-center px-3 py-2 border border-input rounded-md bg-background hover:bg-accent">
+                                    <i class="bi bi-upload mr-2"></i>Selecionar arquivo
+                                </button>
+                                {{ profile_form.foto_perfil }}
+                                <span id="foto-nome" class="text-xs text-muted-foreground"></span>
+                                <img id="foto-preview" src="{% if profile.foto_perfil %}{{ profile.foto_perfil.url }}{% endif %}" alt="Prévia" class="w-10 h-10 rounded-full object-cover border {% if not profile.foto_perfil %}hidden{% endif %}">
+                            </div>
+                            {% if profile_form.foto_perfil.errors %}
+                            <p class="text-xs text-destructive mt-1">{{ profile_form.foto_perfil.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="pt-2">
+                        <button type="submit" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90">
+                            <i class="bi bi-save mr-2"></i>Salvar alterações
+                        </button>
+                    </div>
+                </form>
                 <div>
                     <p class="text-sm font-medium text-muted-foreground mb-1">Membro desde</p>
                     <p class="text-foreground">{{ user.date_joined|date:"d/m/Y" }}</p>
@@ -126,6 +172,49 @@
                 </div>
             </div>
         </div>
+        <!-- Alterar Senha -->
+        <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+            <div class="border-b p-6">
+                <h3 class="text-lg font-semibold flex items-center">
+                    <i class="bi bi-shield-lock mr-2"></i>Alterar Senha
+                </h3>
+            </div>
+            <div class="p-6 space-y-4">
+                <form method="post" class="space-y-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="change_password" />
+                    <div>
+                        <label class="text-sm font-medium text-muted-foreground">Senha atual</label>
+                        {{ password_form.old_password }}
+                        {% if password_form.old_password.errors %}
+                        <p class="text-xs text-destructive mt-1">{{ password_form.old_password.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-muted-foreground">Nova senha</label>
+                        {{ password_form.new_password1 }}
+                        {% if password_form.new_password1.errors %}
+                        <p class="text-xs text-destructive mt-1">{{ password_form.new_password1.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-muted-foreground">Confirmar nova senha</label>
+                        {{ password_form.new_password2 }}
+                        {% if password_form.new_password2.errors %}
+                        <p class="text-xs text-destructive mt-1">{{ password_form.new_password2.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    {% if password_form.non_field_errors %}
+                    <p class="text-xs text-destructive">{{ password_form.non_field_errors.0 }}</p>
+                    {% endif %}
+                    <div class="pt-2">
+                        <button type="submit" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground">
+                            <i class="bi bi-key mr-2"></i>Atualizar senha
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <!-- Empresas Acessíveis -->
@@ -164,4 +253,32 @@
     </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    const input = document.getElementById('id_foto_perfil');
+    const nome = document.getElementById('foto-nome');
+    const preview = document.getElementById('foto-preview');
+    const btn = document.getElementById('btn-file-picker');
+    if(!input) return;
+    if(btn){ btn.addEventListener('click', ()=> input.click()); }
+    input.addEventListener('change', function(){
+        const f = input.files && input.files[0];
+        if(!f){
+            nome.textContent = '';
+            if(preview){ preview.classList.add('hidden'); preview.removeAttribute('src'); }
+            return;
+        }
+        nome.textContent = f.name;
+        if(preview){
+            const reader = new FileReader();
+            reader.onload = e => { preview.src = e.target.result; preview.classList.remove('hidden'); };
+            reader.readAsDataURL(f);
+        }
+    });
+});
+</script>
 {% endblock %}

@@ -30,6 +30,17 @@ class UserProfile(models.Model):
         blank=True,
         verbose_name='Telefone'
     )
+    def _foto_upload_path(instance, filename):
+        import os
+        base = os.path.basename(filename)
+        return f'perfil/fotos/{base}'
+
+    foto_perfil = models.ImageField(
+        upload_to=_foto_upload_path,
+        blank=True,
+        null=True,
+        verbose_name='Foto de Perfil'
+    )
     data_criacao = models.DateTimeField(auto_now_add=True)
     ativo = models.BooleanField(default=True)
     
@@ -129,6 +140,27 @@ class UserProfile(models.Model):
         # Se virou parceiro, garante limpeza das empresas clientes (caso tenha sido setado via script, sem form)
         if self.empresa_parceira_id and self.empresas.exists():
             self.empresas.clear()
+        # Redimensiona e otimiza foto de perfil se existir
+        try:
+            if self.foto_perfil and hasattr(self.foto_perfil, 'path'):
+                from PIL import Image
+                import os
+                path = self.foto_perfil.path
+                if os.path.exists(path):
+                    with Image.open(path) as img:
+                        max_size = (512, 512)
+                        img.thumbnail(max_size, Image.LANCZOS)
+                        ext = os.path.splitext(path)[1].lower()
+                        fmt = 'JPEG' if ext in ('.jpg', '.jpeg') else 'PNG' if ext == '.png' else None
+                        if fmt == 'JPEG' and img.mode in ('RGBA', 'P'):
+                            img = img.convert('RGB')
+                        save_kwargs = { 'optimize': True }
+                        if fmt == 'JPEG':
+                            save_kwargs['quality'] = 85
+                        img.save(path, format=fmt, **save_kwargs)
+        except Exception:
+            # Em caso de erro na otimização, ignorar silenciosamente para não bloquear update do perfil
+            pass
     
     class Meta:
         verbose_name = 'Perfil de Usuário'
