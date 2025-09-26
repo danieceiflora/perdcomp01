@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Meu Perfil{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-6 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-foreground">Meu Perfil</h1>
+        <p class="text-muted-foreground mt-2">Gerencie suas informações pessoais</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Coluna Principal - Edição de Perfil -->
+        <div class="lg:col-span-2">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-xl font-semibold">Informações Pessoais</h3>
+                    <p class="text-sm text-muted-foreground">Atualize seus dados pessoais</p>
+                </div>
+                <div class="card-content">
+                    <form method="post" enctype="multipart/form-data" class="space-y-6">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="update_profile">
+                        
+                        <!-- Upload de Foto -->
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium leading-none">Foto de Perfil</label>
+                            <div class="flex items-center gap-6">
+                                <!-- Preview da foto -->
+                                <div class="w-24 h-24 rounded-full overflow-hidden bg-muted border-2 border-border">
+                                    {% if profile.foto_perfil %}
+                                        <img id="photo-preview" src="{{ profile.foto_perfil.url }}" alt="Foto de perfil" class="w-full h-full object-cover">
+                                    {% else %}
+                                        <div id="photo-preview" class="w-full h-full flex items-center justify-center text-muted-foreground">
+                                            <i class="bi bi-person-circle text-3xl"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Botão para upload -->
+                                <div class="flex-1">
+                                    <button type="button" 
+                                            onclick="document.getElementById('id_foto_perfil').click()"
+                                            class="btn-primary">
+                                        <i class="bi bi-camera mr-2"></i>
+                                        Escolher Foto
+                                    </button>
+                                    {{ profile_form.foto_perfil }}
+                                    <p class="text-xs text-muted-foreground mt-2">
+                                        Formatos aceitos: JPG, PNG, WEBP. Máximo 5MB.
+                                    </p>
+                                    {% if profile_form.foto_perfil.errors %}
+                                        <p class="text-sm text-destructive mt-1">{{ profile_form.foto_perfil.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Nome e Sobrenome -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label for="{{ user_form.first_name.id_for_label }}" class="text-sm font-medium leading-none">
+                                    {{ user_form.first_name.label }}
+                                </label>
+                                {{ user_form.first_name }}
+                                {% if user_form.first_name.errors %}
+                                    <p class="text-sm text-destructive">{{ user_form.first_name.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <label for="{{ user_form.last_name.id_for_label }}" class="text-sm font-medium leading-none">
+                                    {{ user_form.last_name.label }}
+                                </label>
+                                {{ user_form.last_name }}
+                                {% if user_form.last_name.errors %}
+                                    <p class="text-sm text-destructive">{{ user_form.last_name.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="space-y-2">
+                            <label for="{{ user_form.email.id_for_label }}" class="text-sm font-medium leading-none">
+                                {{ user_form.email.label }}
+                            </label>
+                            {{ user_form.email }}
+                            {% if user_form.email.errors %}
+                                <p class="text-sm text-destructive">{{ user_form.email.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Telefone -->
+                        <div class="space-y-2">
+                            <label for="{{ profile_form.telefone.id_for_label }}" class="text-sm font-medium leading-none">
+                                {{ profile_form.telefone.label }}
+                            </label>
+                            {{ profile_form.telefone }}
+                            {% if profile_form.telefone.errors %}
+                                <p class="text-sm text-destructive">{{ profile_form.telefone.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Botão Salvar -->
+                        <div class="flex justify-end pt-4">
+                            <button type="submit" class="btn-primary">
+                                <i class="bi bi-check2 mr-2"></i>
+                                Salvar Alterações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar - Informações Complementares -->
+        <div class="space-y-6">
+            <!-- Informações da Conta -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-lg font-semibold">Informações da Conta</h3>
+                </div>
+                <div class="card-content space-y-4">
+                    <div>
+                        <p class="text-sm font-medium text-muted-foreground">Usuário</p>
+                        <p class="text-foreground">{{ user.username }}</p>
+                    </div>
+                    
+                    <div>
+                        <p class="text-sm font-medium text-muted-foreground">Membro desde</p>
+                        <p class="text-foreground">{{ user.date_joined|date:"d/m/Y" }}</p>
+                    </div>
+                    
+                    <div>
+                        <p class="text-sm font-medium text-muted-foreground">Último acesso</p>
+                        <p class="text-foreground">{{ user.last_login|date:"d/m/Y H:i" }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Informações Empresariais -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-lg font-semibold">Acesso Empresarial</h3>
+                </div>
+                <div class="card-content space-y-4">
+                    <div>
+                        <p class="text-sm font-medium text-muted-foreground">Tipo de Usuário</p>
+                        <div class="mt-1">
+                            {% if profile.eh_cliente %}
+                                <span class="badge bg-green-500/10 text-green-700 border-green-200">
+                                    <i class="bi bi-person mr-1"></i>Cliente
+                                </span>
+                            {% elif profile.eh_parceiro %}
+                                <span class="badge bg-blue-500/10 text-blue-700 border-blue-200">
+                                    <i class="bi bi-handshake mr-1"></i>Parceiro
+                                </span>
+                            {% else %}
+                                <span class="badge bg-gray-500/10 text-gray-700 border-gray-200">
+                                    <i class="bi bi-question-circle mr-1"></i>Indefinido
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if profile.empresa_parceira %}
+                    <div>
+                        <p class="text-sm font-medium text-muted-foreground">Consultoria</p>
+                        <p class="text-foreground">{{ profile.empresa_parceira.nome_fantasia|default:profile.empresa_parceira.razao_social }}</p>
+                        <p class="text-xs text-muted-foreground">{{ profile.empresa_parceira.cnpj }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if profile.empresa_vinculada %}
+                    <div>
+                        <p class="text-sm font-medium text-muted-foreground">Empresa Cliente</p>
+                        <p class="text-foreground">{{ profile.empresa_vinculada.nome_fantasia|default:profile.empresa_vinculada.razao_social }}</p>
+                        <p class="text-xs text-muted-foreground">{{ profile.empresa_vinculada.cnpj }}</p>
+                    </div>
+                    {% endif %}
+
+                    <div>
+                        <p class="text-sm font-medium text-muted-foreground">Status</p>
+                        <div class="mt-1">
+                            {% if profile.ativo %}
+                                <span class="badge bg-green-500/10 text-green-700 border-green-200">
+                                    <i class="bi bi-check-circle mr-1"></i>Ativo
+                                </span>
+                            {% else %}
+                                <span class="badge bg-red-500/10 text-red-700 border-red-200">
+                                    <i class="bi bi-x-circle mr-1"></i>Inativo
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript para preview da foto -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('id_foto_perfil');
+    const preview = document.getElementById('photo-preview');
+
+    if (!fileInput || !preview) return;
+
+    fileInput.addEventListener('change', function(ev) {
+        const file = ev.target.files && ev.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const dataUrl = e.target.result;
+            if (preview.tagName.toLowerCase() === 'img') {
+                preview.src = dataUrl;
+                preview.classList.remove('hidden');
+            } else {
+                preview.innerHTML = `<img src="${dataUrl}" alt="Prévia" class="w-full h-full object-cover">`;
+            }
+        };
+        reader.readAsDataURL(file);
+    });
+});
+</script>
+{% endblock %}

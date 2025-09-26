@@ -4,13 +4,16 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, D
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages
 from django.db import transaction
+from django.db.models import Sum, Case, When, F, FloatField
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
+from utils.access import get_empresas_ids_for_cliente, get_clientes_ids_for_parceiro
 from django.contrib.auth.mixins import LoginRequiredMixin
 from accounts.decorators import cliente_can_view_lancamento, admin_required
 from django.core.exceptions import ValidationError
 from .models import Lancamentos, Anexos
-from .forms import LancamentosForm, AnexosFormSet
+from .forms import LancamentosForm, AnexosFormSet, LancamentoApprovalForm
 from .permissions import LancamentoPermissionMixin, LancamentoClienteViewOnlyMixin, AdminRequiredMixin
 ## removido import duplicado de Http404/HttpResponse
 import openpyxl
@@ -21,32 +24,47 @@ from empresas.models import Empresa
 from django.utils.dateformat import format as date_format
 from django.views.decorators.http import require_GET
 from django.contrib.auth.decorators import login_required
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import permissions, status
+from .serializers import LancamentoSerializer, AnexoSerializer
+from .models import Lancamentos, Anexos
 # --- Exportação de lançamentos para XLSX ---
 from django.contrib.auth.decorators import login_required
 @login_required
 def exportar_lancamentos_xlsx(request):
-    # Filtros iguais à listagem
-    queryset = Lancamentos.objects.select_related('id_adesao', 'id_adesao__cliente', 'id_adesao__cliente__id_company_vinculada').all().order_by('-data_lancamento')
+    """Exporta lançamentos respeitando a mesma lógica de acesso da listagem:
+    - Admin/Staff: todos
+    - Cliente: união (empresas diretas + via sócio)
+    - Parceiro: lançamentos de clientes vinculados à sua empresa_parceira
+    """
+    base = Lancamentos.objects.select_related(
+        'id_adesao', 'id_adesao__cliente', 'id_adesao__cliente__id_company_vinculada'
+    ).order_by('-data_criacao')
     user = request.user
     if user.is_superuser or user.is_staff:
-        pass
+        queryset = base
     elif hasattr(user, 'profile'):
         profile = user.profile
-        if profile.eh_cliente and profile.empresa_vinculada:
-            queryset = queryset.filter(id_adesao__cliente__id_company_vinculada=profile.empresa_vinculada)
-        elif not profile.eh_cliente:
-            empresas_acessiveis = profile.get_empresas_acessiveis()
-            if empresas_acessiveis:
-                queryset = queryset.filter(id_adesao__cliente__id_company_vinculada__in=empresas_acessiveis)
-            else:
-                queryset = queryset.none()
+        if profile.eh_cliente:
+            empresas_ids = get_empresas_ids_for_cliente(profile)
+            queryset = base.filter(id_adesao__cliente__id_company_vinculada_id__in=empresas_ids) if empresas_ids else base.none()
+        elif profile.eh_parceiro:
+            clientes_ids = get_clientes_ids_for_parceiro(profile)
+            queryset = base.filter(id_adesao__cliente__id_company_vinculada_id__in=clientes_ids) if clientes_ids else base.none()
         else:
-            queryset = queryset.none()
+            queryset = base.none()
     else:
-        queryset = queryset.none()
+        queryset = base.none()
+
     perdcomp = request.GET.get('perdcomp')
     if perdcomp:
         queryset = queryset.filter(id_adesao__perdcomp__icontains=perdcomp)
+    aprovado = request.GET.get('aprovado')
+    if aprovado == '1':
+        queryset = queryset.filter(aprovado=True)
+    elif aprovado == '0':
+        queryset = queryset.filter(aprovado=False)
 
     # Criação do arquivo XLSX
     wb = openpyxl.Workbook()
@@ -98,45 +116,53 @@ class LancamentosListView(LancamentoClienteViewOnlyMixin, ListView):
     context_object_name = 'lancamentos'
     paginate_by = 10
     
-    def get_queryset(self):
+    def _get_scoped_base_queryset(self):
+        """Retorna queryset com escopo de acesso aplicado e filtro de perdcomp,
+        mas sem filtrar por status de aprovação. Mantém ordenação e anotação de anexos.
         """
-        Filtra os lançamentos por permissões e permite busca por PERDCOMP.
-        """
-        queryset = super().get_queryset().select_related('id_adesao').order_by('-data_lancamento')
-        
-        # Filtragem por permissões
-        if self.request.user.is_superuser or self.request.user.is_staff:
-            # Admins veem tudo
-            pass
-        elif hasattr(self.request.user, 'profile'):
-            profile = self.request.user.profile
-            
-            # Para clientes, filtra diretamente pela empresa vinculada
-            if profile.eh_cliente and profile.empresa_vinculada:
-                queryset = queryset.filter(
-                    id_adesao__cliente__id_company_vinculada=profile.empresa_vinculada
-                )
-                
-            # Para parceiros, filtra pelas empresas acessíveis
-            elif not profile.eh_cliente:
-                empresas_acessiveis = profile.get_empresas_acessiveis()
-                if empresas_acessiveis:
-                    queryset = queryset.filter(
-                        id_adesao__cliente__id_company_vinculada__in=empresas_acessiveis
-                    )
-                else:
-                    return queryset.none()
-            else:
-                return queryset.none()
+        from django.db.models import Count
+        base = super().get_queryset().select_related(
+            'id_adesao', 'id_adesao__cliente', 'id_adesao__cliente__id_company_vinculada'
+        ).annotate(num_anexos=Count('anexos')).order_by('-data_criacao')
+        user = self.request.user
+        if user.is_superuser or user.is_staff:
+            qs = base
         else:
-            return queryset.none()
-        
-        # Filtro por PERDCOMP
+            if not hasattr(user, 'profile'):
+                return base.none()
+            profile = user.profile
+            if profile.eh_cliente:
+                empresas_ids = get_empresas_ids_for_cliente(profile)
+                if not empresas_ids:
+                    return base.none()
+                qs = base.filter(id_adesao__cliente__id_company_vinculada_id__in=empresas_ids)
+            elif profile.eh_parceiro:
+                clientes_ids = get_clientes_ids_for_parceiro(profile)
+                if not clientes_ids:
+                    return base.none()
+                qs = base.filter(id_adesao__cliente__id_company_vinculada_id__in=clientes_ids)
+            else:
+                return base.none()
+
         perdcomp = self.request.GET.get('perdcomp')
         if perdcomp:
-            queryset = queryset.filter(id_adesao__perdcomp__icontains=perdcomp)
-            
-        return queryset
+            qs = qs.filter(id_adesao__perdcomp__icontains=perdcomp)
+        return qs
+
+    def get_queryset(self):
+        """Filtra lançamentos conforme escopo de acesso do usuário.
+        Regras:
+        - Admin/staff: tudo
+        - Cliente: lançamentos de adesões cujas empresas estão em (empresas diretas + via sócio)
+        - Parceiro: lançamentos de adesões de clientes vinculados à sua empresa_parceira
+        """
+        qs = self._get_scoped_base_queryset()
+        aprovado = self.request.GET.get('aprovado')
+        if aprovado == '1':
+            qs = qs.filter(aprovado=True)
+        elif aprovado == '0':
+            qs = qs.filter(aprovado=False)
+        return qs
         
     def get_context_data(self, **kwargs):
         """
@@ -144,73 +170,68 @@ class LancamentosListView(LancamentoClienteViewOnlyMixin, ListView):
         """
         context = super().get_context_data(**kwargs)
         context['current_filters'] = self.request.GET.dict()
+        # Resumo sintético (ignora filtro de status, respeita escopo/perdcomp)
+        qs_all = self._get_scoped_base_queryset()
+        signed_expr = Case(
+            When(sinal='-', then=Coalesce(F('valor'), 0.0) * -1),
+            default=Coalesce(F('valor'), 0.0),
+            output_field=FloatField()
+        )
+        aprovados_qs = qs_all.filter(aprovado=True)
+        nao_aprov_qs = qs_all.filter(aprovado=False)
+        aprovados_total = aprovados_qs.aggregate(total=Sum(signed_expr))['total'] or 0.0
+        nao_aprov_total = nao_aprov_qs.aggregate(total=Sum(signed_expr))['total'] or 0.0
+        context['resumo'] = {
+            'aprovados': {
+                'qtd': aprovados_qs.count(),
+                'total': aprovados_total,
+            },
+            'nao_aprovados': {
+                'qtd': nao_aprov_qs.count(),
+                'total': nao_aprov_total,
+            }
+        }
         return context
 
-class LancamentoDetailView(LancamentoClienteViewOnlyMixin, DetailView):
+class LancamentoDetailView(LoginRequiredMixin, DetailView):
     model = Lancamentos
     template_name = 'lancamentos_detail.html'
     context_object_name = 'lancamento'
-    
+
     def get_queryset(self):
-        """
-        Filtra o queryset para que clientes só vejam seus próprios lançamentos.
-        """
-        queryset = super().get_queryset()
-        
-        if self.request.user.is_superuser or self.request.user.is_staff:
-            # Admins veem tudo
-            return queryset
-            
-        if hasattr(self.request.user, 'profile'):
-            profile = self.request.user.profile
-            
-            # Para clientes, filtra diretamente pela empresa vinculada
-            if profile.eh_cliente and profile.empresa_vinculada:
-                return queryset.filter(
-                    id_adesao__cliente__id_company_vinculada=profile.empresa_vinculada
-                )
-                
-            # Para parceiros, filtra pelas empresas acessíveis
-            elif not profile.eh_cliente:
-                empresas_acessiveis = profile.get_empresas_acessiveis()
-                if empresas_acessiveis:
-                    return queryset.filter(
-                        id_adesao__cliente__id_company_vinculada__in=empresas_acessiveis
-                    )
-                    
-        # Se chegou aqui, não tem acesso a nada
-        return queryset.none()
-    
-    def get_object(self, queryset=None):
-        """
-        Verifica se o objeto existe no queryset filtrado.
-        Se existir, permite o acesso. Caso contrário, mostra página de acesso negado.
-        """
-        if queryset is None:
-            queryset = self.get_queryset()
-            
-        # Obtém o ID do objeto
-        pk = self.kwargs.get(self.pk_url_kwarg)
-        
+        base = super().get_queryset().select_related(
+            'id_adesao', 'id_adesao__cliente', 'id_adesao__cliente__id_company_vinculada'
+        )
+        user = self.request.user
+        if user.is_superuser or user.is_staff:
+            return base
+        if not hasattr(user, 'profile'):
+            return base.none()
+        profile = user.profile
+        if profile.eh_cliente:
+            empresas_ids = get_empresas_ids_for_cliente(profile)
+            return base.filter(id_adesao__cliente__id_company_vinculada_id__in=empresas_ids) if empresas_ids else base.none()
+        if profile.eh_parceiro:
+            clientes_ids = get_clientes_ids_for_parceiro(profile)
+            return base.filter(id_adesao__cliente__id_company_vinculada_id__in=clientes_ids) if clientes_ids else base.none()
+        return base.none()
+
+    def get(self, request, *args, **kwargs):
+        pk = kwargs.get(self.pk_url_kwarg)
+        queryset = self.get_queryset()
         try:
-            # Tenta obter o objeto do queryset filtrado
-            obj = queryset.get(pk=pk)
-            return obj
+            self.object = queryset.get(pk=pk)
         except self.model.DoesNotExist:
-            # Verifica se o objeto existe no banco, mas o usuário não tem permissão
             if self.model.objects.filter(pk=pk).exists():
+                messages.error(request, "Você não tem permissão para visualizar este lançamento.")
                 from django.shortcuts import render
-                messages.error(self.request, "Você não tem permissão para visualizar este lançamento.")
-                return render(
-                    self.request, 
-                    'forbidden.html', 
-                    {'message': "Você não tem permissão para visualizar este lançamento."},
-                    status=403
-                )
-            else:
-                # Se não existe no banco, é um 404 legítimo
-                raise Http404(f"Lançamento com ID {pk} não encontrado.")
-    
+                return render(request, 'forbidden.html', {
+                    'message': "Você não tem permissão para visualizar este lançamento."
+                }, status=403)
+            raise Http404(f"Lançamento com ID {pk} não encontrado.")
+        context = self.get_context_data(object=self.object)
+        return self.render_to_response(context)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['anexos'] = self.object.anexos.all()
@@ -336,6 +357,26 @@ class AnexosUpdateView(AdminRequiredMixin, UpdateView):
             )
 
 
+class LancamentoApprovalUpdateView(AdminRequiredMixin, UpdateView):
+    model = Lancamentos
+    form_class = LancamentoApprovalForm
+    template_name = 'lancamentos_approval_form.html'
+
+    def get_success_url(self):
+        messages.success(self.request, 'Status de aprovação atualizado.')
+        return reverse_lazy('lancamentos:detail', kwargs={'pk': self.object.pk})
+
+    def get_queryset(self):
+        base = super().get_queryset().select_related('id_adesao', 'id_adesao__cliente', 'id_adesao__cliente__id_company_vinculada')
+        return base
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if self.object.aprovado:
+            messages.info(request, 'Este lançamento já está aprovado e não pode ser alterado.')
+            return redirect('lancamentos:detail', pk=self.object.pk)
+        return super().dispatch(request, *args, **kwargs)
+
 @login_required
 @require_GET
 def lancamento_history_json(request, pk):
@@ -449,5 +490,80 @@ def anexo_history_json(request, pk):
         result.append(entry)
     result.reverse()
     return JsonResponse({'object_id': anexo.id, 'history': result})
+
+# ================== DRF API ==================
+class IsSuperAdmin(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated and (request.user.is_superuser or request.user.is_staff)
+
+class LancamentoListAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+    def get(self, request):
+        objs = Lancamentos.objects.all().select_related('id_adesao')
+        ser = LancamentoSerializer(objs, many=True)
+        return Response(ser.data)
+
+class LancamentoCreateAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+    def post(self, request):
+        ser = LancamentoSerializer(data=request.data)
+        if ser.is_valid():
+            ser.save()
+            return Response(ser.data, status=status.HTTP_201_CREATED)
+        return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class LancamentoDetailAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+    def get_object(self, pk):
+        return get_object_or_404(Lancamentos, pk=pk)
+    def get(self, request, pk):
+        ser = LancamentoSerializer(self.get_object(pk))
+        return Response(ser.data)
+    def patch(self, request, pk):
+        obj = self.get_object(pk)
+        ser = LancamentoSerializer(obj, data=request.data, partial=True)
+        if ser.is_valid():
+            ser.save()
+            return Response(ser.data)
+        return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+    def delete(self, request, pk):
+        obj = self.get_object(pk)
+        obj.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+class AnexoListAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+    def get(self, request):
+        objs = Anexos.objects.all()
+        ser = AnexoSerializer(objs, many=True)
+        return Response(ser.data)
+
+class AnexoCreateAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+    def post(self, request):
+        ser = AnexoSerializer(data=request.data)
+        if ser.is_valid():
+            ser.save()
+            return Response(ser.data, status=status.HTTP_201_CREATED)
+        return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class AnexoDetailAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+    def get_object(self, pk):
+        return get_object_or_404(Anexos, pk=pk)
+    def get(self, request, pk):
+        ser = AnexoSerializer(self.get_object(pk))
+        return Response(ser.data)
+    def patch(self, request, pk):
+        obj = self.get_object(pk)
+        ser = AnexoSerializer(obj, data=request.data, partial=True)
+        if ser.is_valid():
+            ser.save()
+            return Response(ser.data)
+        return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+    def delete(self, request, pk):
+        obj = self.get_object(pk)
+        obj.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 

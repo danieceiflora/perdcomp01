@@ -5,154 +5,156 @@
 {% block title %}Detalhes do Lançamento{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3 class="card-title">Detalhes do Lançamento</h3>
-                    <div>
-                        <a href="{% url 'lancamentos:list' %}" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Voltar
-                        </a>
-                        
-
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-12">
-                            <h5 class="border-bottom pb-2">Informações do Lançamento</h5>
-                            <table class="table table-sm align-middle mb-0">
-                                <tbody>
-                                    <tr>
-                                        <th style="width: 30%">Perdcomp:</th>
-                                        <td>{{ lancamento.id_adesao.perdcomp|default:'--' }}</td>
-                                    </tr>
-                                    <tr>
-                                        <th>Data do Lançamento:</th>
-                                        <td>{{ lancamento.data_lancamento|date:"d/m/Y" }}</td>
-                                    </tr>
-                                    <tr>
-                                        <th>Valor do Lançamento:</th>
-                                        <td class="text-danger">
-                                            <strong>- R$ {{ lancamento.valor|floatformat:2 }}</strong>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th>Saldo Restante:</th>
-                                        <td class="fw-bold {% if lancamento.saldo_restante > 0 %}text-success{% elif lancamento.saldo_restante < 0 %}text-danger{% endif %}">
-                                            {% if lancamento.saldo_restante != None %}
-                                                R$ {{ lancamento.saldo_restante|floatformat:2 }}
-                                            {% else %}
-                                                <span class="text-muted">Não disponível</span>
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th>Observação:</th>
-                                        <td>{{ lancamento.descricao|linebreaks|default:"Nenhuma observação" }}</td>
-                                    </tr>
-                                    {% with metodo_raw=lancamento.metodo|default:'' ml=lancamento.metodo|default:''|lower %}
-                                        {% if metodo_raw %}
-                                            <tr class="table-secondary">
-                                                <th colspan="2">Detalhes do Método</th>
-                                            </tr>
-                                            <tr>
-                                                <th>Método</th>
-                                                <td>{{ metodo_raw }}</td>
-                                            </tr>
-                                            {% if 'restitu' in ml %}
-                                                <tr>
-                                                    <th>Total Crédito Original Utilizado</th>
-                                                    <td>
-                                                        {% if lancamento.total_credito_original_utilizado != None %}
-                                                            {{ lancamento.total_credito_original_utilizado|br_currency }}
-                                                        {% else %}<span class="text-muted">--</span>{% endif %}
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <th>Débito</th>
-                                                    <td>
-                                                        {% if lancamento.debito != None %}
-                                                            {{ lancamento.debito|br_currency }}
-                                                        {% else %}<span class="text-muted">--</span>{% endif %}
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <th>Período de Apuração</th>
-                                                    <td>{{ lancamento.periodo_apuracao|default:'--' }}</td>
-                                                </tr>
-                                            {% elif 'ressarc' in ml %}{# ressarcimento #}
-                                                <tr>
-                                                    <th>Total</th>
-                                                    <td>
-                                                        {% if lancamento.total != None %}
-                                                            {{ lancamento.total|br_currency }}
-                                                        {% else %}<span class="text-muted">--</span>{% endif %}
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <th>Débito</th>
-                                                    <td>
-                                                        {% if lancamento.debito_r != None %}
-                                                            {{ lancamento.debito_r|br_currency }}
-                                                        {% else %}<span class="text-muted">--</span>{% endif %}
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <th>Período de Apuração</th>
-                                                    <td>{{ lancamento.periodo_apuracao_r|default:'--' }}</td>
-                                                </tr>
-                                            {% else %}
-                                                <tr>
-                                                    <td colspan="2" class="text-muted">Nenhum detalhe adicional para este método.</td>
-                                                </tr>
-                                            {% endif %}
-                                        {% endif %}
-                                    {% endwith %}
-                                </tbody>
-                            </table>
-                        </div>
-                        
-                        <div class="col-md-12">
-                            <h5 class="border-bottom pb-2">Anexos</h5>
-                            {% if anexos %}
-                                <div class="table-responsive">
-                                    <table class="table table-sm table-hover">
-                                        <thead>
-                                            <tr>
-                                                <th>Nome</th>
-                                                <th>Descrição</th>
-                                                <th>Data Upload</th>
-                                                <th>Arquivo</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for anexo in anexos %}
-                                            <tr>
-                                                <td>{{ anexo.nome_anexo }}</td>
-                                                <td>{{ anexo.descricao }}</td>
-                                                <td>{{ anexo.data_upload|date:"d/m/Y H:i" }}</td>
-                                                <td>
-                                                    <a href="{{ anexo.arquivo.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                                        <i class="bi bi-file-earmark"></i> Visualizar
-                                                    </a>
-                                                </td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
+<div class="max-w-7xl mx-auto px-4 py-6">
+    <div class="bg-card border rounded-lg shadow-sm">
+        <div class="flex items-start justify-between p-6 border-b">
+            <div>
+                <h1 class="text-2xl font-semibold text-card-foreground mb-1">Detalhes do Lançamento</h1>
+                <p class="text-sm text-muted-foreground">Informações e anexos do lançamento selecionado.</p>
+            </div>
+            <a href="{% url 'lancamentos:list' %}" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">
+                <i class="bi bi-arrow-left mr-2"></i> Voltar
+            </a>
+        </div>
+        <div class="p-6 space-y-10">
+            <section>
+                <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><i class="bi bi-info-circle"></i> Informações do Lançamento</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <div class="text-xs uppercase tracking-wide text-muted-foreground">Aprovação</div>
+                                <div class="font-medium">
+                                    {% if lancamento.aprovado %}
+                                        <span class="inline-flex items-center text-green-600 dark:text-green-400"><i class="bi bi-check2-circle mr-1"></i> Aprovado</span>
+                                        {% if lancamento.data_aprovacao %}<span class="text-muted-foreground text-sm ml-2">em {{ lancamento.data_aprovacao|date:"d/m/Y H:i" }}</span>{% endif %}
+                                    {% else %}
+                                        <span class="inline-flex items-center text-destructive"><i class="bi bi-x-circle mr-1"></i> Não Aprovado pelo cliente</span>
+                                    {% endif %}
                                 </div>
-                            {% else %}
-                                <div class="alert alert-light">
-                                    <i class="bi bi-info-circle"></i> Nenhum anexo para este lançamento.
-                                </div>
+                                {% if lancamento.observacao_aprovacao %}
+                                <div class="mt-1 text-sm text-muted-foreground max-w-prose">{{ lancamento.observacao_aprovacao|linebreaks }}</div>
+                                {% endif %}
+                            </div>
+                            {% if request.user.is_authenticated %}
+                            {% if request.user.is_superuser or request.user.is_staff %}
+                            {% if not lancamento.aprovado %}
+                            <a href="{% url 'lancamentos:aprovar' lancamento.pk %}" class="inline-flex items-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent hover:text-accent-foreground">
+                                <i class="bi bi-pencil-square mr-1"></i> Atualizar
+                            </a>
+                            {% endif %}
+                            {% endif %}
                             {% endif %}
                         </div>
+                        <div>
+                            <div class="text-xs uppercase tracking-wide text-muted-foreground">Empresa Cliente</div>
+                            <div class="font-medium">{% if lancamento.id_adesao.cliente.id_company_vinculada %}{{ lancamento.id_adesao.cliente.id_company_vinculada.razao_social }}{% else %}--{% endif %}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs uppercase tracking-wide text-muted-foreground">Perdcomp</div>
+                            <div class="font-medium">{{ lancamento.id_adesao.perdcomp|default:'--' }}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs uppercase tracking-wide text-muted-foreground">Data do Lançamento</div>
+                            <div class="font-medium">{{ lancamento.data_lancamento|date:"d/m/Y" }}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs uppercase tracking-wide text-muted-foreground">Valor do Lançamento</div>
+                            <div class="font-semibold {% if lancamento.sinal == '+' %}text-green-600 dark:text-green-400{% else %}text-destructive{% endif %}">{{ lancamento.sinal }} {{ lancamento.valor|br_currency }}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs uppercase tracking-wide text-muted-foreground">Saldo Restante</div>
+                            <div class="font-semibold {% if lancamento.saldo_restante > 0 %}text-green-600 dark:text-green-400{% elif lancamento.saldo_restante < 0 %}text-destructive{% endif %}">
+                                {% if lancamento.saldo_restante != None %}{{ lancamento.saldo_restante|br_currency }}{% else %}<span class="text-muted-foreground">Não disponível</span>{% endif %}
+                            </div>
+                        </div>
+                        <div class="md:col-span-2">
+                            <div class="text-xs uppercase tracking-wide text-muted-foreground mb-1">Observação</div>
+                            <div class="rounded-md border bg-muted/30 p-3 text-sm leading-relaxed">{{ lancamento.descricao|linebreaks|default:"Nenhuma observação" }}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs uppercase tracking-wide text-muted-foreground">Adesão Relacionada</div>
+                            <div class="font-medium"><a class="text-primary hover:underline" href="{% url 'adesao:detail' lancamento.id_adesao.id %}">{{ lancamento.id_adesao.perdcomp }}</a></div>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        {% with metodo_raw=lancamento.metodo|default:'' ml=lancamento.metodo|default:''|lower %}
+                            {% if metodo_raw %}
+                            <div>
+                                <div class="text-xs uppercase tracking-wide text-muted-foreground">Método</div>
+                                <div class="font-medium">{{ metodo_raw }}</div>
+                            </div>
+                            <div class="space-y-3">
+                                {% if 'restitu' in ml %}
+                                    <div>
+                                        <div class="text-xs uppercase tracking-wide text-muted-foreground">Total Crédito Original Utilizado</div>
+                                        <div class="font-medium">{% if lancamento.total_credito_original_utilizado != None %}{{ lancamento.total_credito_original_utilizado|br_currency }}{% else %}<span class="text-muted-foreground">--</span>{% endif %}</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs uppercase tracking-wide text-muted-foreground">Débito</div>
+                                        <div class="font-medium">{% if lancamento.debito != None %}{{ lancamento.debito|br_currency }}{% else %}<span class="text-muted-foreground">--</span>{% endif %}</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs uppercase tracking-wide text-muted-foreground">Período de Apuração</div>
+                                        <div class="font-medium">{{ lancamento.periodo_apuracao|default:'--' }}</div>
+                                    </div>
+                                {% elif 'ressarc' in ml %}
+                                    <div>
+                                        <div class="text-xs uppercase tracking-wide text-muted-foreground">Total</div>
+                                        <div class="font-medium">{% if lancamento.total != None %}{{ lancamento.total|br_currency }}{% else %}<span class="text-muted-foreground">--</span>{% endif %}</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs uppercase tracking-wide text-muted-foreground">Débito</div>
+                                        <div class="font-medium">{% if lancamento.debito_r != None %}{{ lancamento.debito_r|br_currency }}{% else %}<span class="text-muted-foreground">--</span>{% endif %}</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs uppercase tracking-wide text-muted-foreground">Período de Apuração</div>
+                                        <div class="font-medium">{{ lancamento.periodo_apuracao_r|default:'--' }}</div>
+                                    </div>
+                                {% else %}
+                                    <div class="text-muted-foreground text-sm">Nenhum detalhe adicional para este método.</div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        {% endwith %}
                     </div>
                 </div>
-            </div>
+            </section>
+
+            <section>
+                <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><i class="bi bi-paperclip"></i> Anexos</h2>
+                {% if anexos %}
+                <div class="overflow-x-auto rounded-md border">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b bg-muted/50 text-muted-foreground">
+                                <th class="h-10 px-4 text-left font-medium">Nome</th>
+                                <th class="h-10 px-4 text-left font-medium">Descrição</th>
+                                <th class="h-10 px-4 text-left font-medium">Data Upload</th>
+                                <th class="h-10 px-4 text-left font-medium">Arquivo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for anexo in anexos %}
+                            <tr class="border-b last:border-0 hover:bg-muted/50">
+                                <td class="px-4 py-3 font-medium">{{ anexo.nome_anexo }}</td>
+                                <td class="px-4 py-3">{{ anexo.descricao }}</td>
+                                <td class="px-4 py-3">{{ anexo.data_upload|date:"d/m/Y H:i" }}</td>
+                                <td class="px-4 py-3">
+                                    <a href="{{ anexo.arquivo.url }}" target="_blank" class="inline-flex items-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent hover:text-accent-foreground transition-colors"><i class="bi bi-file-earmark mr-1"></i>Visualizar</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="flex items-center gap-2 rounded-md border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                    <i class="bi bi-info-circle"></i>
+                    <span>Nenhum anexo para este lançamento.</span>
+                </div>
+                {% endif %}
+            </section>
         </div>
     </div>
 </div>

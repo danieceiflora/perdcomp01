@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Excluir Tese de Crédito{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="max-w-4xl mx-auto">
+        <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+            <div class="flex flex-col space-y-1.5 p-6 border-b">
+                <h3 class="text-2xl font-semibold leading-none tracking-tight">
+                    <i class="bi bi-trash mr-2"></i>Excluir Tese de Crédito
+                </h3>
+            </div>
+            <div class="p-6">
+                {% if has_references %}
+                    <div class="rounded-lg border border-red-300 bg-red-50 p-4 mb-6">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-ban text-red-600"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-red-900">
+                                    Esta tese de crédito não pode ser excluída porque existem adesões vinculadas.
+                                </h3>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <p><strong>Tese de crédito:</strong> {{ object.descricao }}</p>
+                        <div>
+                            <p class="font-semibold mb-2">Adesões vinculadas ({{ referencias|length }}):</p>
+                            <div class="space-y-2">
+                                {% for adesao in referencias %}
+                                    <div class="rounded-md border bg-muted/50 px-3 py-2 text-sm">
+                                        {{ adesao.perdcomp }} - {{ adesao.cliente }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="rounded-lg border border-orange-300 bg-orange-50 p-4 mb-6">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-exclamation-triangle text-orange-600"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-orange-900">
+                                    Tem certeza que deseja excluir a tese de crédito <strong>"{{ object.descricao }}"</strong>?
+                                </h3>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="space-y-3">
+                            <p><strong>Código Origem:</strong> {{ object.cod_origem }}</p>
+                            <p><strong>Descrição:</strong> {{ object.descricao }}</p>
+                        </div>
+                        <div class="space-y-3">
+                            <p><strong>Tipo de Tese:</strong> {{ object.id_tipo_tese }}</p>
+                            <p><strong>Correção:</strong> {{ object.id_correcao }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 space-y-3">
+                        <p><strong>Jurisprudência:</strong> {{ object.jurisprudencia }}</p>
+                        <p class="flex items-center gap-2">
+                            <strong>Aplica Correção:</strong>
+                            {% if object.corrige %}
+                                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">Sim</span>
+                            {% else %}
+                                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">Não</span>
+                            {% endif %}
+                        </p>
+                        {% if object.corrige %}
+                            <p><strong>Valor da Correção:</strong> {{ object.correcao }}</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="flex items-center p-6 pt-0 border-t">
+                {% if has_references %}
+                    <a href="{% url 'correcao:tipo_documento_list' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
+                        <i class="bi bi-arrow-left mr-2"></i>Voltar
+                    </a>
+                {% else %}
+                    <form method="post" class="flex items-center gap-3">
+                        {% csrf_token %}
+                        <button type="submit" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-destructive text-destructive-foreground hover:bg-destructive/90 h-10 px-4 py-2">
+                            <i class="bi bi-trash mr-2"></i>Confirmar Exclusão
+                        </button>
+                        <a href="{% url 'correcao:tipo_documento_list' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
+                            <i class="bi bi-arrow-left mr-2"></i>Cancelar
+                        </a>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

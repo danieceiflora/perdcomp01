@@ -19,9 +19,8 @@ class Adesao(models.Model):
     )
 
     metodo_credito_options = [
-        ('Pedido de compensação', 'Pedido de compensação'),
+        ('Pedido de ressarcimento', 'Pedido de ressarcimento'),
         ('Pedido de restituição', 'Pedido de restituição'),
-        ('Declaração de compensação', 'Declaração de compensação'),
         ('Declaração de compensação pagamento indevido', 'Declaração de compensação pagamento indevido'),
     ]
 
@@ -129,6 +128,35 @@ class Adesao(models.Model):
     saldo_atual = models.FloatField(
         verbose_name='Saldo Atual',
         help_text='Saldo atual da adesão, atualizado automaticamente pelos lançamentos',
+        blank=True,
+        null=True
+    )
+
+    # Campos específicos para Restituição (apenas informativos)
+    selic_acumulada = models.FloatField(
+        verbose_name='SELIC Acumulada (%)',
+        help_text='Taxa SELIC acumulada para cálculo de correção - apenas informativo',
+        blank=True,
+        null=True
+    )
+
+    valor_correcao = models.FloatField(
+        verbose_name='Valor da Correção',
+        help_text='Valor da correção monetária aplicada - apenas informativo',
+        blank=True,
+        null=True
+    )
+
+    valor_total_corrigido = models.FloatField(
+        verbose_name='Valor Total Corrigido',
+        help_text='Valor principal + correção monetária - apenas informativo',
+        blank=True,
+        null=True
+    )
+
+    data_arrecadacao = models.DateField(
+        verbose_name='Data de Arrecadação',
+        help_text='Data em que ocorreu a arrecadação relacionada',
         blank=True,
         null=True
     )

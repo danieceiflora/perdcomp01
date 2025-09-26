@@ -1,20 +1,53 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
-  <div class="card">
-    <div class="card-header bg-danger text-white">
-      <h2>Confirmar Exclusão</h2>
+<div class="max-w-2xl mx-auto">
+  <div class="rounded-lg border border-red-200 dark:border-red-800 bg-white dark:bg-slate-900 shadow-lg overflow-hidden">
+    <!-- Header -->
+    <div class="bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-800 px-6 py-4">
+      <div class="flex items-center gap-3">
+        <div class="flex-shrink-0">
+          <div class="w-8 h-8 bg-red-100 dark:bg-red-900/50 rounded-full flex items-center justify-center">
+            <i class="bi bi-exclamation-triangle text-red-600 dark:text-red-400"></i>
+          </div>
+        </div>
+        <h2 class="text-xl font-semibold text-red-900 dark:text-red-100">Confirmar Exclusão</h2>
+      </div>
     </div>
-    <div class="card-body">
-      <p class="lead">Tem certeza de que deseja excluir a empresa "{{ object.nome }}"?</p>
-      <p>Esta ação não pode ser desfeita e também irá excluir todos os dados associados a esta empresa.</p>
+    
+    <!-- Content -->
+    <div class="px-6 py-6">
+      <div class="space-y-4">
+        <p class="text-lg font-medium text-slate-900 dark:text-slate-100">
+          Tem certeza de que deseja excluir a empresa "{{ object.razao_social|default:object.nome_fantasia }}"?
+        </p>
+        <div class="rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-4">
+          <div class="flex items-start gap-3">
+            <div class="flex-shrink-0">
+              <i class="bi bi-exclamation-triangle text-amber-600 dark:text-amber-400"></i>
+            </div>
+            <div class="text-sm text-amber-800 dark:text-amber-200">
+              <p class="font-medium">Atenção!</p>
+              <p class="mt-1">Esta ação não pode ser desfeita e também irá excluir todos os dados associados a esta empresa.</p>
+            </div>
+          </div>
+        </div>
+      </div>
       
-      <form method="post">
+      <!-- Actions -->
+      <form method="post" class="mt-8">
         {% csrf_token %}
-        <div class="d-flex gap-2 mt-4">
-          <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
-          <a href="{% url 'empresas:lista_empresas' %}" class="btn btn-secondary">Cancelar</a>
+        <div class="flex items-center justify-end gap-3">
+          <a href="{% url 'empresas:lista_empresas' %}" 
+             class="inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+            <i class="bi bi-arrow-left"></i>
+            Cancelar
+          </a>
+          <button type="submit" 
+                  class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 transition-colors">
+            <i class="bi bi-trash"></i>
+            Confirmar Exclusão
+          </button>
         </div>
       </form>
     </div>

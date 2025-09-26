@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Lista de Teses de Crédito{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-foreground flex items-center gap-2">
+                        <i class="bi bi-file-earmark-text"></i>
+                        Tipos de documento
+                    </h1>
+                    <p class="text-muted-foreground mt-1">Gerenciar tipos de documento e suas correções</p>
+                </div>
+                {% if perms.correcao.add_tesecredito %}
+                <a href="{% url 'correcao:tipo_documento_create' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
+                    <i class="bi bi-plus-lg mr-2"></i>Adicionar novo
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if tipos_documento %}
+        <!-- Teses de Crédito Table -->
+        <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+            <div class="flex flex-col space-y-1.5 p-6 border-b">
+                <h3 class="text-lg font-semibold">Documentos ({{ tipos_documento|length }})</h3>
+            </div>
+            <div class="p-6">
+                <div class="overflow-x-auto">
+                    <table class="w-full caption-bottom text-sm">
+                        <thead class="[&_tr]:border-b">
+                            <tr class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">ID</th>
+                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">Tipo de Tese</th>
+                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">Código Origem</th>
+                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">Descrição</th>
+                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody class="[&_tr:last-child]:border-0">
+                            {% for tese in tipos_documento %}
+                            <tr class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                                <td class="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                                    <span class="font-medium text-foreground">{{ tese.id }}</span>
+                                </td>
+                                <td class="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                                    <span class="text-foreground">{{ tese.id_tipo_tese }}</span>
+                                </td>
+                                <td class="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                                    {% if tese.cod_origem != None %}
+                                        <span class="text-foreground">{{ tese.cod_origem }}</span>
+                                    {% else %}
+                                        <span class="text-muted-foreground">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                                    <div class="max-w-xs">
+                                        <p class="text-foreground truncate" title="{{ tese.descricao }}">{{ tese.descricao }}</p>
+                                    </div>
+                                </td>
+                                <td class="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                                    <div class="flex items-center gap-2">
+                                        {% if perms.correcao.change_tesecredito %}
+                                        <a href="{% url 'correcao:tipo_documento_update' tese.pk %}" 
+                                           class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3"
+                                           title="Editar">
+                                            <i class="bi bi-pencil mr-1"></i>Editar
+                                        </a>
+                                        {% endif %}
+                                        <button type="button" 
+                                                class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3 btn-history" 
+                                                data-history-id="{{ tese.pk }}"
+                                                title="Ver histórico">
+                                            <i class="bi bi-clock-history mr-1"></i>Histórico
+                                        </button>
+                                        {% with total=tese.adesoes_total|default:tese.adesoes.count %}
+                                            {% if perms.correcao.delete_tesecredito %}
+                                                {% if total == 0 %}
+                                                    <a href="{% url 'correcao:tipo_documento_delete' tese.pk %}" 
+                                                       class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-destructive text-destructive-foreground hover:bg-destructive/90 h-8 px-3"
+                                                       title="Excluir">
+                                                        <i class="bi bi-trash mr-1"></i>Excluir
+                                                    </a>
+                                                {% else %}
+                                                    <button type="button" 
+                                                            class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-muted text-muted-foreground cursor-not-allowed h-8 px-3" 
+                                                            disabled 
+                                                            title="Há {{ total }} adesão(ões) vinculada(s)">
+                                                        <i class="bi bi-lock mr-1"></i>Excluir
+                                                    </button>
+                                                {% endif %}
+                                            {% endif %}
+                                        {% endwith %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                            
+                {% if is_paginated %}
+                <div class="flex items-center justify-center space-x-2 mt-6 pt-4 border-t">
+                    {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}" 
+                           class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
+                            <i class="bi bi-chevron-left mr-1"></i>Anterior
+                        </a>
+                    {% endif %}
+                    
+                    <span class="px-3 py-2 text-sm text-muted-foreground">
+                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                    </span>
+                    
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}" 
+                           class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
+                            Próximo<i class="bi bi-chevron-right ml-1"></i>
+                        </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+            <div class="flex items-center justify-center p-12">
+                <div class="text-center">
+                    <i class="bi bi-info-circle text-4xl text-muted-foreground mb-4"></i>
+                    <p class="text-muted-foreground">Nenhum documento cadastrado.</p>
+                    {% if perms.correcao.add_tesecredito %}
+                    <a href="{% url 'correcao:tipo_documento_create' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 mt-4">
+                        <i class="bi bi-plus mr-2"></i>Novo Documento
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+<!-- History Modal (Tailwind overlay style) -->
+<div id="historyModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 hidden z-50" role="dialog" aria-modal="true" aria-labelledby="historyModalTitle">
+    <div class="bg-background rounded-lg shadow-xl w-full max-w-md sm:max-w-xl md:max-w-2xl lg:max-w-3xl" style="height: 80vh; display: flex; flex-direction: column;">
+        <div class="flex items-center justify-between px-6 py-4 border-b" style="flex-shrink: 0;">
+            <h3 id="historyModalTitle" class="text-lg font-semibold flex items-center gap-2"><i class="bi bi-clock-history"></i>Histórico do Documento</h3>
+            <button type="button" class="rounded-md p-2 hover:bg-accent transition-colors" onclick="closeHistoryModal()" aria-label="Fechar modal">
+                <i class="bi bi-x text-xl"></i>
+            </button>
+        </div>
+        <div class="px-6 py-4" style="flex: 1; overflow-y: auto; min-height: 0;" id="historyScrollArea">
+            <div id="historyLoading" class="text-center py-12 hidden">
+                <div class="w-10 h-10 border-2 border-primary/40 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
+                <p class="text-muted-foreground">Carregando histórico...</p>
+            </div>
+            <div id="historyContent" class="space-y-4"></div>
+        </div>
+        <div class="flex justify-end px-6 py-4 border-t bg-muted/30" style="flex-shrink: 0;">
+            <button type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground" onclick="closeHistoryModal()">Fechar</button>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+// Badge do tipo de alteração
+function historyBadge(type){
+    if(type === '+') return '<span class="inline-flex items-center rounded-full bg-green-500/10 px-2 py-1 text-xs font-medium text-green-700 dark:text-green-300"><i class="bi bi-plus mr-1"></i> Criação</span>';
+    if(type === '~') return '<span class="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-700 dark:text-amber-300"><i class="bi bi-pencil mr-1"></i> Alteração</span>';
+    if(type === '-') return '<span class="inline-flex items-center rounded-full bg-red-500/10 px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300"><i class="bi bi-trash mr-1"></i> Exclusão</span>';
+    return '<span class="inline-flex items-center rounded-full bg-slate-500/10 px-2 py-1 text-xs font-medium text-slate-700 dark:text-slate-300">?</span>';
+}
+
+function openHistoryModal(){
+    document.getElementById('historyModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+function closeHistoryModal(){
+    document.getElementById('historyModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+// Garante que o modal exista (fallback caso template parcial falhe ou cache antigo)
+function ensureHistoryModal(){
+    let modal = document.getElementById('historyModal');
+    if(!modal){
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = `\n<div id=\"historyModal\" class=\"fixed inset-0 bg-black/50 flex items-center justify-center p-4 hidden z-50\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"historyModalTitle\">\n  <div class=\"bg-background rounded-lg shadow-xl w-full max-w-md sm:max-w-xl md:max-w-2xl lg:max-w-3xl\" style=\"height: 80vh; display: flex; flex-direction: column;\">\n    <div class=\"flex items-center justify-between px-6 py-4 border-b\" style=\"flex-shrink: 0;\">\n      <h3 id=\"historyModalTitle\" class=\"text-lg font-semibold flex items-center gap-2\"><i class=\"bi bi-clock-history\"></i>Histórico da Tese de Crédito</h3>\n      <button type=\"button\" class=\"rounded-md p-2 hover:bg-accent transition-colors\" onclick=\"closeHistoryModal()\" aria-label=\"Fechar modal\"><i class=\"bi bi-x text-xl\"></i></button>\n    </div>\n    <div class=\"px-6 py-4\" style=\"flex: 1; overflow-y: auto; min-height: 0;\">\n      <div id=\"historyLoading\" class=\"text-center py-12 hidden\">\n        <div class=\"w-10 h-10 border-2 border-primary/40 border-t-primary rounded-full animate-spin mx-auto mb-4\"></div>\n        <p class=\"text-muted-foreground\">Carregando histórico...</p>\n      </div>\n      <div id=\"historyContent\" class=\"space-y-4\"></div>\n    </div>\n    <div class=\"flex justify-end px-6 py-4 border-t bg-muted/30\" style=\"flex-shrink: 0;\">\n      <button type=\"button\" class=\"inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground\" onclick=\"closeHistoryModal()\">Fechar</button>\n    </div>\n  </div>\n</div>`;
+        document.body.appendChild(wrapper.firstElementChild);
+        modal = document.getElementById('historyModal');
+    }
+    return modal;
+}
+
+function loadHistory(id){
+    ensureHistoryModal();
+    const content = document.getElementById('historyContent');
+    const loading = document.getElementById('historyLoading');
+    if(!content || !loading){
+        console.error('Elementos de histórico não encontrados após ensureHistoryModal');
+        return;
+    }
+    content.innerHTML = '';
+    loading.classList.remove('hidden');
+    openHistoryModal();
+    fetch(`/correcoes/tese-credito/historico/${id}/`)
+        .then(r => r.json())
+        .then(data => {
+            if(!content){ return; }
+            loading.classList.add('hidden');
+            if(!data.history || !data.history.length){
+                content.innerHTML = '<p class="text-muted-foreground text-center py-8">Sem histórico disponível.</p>';
+                return;
+            }
+            let html = '<div class="space-y-4">';
+            data.history.forEach(entry => {
+                html += `<div class="card">\n<div class=\"card-content\">`+
+                    `<div class=\"flex items-center justify-between mb-3\">`+
+                    `<span class=\"text-sm text-muted-foreground flex items-center gap-1\"><i class=\"bi bi-clock\"></i>${entry.history_date}</span>`+
+                    `<div class=\"flex items-center gap-2\">${historyBadge(entry.history_type)} ${entry.history_user? `<span class=\"text-xs text-muted-foreground flex items-center gap-1\"><i class=\"bi bi-person\"></i>${entry.history_user}</span>`:''}</div>`+
+                    `</div>`;
+                if(entry.changes && entry.changes.length){
+                    html += '<div class="space-y-2">';
+                    entry.changes.forEach(ch => {
+                        html += `<div class=\"flex items-center justify-between text-sm border rounded-md p-2 bg-muted/50\">`+
+                                `<strong class=\"text-foreground\">${ch.field}</strong>`+
+                                `<div class=\"flex items-center gap-2 text-xs\">`+
+                                `<code class=\"bg-red-500/10 text-red-700 dark:text-red-300 px-2 py-1 rounded\">${ch.old===null?'-':ch.old}</code>`+
+                                `<i class=\"bi bi-arrow-right text-muted-foreground\"></i>`+
+                                `<code class=\"bg-green-500/10 text-green-700 dark:text-green-300 px-2 py-1 rounded\">${ch.new===null?'-':ch.new}</code>`+
+                                `</div></div>`;
+                    });
+                    html += '</div>';
+                } else {
+                    html += `<p class=\"text-muted-foreground text-sm\">${entry.note || '(Sem diferenças registradas)'}</p>`;
+                }
+                html += '</div></div>';
+            });
+            html += '</div>';
+            content.innerHTML = html;
+        })
+        .catch(() => {
+            if(loading) loading.classList.add('hidden');
+            if(content) content.innerHTML = '<p class="text-destructive text-center py-8">Erro ao carregar histórico.</p>';
+        });
+}
+
+// Delegação de evento para botões de histórico
+document.addEventListener('click', function(e){
+    const btn = e.target.closest('.btn-history');
+    if(btn){
+        const id = btn.getAttribute('data-history-id');
+        if(id) loadHistory(id);
+    }
+});
+// Fechar com ESC
+document.addEventListener('keydown', function(e){ if(e.key==='Escape'){ closeHistoryModal(); }});
+// Fechar ao clicar no backdrop
+document.getElementById('historyModal').addEventListener('click', function(e){ if(e.target === this){ closeHistoryModal(); }});
+</script>
+{% endblock %}

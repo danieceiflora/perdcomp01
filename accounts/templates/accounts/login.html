@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="flex items-center justify-center min-h-screen py-10">
+  <div class="w-full max-w-md bg-card border rounded-lg shadow p-8">
+    <h1 class="text-xl font-semibold mb-6 text-center">Acesso</h1>
+    <form method="post" novalidate class="space-y-5">
+      {% csrf_token %}
+      <div>
+        <label class="block text-sm mb-1">Usuário</label>
+        <input type="text" name="username" autofocus required class="w-full rounded border px-3 py-2 bg-background" />
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Senha</label>
+        <input type="password" name="password" required class="w-full rounded border px-3 py-2 bg-background" />
+      </div>
+      {% if form.errors %}
+        <div class="text-sm text-red-600">Usuário ou senha inválidos.</div>
+      {% endif %}
+      <button type="submit" class="w-full py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium">Entrar</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

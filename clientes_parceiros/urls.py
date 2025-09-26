@@ -3,7 +3,8 @@ from clientes_parceiros import views
 from .views import (
     NovoClienteView, NewClienteParceiroView, ListClienteParceiroView, EmpresasAjaxView,
     NovoParceiroView, ParceiroDetailView, EditarParceiroView, ListParceirosView,
-    ClienteDetailView, clientes_parceiros_history_json
+    ClienteDetailView, clientes_parceiros_history_json,
+    ClientesParceirosListAPI, ClientesParceirosCreateAPI, ClientesParceirosDetailAPI
 )
 
 urlpatterns = [
@@ -29,5 +30,10 @@ urlpatterns = [
     path('historico/<int:pk>/', clientes_parceiros_history_json, name='clientes_parceiros_history_json'),
     
     # Cliente - Detalhe
-    path('cliente/<int:pk>/', ClienteDetailView.as_view(), name='detalhe_cliente'),
+    path('cliente/<int:pk>/', ClienteDetailView.as_view(), name='cliente_detail'),
+
+    # === API DRF ===
+    path('api/v1/listar-clientes-parceiros/', ClientesParceirosListAPI.as_view(), name='api-clientes-parceiros-list'),
+    path('api/v1/criar-clientes-parceiros/', ClientesParceirosCreateAPI.as_view(), name='api-clientes-parceiros-create'),
+    path('api/v1/listar-clientes-parceiros/<int:pk>/', ClientesParceirosDetailAPI.as_view(), name='api-clientes-parceiros-detail'),
 ]

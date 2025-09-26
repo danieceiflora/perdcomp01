@@ -1,0 +1,44 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-09-12 00:00+0000\n"
+"PO-Revision-Date: 2025-09-12 00:00+0000\n"
+"Last-Translator: Auto <you@example.com>\n"
+"Language-Team: Portuguese (Brazil)\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+# --- Custom overrides for admin permission texts ---
+
+# Default permission names (pattern strings) – override to ensure Portuguese shows.
+msgid "Can add %(name)s"
+msgstr "Pode adicionar %(name)s"
+
+msgid "Can change %(name)s"
+msgstr "Pode alterar %(name)s"
+
+msgid "Can delete %(name)s"
+msgstr "Pode excluir %(name)s"
+
+msgid "Can view %(name)s"
+msgstr "Pode ver %(name)s"
+
+# Help text fragment shown in the Group admin for removing permissions
+msgid "Remove permissões by selecting them and then selecting the 'Remove' arrow button."
+msgstr "Remova permissões selecionando-as e depois clicando na seta 'Remover'."
+
+# Variant (in case Django version uses double quotes around Remove)
+msgid "Remove permissões by selecting them and then select the \"Remove\" arrow button."
+msgstr "Remova permissões selecionando-as e depois clicando na seta \"Remover\"."
+
+# Custom (if present) "Choose all permissions" action link
+msgid "Choose all"
+msgstr "Selecionar todas"
+
+# Fallback capitalization variant
+msgid "Choose All"
+msgstr "Selecionar Todas"

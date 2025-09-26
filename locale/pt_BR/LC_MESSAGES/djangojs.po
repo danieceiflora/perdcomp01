@@ -1,0 +1,38 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-09-12 00:00+0000\n"
+"PO-Revision-Date: 2025-09-12 00:00+0000\n"
+"Last-Translator: Auto <you@example.com>\n"
+"Language-Team: Portuguese (Brazil)\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+# JavaScript related admin texts (if any appear through js_catalog)
+msgid "Choose all"
+msgstr "Selecionar tudo"
+
+msgid "Clear all"
+msgstr "Limpar tudo"
+
+msgid "Choose"
+msgstr "Selecionar"
+
+msgid "Remove"
+msgstr "Remover"
+
+#. Translators: %s is the verbose name of the field
+msgid "Choose all %s"
+msgstr "Selecionar todos/as %s"
+
+#. Translators: %s is the verbose name of the field
+msgid "Remove all %s"
+msgstr "Remover todos/as %s"
+
+#. Translators: %s is the verbose name of the field
+msgid "Remove %s by selecting them and then select the \"Remove\" arrow button."
+msgstr "Remova %s selecionando-os e depois selecione o botão de seta \"Remover\"."

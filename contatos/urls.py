@@ -1,6 +1,8 @@
-from django.contrib import admin
-from django.urls import path, include
+from django.urls import path
+from . import views
+
+app_name = 'contatos'
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    # URLs do app contatos podem ser adicionadas aqui
 ]

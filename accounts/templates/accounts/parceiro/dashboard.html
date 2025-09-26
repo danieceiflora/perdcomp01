@@ -3,40 +3,50 @@
 
 {% block dashboard_type %}Parceiro{% endblock %}
 
-{% block header_gradient %}#007bff 0%, #6610f2 100%{% endblock %}
-
 {% block stat_cards %}
-<div class="col-md-4 mb-3">
-    <div class="card stat-card text-center p-4">
-        <div class="card-body">
-            <i class="bi bi-people text-primary" style="font-size: 2.5rem;"></i>
-            <h3 class="mt-3 mb-1">{{ total_clientes }}</h3>
-            <p class="text-muted mb-0">Cliente{{ total_clientes|pluralize }} Vinculado{{ total_clientes|pluralize:",s" }}</p>
+<div class="mb-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-1">
+            <div class="rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                <div class="p-6">
+                    <div class="flex items-center">
+                        <div class="flex items-center justify-center w-16 h-16 bg-blue-500/10 rounded-full mr-4">
+                            <i class="bi bi-people text-2xl text-blue-600 dark:text-blue-500"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-medium text-muted-foreground">Clientes Vinculados</h3>
+                            <p class="text-3xl font-bold mt-1 text-foreground">{{ total_clientes }}</p>
+                            <p class="text-xs text-muted-foreground mt-1">Cliente{{ total_clientes|pluralize }} Ativo{{ total_clientes|pluralize:",s" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block empresa_title %}Sua Empresa (Parceiro){% endblock %}
 
 {% block empresa_additional_info %}
 {% if empresa_principal %}
-<hr>
-<div class="row mt-3">
-    <div class="col-12">
-        <p class="mb-2"><strong><i class="bi bi-diagram-3 me-1"></i> Consultoria:</strong></p>
-        <div class="d-flex align-items-center">
-            <div class="logo-container me-2">
+<hr class="border-gray-200 dark:border-gray-700 my-4">
+<div class="mt-4">
+    <div class="w-full">
+        <p class="mb-2 font-semibold flex items-center">
+            <i class="bi bi-diagram-3 mr-2"></i>Consultoria:
+        </p>
+        <div class="flex items-center">
+            <div class="mr-3">
                 {% if empresa_principal.logomarca %}
-                    <img src="{{ empresa_principal.logomarca.url }}" alt="{{ empresa_principal.razao_social }}" class="empresa-logo-small logo-card">
+                    <img src="{{ empresa_principal.logomarca.url }}" alt="{{ empresa_principal.razao_social }}" class="w-8 h-8 rounded border object-cover">
                 {% else %}
-                    <div class="logo-placeholder-small logo-card">
-                        <i class="bi bi-building-fill text-primary" style="font-size: 0.6rem;"></i>
+                    <div class="w-8 h-8 rounded border bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                        <i class="bi bi-building-fill text-blue-600 dark:text-blue-400 text-xs"></i>
                     </div>
                 {% endif %}
             </div>
-            <div>
+            <div class="text-sm">
                 {{ empresa_principal.nome_fantasia|default:empresa_principal.razao_social }}
             </div>
         </div>
@@ -51,55 +61,52 @@
 
 {% block content_middle %}
 <!-- Lista de Clientes Vinculados -->
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-people me-2"></i>Seus Clientes
-                </h5>
-                <span class="badge bg-primary rounded-pill">{{ total_clientes }}</span>
-            </div>
-            <div class="card-body">
-                {% if empresas_acessiveis %}
-                <div class="row">
-                    {% for empresa_cliente in empresas_acessiveis %}
-                    <div class="col-md-6 col-lg-4 mb-3">
-                        <div class="card border logo-card">
-                            <div class="card-body text-center">
-                                <div class="logo-container mx-auto mb-2">
-                                    {% if empresa_cliente.logomarca %}
-                                        <img src="{{ empresa_cliente.logomarca.url }}" alt="{{ empresa_cliente.razao_social }}" class="empresa-logo-small logo-card">
-                                    {% else %}
-                                        <div class="logo-placeholder-small logo-card">
-                                            <i class="bi bi-building text-muted" style="font-size: 0.6rem;"></i>
-                                        </div>
-                                    {% endif %}
+<div class="mt-6">
+    <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+        <div class="border-b bg-muted/50 px-8 py-4 flex items-center justify-between">
+            <h5 class="text-lg font-semibold flex items-center">
+                <i class="bi bi-people mr-2"></i>Seus Clientes
+            </h5>
+            <span class="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-100">
+                {{ total_clientes }}
+            </span>
+        </div>
+        <div class="p-6">
+            {% if empresas_acessiveis %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for empresa_cliente in empresas_acessiveis %}
+                <div class="rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-all duration-200">
+                    <div class="p-4 text-center">
+                        <div class="flex justify-center mb-3">
+                            {% if empresa_cliente.logomarca %}
+                                <img src="{{ empresa_cliente.logomarca.url }}" alt="{{ empresa_cliente.razao_social }}" class="w-12 h-12 rounded border object-cover">
+                            {% else %}
+                                <div class="w-12 h-12 rounded border bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                                    <i class="bi bi-building text-gray-400 dark:text-gray-300"></i>
                                 </div>
-                                <h6 class="card-title">{{ empresa_cliente.nome_fantasia|default:empresa_cliente.razao_social }}</h6>
-                                <p class="card-text small text-muted">{{ empresa_cliente.cnpj }}</p>
-                                
-                            </div>
+                            {% endif %}
                         </div>
+                        <h6 class="font-semibold text-sm mb-1">{{ empresa_cliente.nome_fantasia|default:empresa_cliente.razao_social }}</h6>
+                        <p class="text-xs text-muted-foreground">{{ empresa_cliente.cnpj }}</p>
                     </div>
-                    {% endfor %}
                 </div>
-                {% else %}
-                <div class="text-center py-4">
-                    <div class="mb-3">
-                        <i class="bi bi-people text-muted" style="font-size: 3rem;"></i>
-                    </div>
-                    <h5>Nenhum cliente vinculado</h5>
-                    <p class="text-muted mb-3">Você ainda não tem clientes vinculados à sua empresa.</p>
-                    <a href="{% url 'cadastrar_cliente_parceiro' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle me-1"></i>Adicionar Cliente
-                    </a>
-                </div>
-                {% endif %}
+                {% endfor %}
             </div>
+            {% else %}
+            <div class="text-center py-12">
+                <div class="mb-4">
+                    <i class="bi bi-people text-gray-400 dark:text-gray-300 text-5xl"></i>
+                </div>
+                <h5 class="text-lg font-semibold mb-2">Nenhum cliente vinculado</h5>
+                <p class="text-muted-foreground mb-4">Você ainda não tem clientes vinculados à sua empresa.</p>
+                <a href="{% url 'cadastrar_cliente_parceiro' %}" class="inline-flex items-center justify-center rounded-md bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 px-4 py-2 text-sm font-medium text-white transition-colors">
+                    <i class="bi bi-plus-circle mr-2"></i>Adicionar Cliente
+                </a>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
 {% endblock %}
 
-{% block tipo_acesso_badge_class %}bg-primary{% endblock %}
+

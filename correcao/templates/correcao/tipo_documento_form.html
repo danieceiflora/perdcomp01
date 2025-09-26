@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load form_tags %}
+
+{% block title %}
+    {% if object %}Editar Tese de Crédito{% else %}Nova Tese de Crédito{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="max-w-4xl mx-auto">
+        <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+            <div class="flex flex-col space-y-1.5 p-6 border-b">
+                <h3 class="text-2xl font-semibold leading-none tracking-tight">
+                    {% if object %}
+                        <i class="bi bi-pencil mr-2"></i>Editar Tese de Crédito
+                    {% else %}
+                        <i class="bi bi-plus mr-2"></i>Adicionar tipo de documento
+                    {% endif %}
+                </h3>
+            </div>
+            <form method="post" class="p-6">
+                {% csrf_token %}
+                
+                <div class="grid gap-6">
+                    <div class="grid md:grid-cols-1 gap-4">
+                        <div class="space-y-2">
+                            {{ form.id_tipo_tese.label_tag|add_class:"text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" }}
+                            {{ form.id_tipo_tese|add_class:"flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" }}
+                            {% if form.id_tipo_tese.errors %}
+                                <div class="text-sm text-destructive">
+                                    {{ form.id_tipo_tese.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            {{ form.cod_origem.label_tag|add_class:"text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" }}
+                            {{ form.cod_origem|add_class:"flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" }}
+                            {% if form.cod_origem.errors %}
+                                <div class="text-sm text-destructive">
+                                    {{ form.cod_origem.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="space-y-2">
+                            {{ form.descricao.label_tag|add_class:"text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" }}
+                            {{ form.descricao|add_class:"flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" }}
+                            {% if form.descricao.errors %}
+                                <div class="text-sm text-destructive">
+                                    {{ form.descricao.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        {{ form.jurisprudencia.label_tag|add_class:"text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" }}
+                        {{ form.jurisprudencia|add_class:"flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" }}
+                        {% if form.jurisprudencia.errors %}
+                            <div class="text-sm text-destructive">
+                                {{ form.jurisprudencia.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-between pt-6">
+                    <a href="{% url 'correcao:tipo_documento_list' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
+                        <i class="bi bi-arrow-left mr-2"></i>Cancelar
+                    </a>
+                    <button type="submit" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
+                        <i class="bi bi-check mr-2"></i>{% if object %}Atualizar{% else %}Criar{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="container mx-auto px-4 py-6">
+    <div class="max-w-4xl mx-auto">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="grid grid-cols-1 gap-4">
+                <div>
+                    {{ form.id_correcao.label_tag|add_class:"text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" }}
+                    {{ form.id_correcao|add_class:"flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" }}
+                    {% if form.id_correcao.errors %}
+                        <div class="text-sm text-destructive">
+                            {{ form.id_correcao.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3 pt-6 border-t mt-6">
+                    <button type="submit" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
+                        <i class="bi bi-check-lg mr-2"></i>Salvar
+                    </button>
+                    <a href="{% url 'correcao:tipo_documento_list' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
+                        <i class="bi bi-arrow-left mr-2"></i>Voltar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const corrige = document.getElementById('{{ form.corrige.id_for_label }}') || document.querySelector('input[name="corrige"]');
+    const correcaoGroup = document.getElementById('correcao-group');
+    const correcaoSelect = document.getElementById('{{ form.id_correcao.id_for_label }}') || document.querySelector('[name="id_correcao"]');
+
+    function toggleCorrecao() {
+        const checked = corrige && corrige.checked;
+        if (!correcaoGroup) return;
+        if (checked) {
+            correcaoGroup.classList.remove('hidden');
+            if (correcaoSelect) {
+                correcaoSelect.disabled = false;
+                correcaoSelect.required = true;
+            }
+        } else {
+            correcaoGroup.classList.add('hidden');
+            if (correcaoSelect) {
+                correcaoSelect.required = false;
+                correcaoSelect.disabled = true;
+                if (correcaoSelect.tagName === 'SELECT') {
+                    correcaoSelect.selectedIndex = 0;
+                } else {
+                    correcaoSelect.value = '';
+                }
+            }
+        }
+    }
+
+    if (corrige) {
+        corrige.addEventListener('change', toggleCorrecao);
+        toggleCorrecao(); // estado inicial
+    }
+});
+</script>
+{% endblock %}

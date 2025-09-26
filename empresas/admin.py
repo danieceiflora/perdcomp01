@@ -1,64 +1,63 @@
 from django.contrib import admin
-from empresas.models import Empresa
-from contatos.models import Contatos
-from django.utils.safestring import mark_safe
-from django.utils.html import format_html
+from .models import Empresa, Socio, ParticipacaoSocietaria
 
-class ContatosInline(admin.TabularInline):
-    model = Contatos
-    fk_name = 'empresa_base'  # Especifica qual campo ForeignKey usar
-    extra = 1  # Número de formulários vazios a serem exibidos
-    verbose_name = "Contato"
-    verbose_name_plural = "Contatos"
-    fields = ('tipo_contato', 'telefone', 'email', 'site')
 
-class ContatosVinculadosInline(admin.TabularInline):
-    model = Contatos
-    extra = 0  # Apenas mostrar contatos existentes
-    verbose_name = "Contato de Empresa Vinculada"
-    verbose_name_plural = "Contatos de Empresas Vinculadas"
-    fields = ('tipo_contato', 'empresa_base', 'telefone', 'email', 'site')
-    readonly_fields = ('tipo_contato', 'empresa_base', 'telefone', 'email', 'site')
-    can_delete = False
-    
-    def has_add_permission(self, request, obj=None):
-        return False  # Impedir adição através deste inline
+class ParticipacaoInline(admin.TabularInline):
+	model = ParticipacaoSocietaria
+	extra = 1
+	autocomplete_fields = ['socio']
+	fields = ('socio', 'percentual', 'data_entrada', 'data_saida', 'ativo')
+
 
 @admin.register(Empresa)
 class EmpresaAdmin(admin.ModelAdmin):
-    list_display = ('cnpj', 'razao_social', 'nome_fantasia', 'codigo_origem', 'has_logo', 'contatos_count')
-    list_filter = ('codigo_origem',)
-    search_fields = ('cnpj', 'razao_social', 'nome_fantasia')
-    readonly_fields = ('display_logomarca',)
-    inlines = [ContatosInline, ContatosVinculadosInline]
-    fieldsets = (
-        ('Informações Principais', {
-            'fields': ('cnpj', 'razao_social', 'nome_fantasia')
-        }),
-        ('Informações Adicionais', {
-            'fields': ('codigo_origem', 'logomarca', 'display_logomarca'),
-            'classes': ('collapse',)
-        }),
-    )
-    
-    def has_logo(self, obj):
-        return bool(obj.logomarca)
-    has_logo.boolean = True
-    has_logo.short_description = 'Logo'
-    
-    def display_logomarca(self, obj):
-        if obj.logomarca:
-            return format_html('<img src="{}" width="150" />', obj.logomarca.url)
-        return "Sem logomarca"
-    display_logomarca.short_description = 'Visualização da Logomarca'
-    
-    def contatos_count(self, obj):
-        return obj.empresa_base_contato.count()
-    contatos_count.short_description = 'Contatos'
+	list_display = ('razao_social', 'nome_fantasia', 'cnpj')
+	search_fields = ('razao_social', 'nome_fantasia', 'cnpj')
+	inlines = [ParticipacaoInline]
 
-# Registrando o modelo Contatos no admin também
-@admin.register(Contatos)
-class ContatosAdmin(admin.ModelAdmin):
-    list_display = ('tipo_contato', 'empresa_base', 'telefone', 'email')
-    list_filter = ('tipo_contato',)
-    search_fields = ('telefone', 'email', 'empresa_base__razao_social',)
+	# Remover ação de exclusão em massa
+	def get_actions(self, request):
+		actions = super().get_actions(request)
+		if 'delete_selected' in actions:
+			del actions['delete_selected']
+		return actions
+
+	# Bloqueia permissão de exclusão
+	def has_delete_permission(self, request, obj=None):
+		return False
+
+	# Esconde botão "Excluir" na página de alteração
+	def change_view(self, request, object_id, form_url='', extra_context=None):
+		extra_context = extra_context or {}
+		extra_context['show_delete'] = False
+		return super().change_view(request, object_id, form_url, extra_context=extra_context)
+
+	# Bloqueia acesso à view de deleção direta (via URL)
+	def delete_view(self, request, object_id, extra_context=None):
+		from django.http import HttpResponseForbidden
+		return HttpResponseForbidden("Exclusão de empresas não é permitida para manter a consistência dos dados.")
+
+
+class ParticipacaoInlineForSocio(admin.TabularInline):
+	model = ParticipacaoSocietaria
+	extra = 1
+	autocomplete_fields = ['empresa']
+	fields = ('empresa', 'percentual', 'data_entrada', 'data_saida', 'ativo')
+
+
+@admin.register(Socio)
+class SocioAdmin(admin.ModelAdmin):
+	list_display = ('nome', 'cpf', 'user', 'ativo')
+	search_fields = ('nome', 'cpf', 'user__username')
+	list_filter = ('ativo',)
+	inlines = [ParticipacaoInlineForSocio]
+	autocomplete_fields = ['user']
+
+
+@admin.register(ParticipacaoSocietaria)
+class ParticipacaoAdmin(admin.ModelAdmin):
+	list_display = ('socio', 'empresa', 'percentual', 'ativo')
+	list_filter = ('ativo', 'empresa')
+	search_fields = ('socio__nome', 'socio__cpf', 'empresa__razao_social', 'empresa__nome_fantasia')
+	autocomplete_fields = ['socio', 'empresa']
+

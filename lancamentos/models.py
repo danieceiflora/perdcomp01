@@ -1,4 +1,6 @@
 from django.db import models
+from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
 from adesao.models import Adesao
 from django.urls import reverse
 from datetime import datetime, timedelta
@@ -13,8 +15,8 @@ class Lancamentos(models.Model):
     )
     
     data_lancamento = models.DateTimeField(
-        verbose_name='Data do Lançamento',
-        help_text='Data em que o lançamento foi realizado'
+        verbose_name='Data do pedido',
+        help_text='Data em que o pedido foi realizado'
     )
     
     valor = models.FloatField(
@@ -65,6 +67,22 @@ class Lancamentos(models.Model):
         blank=True
     )
 
+    # Campos de aprovação
+    aprovado = models.BooleanField(
+        default=False,
+        verbose_name='Aprovado'
+    )
+    data_aprovacao = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Data de Aprovação'
+    )
+    observacao_aprovacao = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Observação da Aprovação'
+    )
+
     # Campos adicionais para rastrear origem dos valores conforme método
     metodo = models.CharField(
         max_length=60,
@@ -112,14 +130,13 @@ class Lancamentos(models.Model):
     def clean(self):
         """
         Validação do modelo para garantir regras de negócio:
-        - Lançamentos de débito não podem deixar o saldo negativo
+        - Lançamentos de débito não podem deixar o saldo negativo quando aprovados
         """
         from django.core.exceptions import ValidationError
         
-        # Se for um novo lançamento de débito, verifica se o saldo ficaria negativo
-        if not self.pk and self.sinal == '-':
+        # Se estiver aprovando (ou já aprovado), valida saldo para débitos
+        if self.aprovado and self.sinal == '-':
             adesao = self.id_adesao
-            # Inicializa saldo_atual se estiver None
             if adesao.saldo_atual is None:
                 adesao.saldo_atual = adesao.saldo or 0
             try:
@@ -131,6 +148,9 @@ class Lancamentos(models.Model):
                 raise ValidationError({
                     'valor': f"O saldo não pode ficar negativo. Saldo atual: R$ {adesao.saldo_atual}, Valor do débito: R$ {valor_numerico}"
                 })
+        # Regras de aprovação: se não aprovado, não pode ter data; se aprovado sem data, define agora
+        if not self.aprovado and self.data_aprovacao is not None:
+            raise ValidationError({'data_aprovacao': 'Data de aprovação só pode existir quando o lançamento estiver aprovado.'})
             
     def pode_editar_anexos(self):
         """
@@ -148,16 +168,56 @@ class Lancamentos(models.Model):
         sempre que um novo lançamento for adicionado.
         """
         from django.db import transaction
-        
-        # Verifica se é um novo lançamento
+        from django.core.exceptions import ValidationError
+        from django.utils import timezone
+
+        # Verifica se é um novo lançamento e captura estado anterior
         is_novo = not self.pk
-        
+        original_aprovado = False
+        if not is_novo:
+            try:
+                original = type(self).objects.get(pk=self.pk)
+                original_aprovado = bool(original.aprovado)
+            except type(self).DoesNotExist:
+                original_aprovado = False
+
+        # Regras de aprovação antes de salvar: auto-definir/limpar data
+        if self.aprovado and self.data_aprovacao is None:
+            self.data_aprovacao = timezone.now()
+        if not self.aprovado:
+            self.data_aprovacao = None
+
+        # Imutabilidade: após criação, apenas campos de aprovação podem mudar
+        if not is_novo:
+            allowed = {'aprovado', 'data_aprovacao', 'observacao_aprovacao'}
+            changed = set()
+            for field in self._meta.fields:
+                fname = field.name
+                if fname in ('id', 'pk', 'data_criacao'):
+                    continue
+                old_val = getattr(original, fname)
+                new_val = getattr(self, fname)
+                if old_val != new_val:
+                    changed.add(fname)
+            if changed - allowed:
+                raise ValidationError('Após a criação, apenas os campos de aprovação podem ser editados.')
+            # Bloquear mudança de status após aprovado
+            if original_aprovado and self.aprovado is not True:
+                raise ValidationError('Não é permitido alterar o status após aprovado.')
+
         with transaction.atomic():
             # Salva o lançamento
             super().save(*args, **kwargs)
             
-            # Atualiza o saldo apenas para novos lançamentos
-            if is_novo:
+            # Atualiza o saldo apenas quando aprovação ocorre
+            should_update_saldo = False
+            if is_novo and self.aprovado:
+                should_update_saldo = True
+            elif (not is_novo) and (not original_aprovado) and self.aprovado:
+                should_update_saldo = True
+
+            if should_update_saldo:
+                # Validação final do saldo em caso de débito já foi feita em clean(); ainda assim garantir coerência
                 self.atualizar_saldo_adesao()
                 
         return self
@@ -200,9 +260,24 @@ class Anexos(models.Model):
         verbose_name='Lançamento'
     )
     
+    def _anexo_upload_path(instance, filename):
+        # Evita path traversal garantindo somente nome básico
+        import os
+        base = os.path.basename(filename)
+        return f'documentos/lancamentos/{base}'
+
+    def validar_tamanho(arquivo):
+        max_mb = 10
+        if arquivo.size > max_mb * 1024 * 1024:
+            raise ValidationError(f"Arquivo excede {max_mb}MB.")
+
     arquivo = models.FileField(
-        upload_to='documentos/lancamentos/',
-        verbose_name='Arquivo'
+        upload_to=_anexo_upload_path,
+        verbose_name='Arquivo',
+        validators=[
+            FileExtensionValidator(allowed_extensions=['pdf','jpg','jpeg','png','gif','txt','csv','xlsx','xls']),
+            validar_tamanho
+        ]
     )
     
     nome_anexo = models.CharField(

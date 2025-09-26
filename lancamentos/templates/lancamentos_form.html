@@ -7,277 +7,273 @@
 
 {% block extra_head %}
 <style>
-    .anexo-form {
-        background-color: #f8f9fa;
-        padding: 15px;
-        margin-bottom: 10px;
-        border-radius: 5px;
-        border: 1px solid #dee2e6;
-    }
-    .delete-form {
-        background-color: #fff3f3;
-    }
+  .delete-form {opacity:.55; position:relative;}
+  .delete-form::after {content:"Será removido após salvar"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(239,68,68,.18); font-size:.75rem; font-weight:500; color:#b91c1c; backdrop-filter:blur(1px);}    
+  /* Custom file input wrapper */
+  .file-field {position:relative;}
+  .file-field input[type=file] {opacity:0; position:absolute; inset:0; width:100%; height:100%; cursor:pointer;}
+  .file-field .file-visual {display:flex; align-items:center; gap:.75rem; background:var(--file-bg,#f3f4f6); color:var(--file-fg,#111827); border:1px solid var(--file-border,#d1d5db); border-radius:.5rem; padding:.55rem .9rem; font-size:.75rem; line-height:1.1; min-height:42px;}
+  .file-field .file-visual .file-btn {background:var(--file-btn-bg,#e5e7eb); color:var(--file-btn-fg,#111827); border:1px solid var(--file-btn-border,#d1d5db); padding:.35rem .8rem; border-radius:.4rem; font-weight:500; font-size:.7rem; letter-spacing:.5px; text-transform:uppercase; display:inline-flex; align-items:center; gap:.25rem;}
+  .file-field .file-visual .file-name {flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.7rem; opacity:.85;}
+  .file-field .file-visual:focus-within {outline:2px solid var(--file-focus,#2563eb); outline-offset:2px;}
+  .file-field:hover .file-visual {background:var(--file-bg-hover,#e5e7eb);}  
+  /* Dark mode overrides */
+  :root.dark .file-field .file-visual, .dark .file-field .file-visual, body.dark .file-field .file-visual {--file-bg:#1f2937; --file-fg:#f3f4f6; --file-border:#374151; --file-bg-hover:#273549;}
+  :root.dark .file-field .file-visual .file-btn, .dark .file-field .file-visual .file-btn, body.dark .file-field .file-visual .file-btn {--file-btn-bg:#374151; --file-btn-fg:#f3f4f6; --file-btn-border:#4b5563;}
+  :root.dark .file-field .file-visual .file-name, .dark .file-field .file-visual .file-name, body.dark .file-field .file-visual .file-name {opacity:.9;}
+  .file-field .file-visual .file-btn:hover {filter:brightness(1.05);}    
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <form id="lancamento-form" method="post" enctype="multipart/form-data" class="card card-body" novalidate>
+<div class="max-w-7xl mx-auto px-4 py-6">
+    <div class="bg-card border rounded-lg shadow-sm">
+        <div class="p-6 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-semibold text-card-foreground">{% if object %}Editar Lançamento{% else %}Novo Lançamento{% endif %}</h1>
+                <p class="text-sm text-muted-foreground">Preencha os dados do lançamento e anexe documentos.</p>
+            </div>
+            <a href="{% url 'lancamentos:list' %}" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">
+                <i class="bi bi-arrow-left mr-2"></i> Voltar
+            </a>
+        </div>
+        <form id="lancamento-form" method="post" enctype="multipart/form-data" novalidate class="p-6 space-y-8">
                 {% csrf_token %}
                 
                 <!-- Exibir erros gerais (não específicos de um campo) -->
                 {% if form.non_field_errors %}
-                    <div class="alert alert-danger" role="alert">
-                        {% for error in form.non_field_errors %}
-                            {{ error }}
-                        {% endfor %}
-                    </div>
+                <div class="rounded-md border border-destructive/50 bg-destructive/10 text-destructive text-sm p-4">
+                    <ul class="list-disc list-inside space-y-1">
+                        {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                </div>
                 {% endif %}
-                
-                <!-- Campo Valor ocultado do front: mantém input para submissão -->
-                <div class="col-md-3 d-none">
+
+                <!-- Campo oculto de valor (quando necessário) -->
+                <div class="hidden">
                     <label class="form-label visually-hidden" for="{{ form.valor.id_for_label }}">{{ form.valor.label }}</label>
-                    <div class="input-group">
-                        {{ form.valor }}
-                        <span class="input-group-text">R$</span>
-                    </div>
-                    <!-- Erros serão exibidos no modal -->
+                    {{ form.valor }}
                 </div>
-        
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <div class="form-group mb-3">
-                            <label for="{{ form.id_adesao.id_for_label }}" class="form-label">{{ form.id_adesao.label }}:</label>
+
+                <!-- Grupo 1: Adesão / Saldo / Tipo (e Sinal) -->
+                <div class="bg-muted/20 border rounded-md p-4">
+                    <h3 class="text-sm font-semibold mb-4 tracking-wide text-muted-foreground">Dados do lançamento</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="md:col-span-2">
+                            <label for="{{ form.id_adesao.id_for_label }}" class="block text-sm font-medium mb-1">{{ form.id_adesao.label }}</label>
                             {{ form.id_adesao }}
-                            {% if form.id_adesao.errors %}
-                                <div class="text-danger">
-                                    {{ form.id_adesao.errors }}
-                                </div>
-                            {% endif %}
+                            {% if form.id_adesao.errors %}<div class="text-sm text-destructive mt-1">{{ form.id_adesao.errors }}</div>{% endif %}
                         </div>
-
-                        <div class="form-group mb-3">
-                            <label for="{{ form.saldo_atual_adesao.id_for_label }}" class="form-label">{{ form.saldo_atual_adesao.label }}:</label>
-                            <div class="input-group">
-                                {{ form.saldo_atual_adesao }}
-                                <span class="input-group-text">R$</span>
-                            </div>
-                            <small class="form-text text-muted">Saldo disponível na adesão selecionada.</small>
+                        <div>
+                            <label for="{{ form.saldo_atual_adesao.id_for_label }}" class="block text-sm font-medium mb-1">{{ form.saldo_atual_adesao.label }}</label>
+                            {{ form.saldo_atual_adesao }}
+                            <p class="text-xs text-muted-foreground mt-1">Saldo disponível na adesão selecionada.</p>
                         </div>
-
-                        <div class="form-group mb-3">
-                            <label for="{{ form.metodo_escolhido.id_for_label }}" class="form-label">Método:</label>
-                            {{ form.metodo_escolhido }}
-                            {% if form.metodo_escolhido.errors %}
-                                <div class="text-danger">
-                                    {{ form.metodo_escolhido.errors }}
-                                </div>
-                            {% endif %}
-                            <small class="form-text text-muted">Selecione o método para exibir os campos específicos.</small>
-                        </div>
-
-                        <div class="form-group mb-3">
-                            <label for="{{ form.data_lancamento.id_for_label }}" class="form-label">{{ form.data_lancamento.label }}:</label>
-                            {{ form.data_lancamento }}
-                            {% if form.data_lancamento.errors %}
-                                <div class="text-danger">
-                                    {{ form.data_lancamento.errors }}
-                                </div>
-                            {% endif %}
-                            <small class="form-text text-muted">{{ form.data_lancamento.help_text }}</small>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group mb-3">
-                            <label for="{{ form.tipo.id_for_label }}" class="form-label">{{ form.tipo.label }}:</label>
+                        <div class="md:col-span-2">
+                            <label for="{{ form.tipo.id_for_label }}" class="block text-sm font-medium mb-1">{{ form.tipo.label }}</label>
                             {{ form.tipo }}
-                            {% if form.tipo.errors %}
-                                <div class="text-danger">
-                                    {{ form.tipo.errors }}
-                                </div>
-                            {% endif %}
+                            {% if form.tipo.errors %}<div class="text-sm text-destructive mt-1">{{ form.tipo.errors }}</div>{% endif %}
                         </div>
-
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="form-group mb-3">
-                                    <label for="{{ form.sinal.id_for_label }}" class="form-label">{{ form.sinal.label }}:</label>
-                                    {{ form.sinal }}
-                                    {% if form.sinal.errors %}
-                                        <div class="text-danger">
-                                            {{ form.sinal.errors }}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Seção dinâmica: Detalhes do método -->
-                <div class="card mb-4">
-                    <div class="card-header"><strong>Detalhes do método</strong></div>
-                    <div class="card-body">
-                        <div class="row g-3">
-                            <!-- Pedido de restituição -->
-                            <div id="lanc-group-total_credito_original_utilizado" class="col-md-4 d-none">
-                                <label for="{{ form.lanc_total_credito_original_utilizado.id_for_label }}" class="form-label">Total Crédito Original Utilizado</label>
-                                {{ form.lanc_total_credito_original_utilizado }}
-                                {% if form.lanc_total_credito_original_utilizado.errors %}
-                                    <div class="text-danger">{{ form.lanc_total_credito_original_utilizado.errors }}</div>
-                                {% endif %}
-                            </div>
-                            <div id="lanc-group-debito" class="col-md-4 d-none">
-                                <label for="{{ form.lanc_debito.id_for_label }}" class="form-label">Débito</label>
-                                {{ form.lanc_debito }}
-                                {% if form.lanc_debito.errors %}
-                                    <div class="text-danger">{{ form.lanc_debito.errors }}</div>
-                                {% endif %}
-                            </div>
-                            <div id="lanc-group-periodo_apuracao" class="col-md-4 d-none">
-                                <label for="{{ form.lanc_periodo_apuracao.id_for_label }}" class="form-label">Período de Apuração</label>
-                                {{ form.lanc_periodo_apuracao }}
-                                {% if form.lanc_periodo_apuracao.errors %}
-                                    <div class="text-danger">{{ form.lanc_periodo_apuracao.errors }}</div>
-                                {% endif %}
-                            </div>
-                            <!-- Pedido de ressarcimento -->
-                            <div id="lanc-group-debito_r" class="col-md-4 d-none">
-                                <label for="{{ form.lanc_debito_r.id_for_label }}" class="form-label">Débito</label>
-                                {{ form.lanc_debito_r }}
-                                {% if form.lanc_debito_r.errors %}
-                                    <div class="text-danger">{{ form.lanc_debito_r.errors }}</div>
-                                {% endif %}
-                            </div>
-                            <div id="lanc-group-periodo_apuracao_r" class="col-md-4 d-none">
-                                <label for="{{ form.lanc_periodo_apuracao_r.id_for_label }}" class="form-label">Período de Apuração</label>
-                                {{ form.lanc_periodo_apuracao_r }}
-                                {% if form.lanc_periodo_apuracao_r.errors %}
-                                    <div class="text-danger">{{ form.lanc_periodo_apuracao_r.errors }}</div>
-                                {% endif %}
-                            </div>
-                            <div id="lanc-group-total_r" class="col-md-4 d-none">
-                                <label for="{{ form.lanc_total_r.id_for_label }}" class="form-label">Total</label>
-                                {{ form.lanc_total_r }}
-                                {% if form.lanc_total_r.errors %}
-                                    <div class="text-danger">{{ form.lanc_total_r.errors }}</div>
-                                {% endif %}
-                            </div>
+                        <div>
+                            <label for="{{ form.sinal.id_for_label }}" class="block text-sm font-medium mb-1">{{ form.sinal.label }}</label>
+                            {{ form.sinal }}
+                            {% if form.sinal.errors %}<div class="text-sm text-destructive mt-1">{{ form.sinal.errors }}</div>{% endif %}
                         </div>
                     </div>
                 </div>
 
-                <div class="form-group mb-4">
-                    <label for="{{ form.descricao.id_for_label }}" class="form-label">{{ form.descricao.label }}:</label>
-                    {{ form.descricao }}
-                    {% if form.descricao.errors %}
-                        <div class="text-danger">
-                            {{ form.descricao.errors }}
+                <!-- Grupo 2: Método / Data / Detalhes / Observação -->
+                <div class="bg-muted/20 border rounded-md p-4">
+                    <h3 class="text-sm font-semibold mb-4 tracking-wide text-muted-foreground">Pedido e método</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="{{ form.metodo_escolhido.id_for_label }}" class="block text-sm font-medium mb-1">Método</label>
+                            {{ form.metodo_escolhido }}
+                            {% if form.metodo_escolhido.errors %}<div class="text-sm text-destructive mt-1">{{ form.metodo_escolhido.errors }}</div>{% endif %}
+                            <p class="text-xs text-muted-foreground mt-1">Selecione o método para exibir os campos específicos.</p>
                         </div>
-                    {% endif %}
+                        <div>
+                            <label for="{{ form.data_lancamento.id_for_label }}" class="block text-sm font-medium mb-1">{{ form.data_lancamento.label }}</label>
+                            {{ form.data_lancamento }}
+                            {% if form.data_lancamento.errors %}<div class="text-sm text-destructive mt-1">{{ form.data_lancamento.errors }}</div>{% endif %}
+                            <p class="text-xs text-muted-foreground mt-1">{{ form.data_lancamento.help_text }}</p>
+                        </div>
+                        <div class="md:col-span-3">
+                            <div class="border rounded-md p-4">
+                                <h4 class="text-sm font-semibold mb-4 tracking-wide text-muted-foreground">Detalhes do método</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div id="lanc-group-total_credito_original_utilizado" class="hidden">
+                                        <label for="{{ form.lanc_total_credito_original_utilizado.id_for_label }}" class="block text-sm font-medium mb-1">Total Crédito Original Utilizado</label>
+                                        {{ form.lanc_total_credito_original_utilizado }}
+                                        {% if form.lanc_total_credito_original_utilizado.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_total_credito_original_utilizado.errors }}</div>{% endif %}
+                                    </div>
+                                    <div id="lanc-group-debito" class="hidden">
+                                        <label for="{{ form.lanc_debito.id_for_label }}" class="block text-sm font-medium mb-1">Débito</label>
+                                        {{ form.lanc_debito }}
+                                        {% if form.lanc_debito.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_debito.errors }}</div>{% endif %}
+                                    </div>
+                                    <div id="lanc-group-periodo_apuracao" class="hidden">
+                                        <label for="{{ form.lanc_periodo_apuracao.id_for_label }}" class="block text-sm font-medium mb-1">Período de Apuração</label>
+                                        {{ form.lanc_periodo_apuracao }}
+                                        {% if form.lanc_periodo_apuracao.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_periodo_apuracao.errors }}</div>{% endif %}
+                                    </div>
+                                    <div id="lanc-group-debito_r" class="hidden">
+                                        <label for="{{ form.lanc_debito_r.id_for_label }}" class="block text-sm font-medium mb-1">Débito</label>
+                                        {{ form.lanc_debito_r }}
+                                        {% if form.lanc_debito_r.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_debito_r.errors }}</div>{% endif %}
+                                    </div>
+                                    <div id="lanc-group-periodo_apuracao_r" class="hidden">
+                                        <label for="{{ form.lanc_periodo_apuracao_r.id_for_label }}" class="block text-sm font-medium mb-1">Período de Apuração</label>
+                                        {{ form.lanc_periodo_apuracao_r }}
+                                        {% if form.lanc_periodo_apuracao_r.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_periodo_apuracao_r.errors }}</div>{% endif %}
+                                    </div>
+                                    <div id="lanc-group-total_r" class="hidden">
+                                        <label for="{{ form.lanc_total_r.id_for_label }}" class="block text-sm font-medium mb-1">Total</label>
+                                        {{ form.lanc_total_r }}
+                                        {% if form.lanc_total_r.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_total_r.errors }}</div>{% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="md:col-span-3">
+                            <label for="{{ form.descricao.id_for_label }}" class="block text-sm font-medium mb-1">Observação</label>
+                            {{ form.descricao }}
+                            {% if form.descricao.errors %}<div class="text-sm text-destructive mt-1">{{ form.descricao.errors }}</div>{% endif %}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Aprovado</label>
+                            <select name="aprovado" class="input w-full">
+                                <option value="False">Não</option>
+                                <option value="True">Sim</option>
+                            </select>
+                            <p class="text-xs text-muted-foreground mt-1">Se "Sim" for selecionado, o saldo será atualizado no salvamento.</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Data de Aprovação</label>
+                            <input type="datetime-local" name="data_aprovacao" class="input w-full" />
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="block text-sm font-medium mb-1">Observação da Aprovação</label>
+                            <textarea name="observacao_aprovacao" rows="3" class="input w-full" placeholder="Observações sobre a aprovação (opcional)"></textarea>
+                        </div>
+                    </div>
                 </div>
                     
                                        
-                    <h4 class="border-bottom pb-2 mb-3">Anexos</h4>
+                <!-- Grupo 3: Anexos -->
+                <div class="bg-muted/20 border rounded-md p-4">
+                    <h4 class="text-base font-semibold border-b pb-2 mb-4 flex items-center gap-2"><i class="bi bi-paperclip"></i> Anexos</h4>
+                    <div id="dropzone-anexos" class="mb-4 border-2 border-dashed rounded-md p-6 text-center cursor-pointer transition-colors bg-muted/20 hover:bg-muted/30" style="cursor:pointer;">
+                        <div class="flex flex-col items-center gap-2 text-sm text-muted-foreground">
+                            <i class="bi bi-cloud-upload text-2xl"></i>
+                            <span>Arraste arquivos aqui ou <span class="text-primary font-medium">clique para selecionar</span></span>
+                            <span class="text-xs">Formatos aceitos: PDF, imagens, planilhas. Múltiplos arquivos suportados.</span>
+                        </div>
+                        <input id="hidden-multi-file" type="file" class="hidden" multiple>
+                    </div>
                     
                     {{ anexos_formset.management_form }}
                     
-                    <div id="anexos-container">
+                    <div id="anexos-container" class="space-y-4">
                         {% for anexo_form in anexos_formset.forms %}
-                            <div class="anexo-form {% if anexo_form.instance.pk and anexo_form.DELETE.value %}delete-form{% endif %}">
-                                <div class="row">
-                                    {% if anexo_form.instance.pk %}
-                                    <div class="col-12 mb-2">
-                                        <strong>Anexo atual:</strong> 
-                                        {% if anexo_form.instance.arquivo %}
-                                            <a href="{{ anexo_form.instance.arquivo.url }}" target="_blank">{{ anexo_form.instance.nome_anexo }}</a>
-                                        {% else %}
-                                            {{ anexo_form.instance.nome_anexo }}
-                                        {% endif %}
-                                        
-                                       
-                                    </div>
+                        {% if anexo_form.instance.pk or anexo_form.nome_anexo.value or anexo_form.arquivo.value %}
+                        <div class="anexo-form {% if anexo_form.instance.pk and anexo_form.DELETE.value %}delete-form{% endif %} bg-muted/20 border rounded-md p-4"
+                             data-initial-form="{{ forloop.first|yesno:'true,false' }}">
+                            <div class="flex items-center justify-between mb-2">
+                                <h5 class="font-medium text-sm">Anexo {% if forloop.counter > 1 %}#{{ forloop.counter }}{% endif %}</h5>
+                                <button type="button" class="remove-anexo inline-flex items-center justify-center rounded-md border border-destructive bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive hover:bg-destructive/20 transition-colors">
+                                    <i class="bi bi-trash mr-1"></i>Remover
+                                </button>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {% if anexo_form.instance.pk %}
+                                <div class="md:col-span-3 text-sm mb-2">
+                                    <strong class="font-medium">Anexo atual:</strong>
+                                    {% if anexo_form.instance.arquivo %}
+                                        <a href="{{ anexo_form.instance.arquivo.url }}" target="_blank">{{ anexo_form.instance.nome_anexo }}</a>
+                                    {% else %}
+                                        {{ anexo_form.instance.nome_anexo }}
                                     {% endif %}
-                                
-                                    <!-- Campos ocultos -->
-                                    {% for hidden in anexo_form.hidden_fields %}
-                                        {{ hidden }}
-                                    {% endfor %}
-                                
-                                    <div class="col-md-4">
-                                        <div class="form-group mb-3">
-                                            <label for="{{ anexo_form.arquivo.id_for_label }}" class="form-label">Arquivo:</label>
-                                            {{ anexo_form.arquivo }}
-                                            {% if anexo_form.arquivo.errors %}
-                                                <div class="text-danger">
-                                                    {{ anexo_form.arquivo.errors }}
-                                                </div>
-                                            {% endif %}
+                                </div>
+                                {% endif %}
+                                {# Campos ocultos #}
+                                {% for hidden in anexo_form.hidden_fields %}
+                                    {{ hidden }}
+                                {% endfor %}
+                                <div>
+                                    <label for="{{ anexo_form.arquivo.id_for_label }}" class="block text-sm font-medium mb-1">Arquivo</label>
+                                    <div class="file-field" data-file-wrapper>
+                                        {{ anexo_form.arquivo }}
+                                        <div class="file-visual">
+                                            <span class="file-btn"><i class="bi bi-paperclip text-xs"></i> Selecionar</span>
+                                            <span class="file-name" data-file-name>{% if anexo_form.instance.pk %}{{ anexo_form.instance.nome_anexo|default:'Arquivo existente' }}{% else %}Nenhum arquivo{% endif %}</span>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group mb-3">
-                                            <label for="{{ anexo_form.nome_anexo.id_for_label }}" class="form-label">Nome:</label>
-                                            {{ anexo_form.nome_anexo }}
-                                            {% if anexo_form.nome_anexo.errors %}
-                                                <div class="text-danger">
-                                                    {{ anexo_form.nome_anexo.errors }}
-                                                </div>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group mb-3">
-                                            <label for="{{ anexo_form.descricao.id_for_label }}" class="form-label">Descrição:</label>
-                                            {{ anexo_form.descricao }}
-                                            {% if anexo_form.descricao.errors %}
-                                                <div class="text-danger">
-                                                    {{ anexo_form.descricao.errors }}
-                                                </div>
-                                            {% endif %}
+                                    {% if anexo_form.arquivo.errors %}<div class="text-sm text-destructive mt-1">{{ anexo_form.arquivo.errors }}</div>{% endif %}
+                                </div>
+                                <div>
+                                    <label for="{{ anexo_form.nome_anexo.id_for_label }}" class="block text-sm font-medium mb-1">Nome</label>
+                                    {{ anexo_form.nome_anexo }}
+                                    {% if anexo_form.nome_anexo.errors %}<div class="text-sm text-destructive mt-1">{{ anexo_form.nome_anexo.errors }}</div>{% endif %}
+                                </div>
+                                <div>
+                                    <label for="{{ anexo_form.descricao.id_for_label }}" class="block text-sm font-medium mb-1">Descrição</label>
+                                    {{ anexo_form.descricao }}
+                                    {% if anexo_form.descricao.errors %}<div class="text-sm text-destructive mt-1">{{ anexo_form.descricao.errors }}</div>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                        
+                        <!-- Template form para clonagem via JavaScript (sempre oculto) -->
+                        {% with anexos_formset.empty_form as template_form %}
+                        <div class="anexo-form bg-muted/20 border rounded-md p-4 hidden" id="template-anexo-form" data-template-form="true">
+                            <div class="flex items-center justify-between mb-2">
+                                <h5 class="font-medium text-sm">Anexo</h5>
+                                <button type="button" class="remove-anexo inline-flex items-center justify-center rounded-md border border-destructive bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive hover:bg-destructive/20 transition-colors">
+                                    <i class="bi bi-trash mr-1"></i>Remover
+                                </button>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {# Campos ocultos #}
+                                {% for hidden in template_form.hidden_fields %}
+                                    {{ hidden }}
+                                {% endfor %}
+                                <div>
+                                    <label for="{{ template_form.arquivo.id_for_label }}" class="block text-sm font-medium mb-1">Arquivo</label>
+                                    <div class="file-field" data-file-wrapper>
+                                        {{ template_form.arquivo }}
+                                        <div class="file-visual">
+                                            <span class="file-btn"><i class="bi bi-paperclip text-xs"></i> Selecionar</span>
+                                            <span class="file-name" data-file-name>Nenhum arquivo</span>
                                         </div>
                                     </div>
                                 </div>
+                                <div>
+                                    <label for="{{ template_form.nome_anexo.id_for_label }}" class="block text-sm font-medium mb-1">Nome</label>
+                                    {{ template_form.nome_anexo }}
+                                </div>
+                                <div>
+                                    <label for="{{ template_form.descricao.id_for_label }}" class="block text-sm font-medium mb-1">Descrição</label>
+                                    {{ template_form.descricao }}
+                                </div>
                             </div>
-                        {% endfor %}
+                        </div>
+                        {% endwith %}
                     </div>
                     
-                    <button type="button" id="add-anexo" class="btn btn-outline-primary mb-4">
-                        <i class="bi bi-plus-circle"></i> Adicionar Anexo
-                    </button>
                     
-                    <div class="card-footer">
-                        <button type="submit" class="btn btn-success">
-                            <i class="bi bi-check-lg"></i> Salvar
+                    
+                    <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 pt-6 mt-6 border-t w-full">
+                        <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-6 py-3 text-sm font-medium hover:bg-primary/90 transition-colors min-w-[140px]">
+                            <i class="bi bi-check-lg mr-2"></i>Salvar
                         </button>
-                        <a href="{% url 'lancamentos:list' %}" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Cancelar
+                        <a href="{% url 'lancamentos:list' %}" class="w-full sm:w-auto inline-flex items-center justify-center rounded-md border border-input bg-background px-6 py-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors min-w-[140px]">
+                            <i class="bi bi-arrow-left mr-2"></i>Cancelar
                         </a>
                     </div>
             </form>
-            
-            <!-- Modal de Erro do Formulário -->
-            <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header bg-danger text-white">
-                            <h5 class="modal-title" id="errorModalLabel"><i class="bi bi-exclamation-triangle-fill me-2"></i>Erro no Formulário</h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div id="modalErrorContent">
-                                <!-- Conteúdo preenchido via JS -->
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 {% endblock %}
@@ -286,40 +282,17 @@
 <script>
     // Detectar erros de formulário e mostrar modal
     document.addEventListener('DOMContentLoaded', function() {
-        const hasFormErrors = {% if form.errors or form.non_field_errors or anexos_formset.errors or anexos_formset.non_form_errors %}true{% else %}false{% endif %};
+    const hasFormErrors = JSON.parse('{% if form.errors or form.non_field_errors or anexos_formset.errors or anexos_formset.non_form_errors %}true{% else %}false{% endif %}');
         
         if (hasFormErrors) {
-            // Coletar todos os erros para exibir no modal
-            const errorMessages = [];
-            
-            // Erros gerais do formulário
-            {% if form.non_field_errors %}
-                {% for error in form.non_field_errors %}
-                    errorMessages.push("{{ error }}");
-                {% endfor %}
-            {% endif %}
-            
-            // Erros específicos de campos
-            {% for field in form %}
-                {% if field.errors %}
-                    {% for error in field.errors %}
-                        errorMessages.push("<strong>{{ field.label }}</strong>: {{ error }}");
-                    {% endfor %}
-                {% endif %}
-            {% endfor %}
-            
-            // Erros do formset
-            {% if anexos_formset.non_form_errors %}
-                {% for error in anexos_formset.non_form_errors %}
-                    errorMessages.push("<strong>Anexos</strong>: {{ error }}");
-                {% endfor %}
-            {% endif %}
-            
+            // String única com separador para evitar conflitos de lint/JS
+            const errorMessagesRaw = "{% for error in form.non_field_errors %}{{ error|escapejs }}||{% endfor %}{% for field in form %}{% for error in field.errors %}<strong>{{ field.label|escapejs }}</strong>: {{ error|escapejs }}||{% endfor %}{% endfor %}{% for error in anexos_formset.non_form_errors %}<strong>Anexos</strong>: {{ error|escapejs }}||{% endfor %}";
+            const errorMessages = errorMessagesRaw.split('||').filter(Boolean);
             // Inserir erros no modal
             const errorContentEl = document.getElementById('modalErrorContent');
             if (errorContentEl) {
                 const errorList = document.createElement('ul');
-                errorList.className = 'alert alert-danger mb-0 list-unstyled';
+                errorList.className = 'space-y-2';
                 
                 errorMessages.forEach(msg => {
                     const li = document.createElement('li');
@@ -332,8 +305,7 @@
                 errorContentEl.appendChild(errorList);
                 
                 // Mostrar o modal
-                const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
-                errorModal.show();
+                openErrorModal();
             }
         }
     });
@@ -359,7 +331,7 @@
             }
             el.classList.add('is-invalid');
             const div = document.createElement('div');
-            div.className = 'invalid-feedback d-block ajax-error';
+            div.className = 'ajax-error text-xs text-destructive mt-1';
             div.innerHTML = msgs.map(m=>`<div>${m}</div>`).join('');
             el.parentElement.appendChild(div);
         }
@@ -381,7 +353,7 @@
                 });
                 if(data.form.non_field && data.form.non_field.length){
                     const alert = document.createElement('div');
-                    alert.className='alert alert-danger ajax-error';
+                    alert.className='ajax-error rounded-md border border-destructive/50 bg-destructive/10 text-destructive text-sm p-3 mb-4';
                     alert.innerHTML=data.form.non_field.join('<br>');
                     form.prepend(alert);
                 }
@@ -397,7 +369,7 @@
                     });
                     if(fErr.non_field && fErr.non_field.length){
                         const nf = document.createElement('div');
-                        nf.className='alert alert-danger ajax-error mb-2';
+                        nf.className='ajax-error rounded-md border border-destructive/50 bg-destructive/10 text-destructive text-xs p-2 mb-2';
                         nf.innerHTML=fErr.non_field.join('<br>');
                         frm.prepend(nf);
                     }
@@ -405,7 +377,7 @@
             }
             if(data.anexos_non_form && data.anexos_non_form.length){
                 const alert2 = document.createElement('div');
-                alert2.className='alert alert-danger ajax-error';
+                alert2.className='ajax-error rounded-md border border-destructive/50 bg-destructive/10 text-destructive text-sm p-3 mb-4';
                 alert2.innerHTML=data.anexos_non_form.join('<br>');
                 form.prepend(alert2);
             }
@@ -423,8 +395,8 @@
             'pedido de restituicao': ['lanc-group-total_credito_original_utilizado','lanc-group-debito','lanc-group-periodo_apuracao']
         };
         function norm(v){return (v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();}
-        function hideAll(){document.querySelectorAll('[id^="lanc-group-"]').forEach(el=>{el.classList.add('d-none');});}
-        function update(){hideAll(); const sel = norm(metodoField.value); const groups = mapGroups[sel]||[]; groups.forEach(id=>{const el=document.getElementById(id); if(el) el.classList.remove('d-none');});}
+        function hideAll(){document.querySelectorAll('[id^="lanc-group-"]').forEach(el=>el.classList.add('hidden'));}
+        function update(){hideAll(); const sel = norm(metodoField.value); const groups = mapGroups[sel]||[]; groups.forEach(id=>{const el=document.getElementById(id); if(el) el.classList.remove('hidden');});}
         if(metodoField){metodoField.addEventListener('change',update); update();}
         
         // Atualizar saldo quando adesão for selecionada
@@ -457,9 +429,11 @@
             dataField.value = today;
         }
         
-        // Função para gerenciar o formset de anexos
-        const anexosContainer = document.getElementById('anexos-container');
-        const addAnexoBtn = document.getElementById('add-anexo');
+    // Função para gerenciar o formset de anexos
+    const anexosContainer = document.getElementById('anexos-container');
+    const addAnexoBtn = document.getElementById('add-anexo');
+    const dropzone = document.getElementById('dropzone-anexos');
+    const hiddenMultiFile = document.getElementById('hidden-multi-file');
         
         // Pegando o prefixo do formset
         const prefix = '{{ anexos_formset.prefix }}';
@@ -473,9 +447,7 @@
             el.querySelectorAll('input, select, textarea').forEach((element) => {
                 ['id', 'name'].forEach((attr) => {
                     if (element.getAttribute(attr)) {
-                        element.setAttribute(attr, 
-                            element.getAttribute(attr).replace(id_regex, replacement)
-                        );
+                        element.setAttribute(attr, element.getAttribute(attr).replace(id_regex, replacement));
                     }
                 });
             });
@@ -502,55 +474,279 @@
         };
         
         // Função para adicionar um novo anexo
-        addAnexoBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // Pegando o número total de forms
-            let totalForms = document.getElementById('id_' + prefix + '-TOTAL_FORMS');
-            let currentFormCount = parseInt(totalForms.value);
-            
-            // Pegando o primeiro form como template
-            const formTemplate = anexosContainer.querySelector('.anexo-form');
-            if (!formTemplate) return;
-            
-            const newForm = formTemplate.cloneNode(true);
-            
-            // Remover informações de anexo existente
-            const anexoAtualDiv = newForm.querySelector('.col-12.mb-2');
-            if (anexoAtualDiv) {
-                anexoAtualDiv.remove();
-            }
-            
-            // Resetando todos os valores dos inputs
-            newForm.querySelectorAll('input, select, textarea').forEach((input) => {
-                if (input.getAttribute('type') === 'hidden') {
-                    // Para campos hidden, limpar apenas se não for o ID
-                    if (input.name && input.name.includes('-id')) {
+        if(addAnexoBtn){
+            addAnexoBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                // Reutiliza a mesma lógica de clone do primeiro form
+                const formTemplate = anexosContainer.querySelector('.anexo-form');
+                if (!formTemplate) return;
+                const totalForms = document.getElementById('id_' + prefix + '-TOTAL_FORMS');
+                const currentFormCount = parseInt(totalForms.value);
+                const newForm = formTemplate.cloneNode(true);
+                const anexoAtualDiv = newForm.querySelector('.md-col-span-3.mb-2');
+                if (anexoAtualDiv) anexoAtualDiv.remove();
+                newForm.querySelectorAll('input, select, textarea').forEach((input) => {
+                    if (input.type === 'hidden') {
+                        if (input.name && input.name.includes('-id')) input.value = '';
+                    } else {
                         input.value = '';
                     }
-                } else {
-                    input.value = '';
+                });
+                newForm.classList.remove('delete-form');
+                const headerDiv = newForm.querySelector('.flex.items-center.justify-between.mb-2');
+                const titulo = headerDiv.querySelector('h5');
+                if (titulo) titulo.textContent = `Anexo #${currentFormCount + 1}`;
+                let removeButton = headerDiv.querySelector('.remove-anexo');
+                if (!removeButton) {
+                    removeButton = document.createElement('button');
+                    removeButton.type = 'button';
+                    removeButton.className = 'remove-anexo inline-flex items-center justify-center rounded-md border border-destructive bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive hover:bg-destructive/20 transition-colors';
+                    removeButton.innerHTML = '<i class="bi bi-trash mr-1"></i>Remover';
+                    headerDiv.appendChild(removeButton);
                 }
+                updateElementIndex(newForm, prefix, currentFormCount);
+                totalForms.value = currentFormCount + 1;
+                anexosContainer.appendChild(newForm);
+                updateAnexoNumbers();
+                setupRemoveButtons();
+            });
+        }
+        
+        // Função para remover anexo
+        function setupRemoveButtons() {
+            document.querySelectorAll('.remove-anexo').forEach(button => {
+                // Remover event listeners antigos para evitar duplicação
+                const newButton = button.cloneNode(true);
+                button.parentNode.replaceChild(newButton, button);
                 
-                // Limpando quaisquer mensagens de erro
-                const errorDiv = input.nextElementSibling;
-                if (errorDiv && errorDiv.classList.contains('text-danger')) {
-                    errorDiv.innerHTML = '';
+                newButton.addEventListener('click', function() {
+                    // Encontrar o form pai
+                    const anexoForm = this.closest('.anexo-form');
+                    
+                    // Verificar se é um anexo existente com campo DELETE
+                    const deleteField = anexoForm.querySelector('input[name$="-DELETE"]');
+                    if (deleteField) {
+                        // Marcar para exclusão e ocultar visualmente
+                        deleteField.value = 'on';
+                        anexoForm.classList.add('delete-form');
+                        anexoForm.style.display = 'none';
+                    } else {
+                        // Se for um novo anexo, remover completamente do DOM
+                        anexoForm.remove();
+                        
+                        // Atualizar os índices dos formsets
+                        const forms = document.querySelectorAll('.anexo-form');
+                        const totalForms = document.getElementById('id_' + prefix + '-TOTAL_FORMS');
+                        totalForms.value = forms.length;
+                        
+                        // Atualizar os índices de cada formset
+                        forms.forEach((form, idx) => {
+                            updateElementIndex(form, prefix, idx);
+                        });
+                        
+                        // Atualizar a numeração dos anexos
+                        updateAnexoNumbers();
+                    }
+                });
+            });
+        }
+        
+        // Função para atualizar a numeração dos anexos
+        function updateAnexoNumbers() {
+            const anexoForms = document.querySelectorAll('.anexo-form:not([data-template-form])');
+            anexoForms.forEach((form, index) => {
+                const heading = form.querySelector('h5');
+                if (heading) {
+                    heading.textContent = `Anexo #${index + 1}`;
                 }
             });
+        }
+        
+        // Configurar botões de remoção ao carregar a página
+    setupRemoveButtons();
+
+        // -------- Drag & Drop --------
+        function highlight(on){
+            if(!dropzone) return; dropzone.classList.toggle('ring-2', on); dropzone.classList.toggle('ring-primary/50', on);
+        }
+
+        function createFormForFile(file){
+            // Usar o template dedicado
+            const templateForm = document.getElementById('template-anexo-form');
+            if(!templateForm) return;
             
-            // Remover classe delete-form se existir
-            newForm.classList.remove('delete-form');
+            const totalForms = document.getElementById('id_' + prefix + '-TOTAL_FORMS');
+            const currentIndex = parseInt(totalForms.value);
             
-            // Atualizando os índices
-            updateElementIndex(newForm, prefix, currentFormCount);
+            // Clonar o template
+            const formEl = templateForm.cloneNode(true);
+            formEl.classList.remove('hidden');
+            formEl.removeAttribute('id');
+            formEl.removeAttribute('data-template-form');
             
-            // Atualizando o valor total de forms
-            totalForms.value = currentFormCount + 1;
+            // Atualizar índices
+            updateElementIndex(formEl, prefix, currentIndex);
+            totalForms.value = currentIndex + 1;
             
-            // Adicionando o novo form ao container
-            anexosContainer.appendChild(newForm);
-        });
+            // Anexar ao container
+            anexosContainer.appendChild(formEl);
+            
+            // Configurar o arquivo no input
+            const inputFile = formEl.querySelector('input[type="file"]');
+            if(inputFile){
+                // Criar um DataTransfer para setar o File (somente navegadores modernos)
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                inputFile.files = dt.files;
+                // Disparar evento change para atualizar qualquer listener e UI
+                try { inputFile.dispatchEvent(new Event('change', { bubbles: true })); } catch(_) {}
+            }
+            
+            // Preencher nome do anexo automaticamente
+            const nomeInput = formEl.querySelector('input[name$="-nome_anexo"]');
+            if(nomeInput && !nomeInput.value){ 
+                nomeInput.value = file.name; 
+            }
+            
+            // Atualizar o wrapper do arquivo para mostrar o nome do arquivo
+            const fileWrapper = formEl.querySelector('[data-file-wrapper]');
+            if(fileWrapper) {
+                updateSingleWrapper(fileWrapper);
+                const nameSpan = fileWrapper.querySelector('[data-file-name]');
+                if(nameSpan) { nameSpan.textContent = file.name; }
+            }
+            
+            // Atualizar numeração e botões
+            updateAnexoNumbers();
+            setupRemoveButtons();
+            
+            // Re-bind file wrappers para o novo form
+            bindFileWrappers(formEl);
+        }
+        function handleFiles(files){
+            const added = [];
+            const failed = [];
+            [...files].forEach(f=>{
+                try {
+                    createFormForFile(f);
+                    added.push(f.name);
+                } catch(err){
+                    failed.push(f.name);
+                }
+            });
+            // contador removido
+            showAnexoFeedback(added, failed);
+        }
+        if(dropzone){
+            ['dragenter','dragover'].forEach(evt=>dropzone.addEventListener(evt, e=>{e.preventDefault(); e.stopPropagation(); highlight(true);}));
+            ['dragleave','drop'].forEach(evt=>dropzone.addEventListener(evt, e=>{e.preventDefault(); e.stopPropagation(); if(evt==='dragleave') highlight(false);}));
+            dropzone.addEventListener('drop', e=>{highlight(false); if(e.dataTransfer?.files){ handleFiles(e.dataTransfer.files); }});
+            dropzone.addEventListener('click', ()=> hiddenMultiFile?.click());
+        }
+        if(hiddenMultiFile){
+            hiddenMultiFile.addEventListener('change', e=>{ handleFiles(e.target.files); hiddenMultiFile.value=''; });
+        }
+        // Atualiza contador também após remoções
+    // contador removido - sem observer
+
+        // Modal de feedback de anexos
+        function ensureAnexoModal(){
+            let modal = document.getElementById('anexoFeedbackModal');
+            if(modal) return modal;
+            modal = document.createElement('div');
+            modal.id='anexoFeedbackModal';
+            modal.className='fixed inset-0 z-50 hidden';
+            modal.innerHTML = `
+                <div class="absolute inset-0 bg-black/60" data-overlay></div>
+                <div class="relative z-10 max-w-md w-full mx-auto mt-24 bg-card border rounded-lg shadow-lg overflow-hidden">
+                    <div class="flex items-center justify-between px-5 py-3 border-b">
+                        <h3 class="text-sm font-semibold flex items-center gap-2"><i class="bi bi-files"></i> Anexos</h3>
+                        <button type="button" data-close class="p-1 rounded hover:bg-muted">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                    <div class="p-5 space-y-4 text-sm" id="anexoFeedbackBody"></div>
+                    <div class="px-5 py-3 border-t flex justify-end">
+                        <button type="button" data-close class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-xs font-medium hover:bg-accent hover:text-accent-foreground">Fechar</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+            modal.addEventListener('click', e=>{ if(e.target.dataset.overlay!==undefined || e.target.closest('[data-close]')) closeAnexoModal(); });
+            document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeAnexoModal(); });
+            return modal;
+        }
+        function openAnexoModal(){ const m=ensureAnexoModal(); m.classList.remove('hidden'); document.body.style.overflow='hidden'; }
+        function closeAnexoModal(){ const m=document.getElementById('anexoFeedbackModal'); if(m){ m.classList.add('hidden'); document.body.style.overflow=''; } }
+        function showAnexoFeedback(added, failed){
+            if(!added.length && !failed.length) return;
+            const modal = ensureAnexoModal();
+            const body = modal.querySelector('#anexoFeedbackBody');
+            let html='';
+            if(added.length){
+                html += `<div class="rounded-md border border-emerald-500/40 bg-emerald-500/10 p-3"><div class="font-medium text-emerald-600 text-xs mb-1 flex items-center gap-1"><i class='bi bi-check2-circle'></i> Adicionados</div><ul class='text-emerald-700 list-disc ml-4 space-y-1'>${added.map(a=>`<li>${a}</li>`).join('')}</ul></div>`;
+            }
+            if(failed.length){
+                html += `<div class="rounded-md border border-destructive/40 bg-destructive/10 p-3"><div class="font-medium text-destructive text-xs mb-1 flex items-center gap-1"><i class='bi bi-exclamation-triangle'></i> Falharam</div><ul class='text-destructive list-disc ml-4 space-y-1'>${failed.map(a=>`<li>${a}</li>`).join('')}</ul></div>`;
+            }
+            body.innerHTML = html;
+            openAnexoModal();
+        }
+
+        // Atualiza nomes de arquivos exibidos nos wrappers custom
+        function updateSingleWrapper(wrapper){
+            const input = wrapper.querySelector('input[type=file]');
+            const nameSpan = wrapper.querySelector('[data-file-name]');
+            if(!input || !nameSpan) return;
+            if(input.files && input.files.length){
+                nameSpan.textContent = input.files.length === 1 ? input.files[0].name : input.files.length + ' arquivos selecionados';
+            } else {
+                nameSpan.textContent = 'Nenhum arquivo';
+            }
+        }
+        function bindFileWrappers(scope=document){
+            scope.querySelectorAll('[data-file-wrapper]').forEach(wrapper=>{
+                const input = wrapper.querySelector('input[type=file]');
+                if(!input || wrapper.dataset.bound) return;
+                wrapper.dataset.bound = '1';
+                input.addEventListener('change', ()=> updateSingleWrapper(wrapper));
+                updateSingleWrapper(wrapper);
+            });
+        }
+        bindFileWrappers();
+        // Re-bind after dynamic add (MutationObserver)
+        const mo = new MutationObserver(()=> bindFileWrappers());
+        mo.observe(document.getElementById('anexos-container'), {childList:true, subtree:true});
     });
+
+        // Tailwind Error Modal (light replacement for bootstrap)
+        function openErrorModal(){
+                let modal=document.getElementById('errorModalTW');
+                if(!modal){
+                        modal=document.createElement('div');
+                        modal.id='errorModalTW';
+                        modal.className='fixed inset-0 z-50 flex items-center justify-center p-4';
+                        modal.innerHTML=`<div class="absolute inset-0 bg-black/60" data-overlay></div>
+                                <div class="relative z-10 w-full max-w-lg bg-card border rounded-lg shadow-lg overflow-hidden">
+                                    <div class="flex items-center justify-between px-6 py-4 border-b bg-destructive/10">
+                                        <h3 class="text-lg font-semibold text-destructive flex items-center gap-2"><i class="bi bi-exclamation-triangle-fill"></i> Erro no Formulário</h3>
+                                        <button type="button" class="rounded-md p-2 hover:bg-muted" data-close><i class="bi bi-x"></i></button>
+                                    </div>
+                                    <div class="p-6 max-h-[60vh] overflow-y-auto text-sm" id="modalErrorContent"></div>
+                                    <div class="flex justify-end px-6 py-4 border-t">
+                                        <button type="button" data-close class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground">Fechar</button>
+                                    </div>
+                                </div>`;
+                        document.body.appendChild(modal);
+                        modal.addEventListener('click',e=>{if(e.target.dataset.overlay!==undefined||e.target.closest('[data-close]')){closeErrorModal();}});
+                        document.addEventListener('keydown', escHandler);
+                }
+                modal.classList.remove('hidden');
+                document.body.style.overflow='hidden';
+        }
+        function closeErrorModal(){
+                const modal=document.getElementById('errorModalTW');
+                if(modal){modal.classList.add('hidden'); document.body.style.overflow='';}
+        }
+        function escHandler(e){ if(e.key==='Escape'){ closeErrorModal(); } }
 </script>
 {% endblock %}

@@ -9,12 +9,12 @@ from django.urls import reverse_lazy
 from django.db import transaction
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse, Http404
-from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views import View
 import json
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django import forms
+from django.db import models
 from django.db.models import Q
 from django.utils.timezone import localtime
 from django.utils.dateformat import format as date_format
@@ -23,8 +23,12 @@ from django.contrib.auth.decorators import login_required
 from .models import ClientesParceiros
 from .forms import NovoClienteForm, ContatoFormSet, NovoParceiroForm
 from empresas.forms import EmpresaForm
-from empresas.models import Empresa
+from empresas.models import Empresa, Socio, ParticipacaoSocietaria
 from contatos.models import Contatos
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status, permissions
+from .serializers import ClientesParceirosSerializer
 
 # === FIM IMPORTS ===
 
@@ -60,11 +64,60 @@ class EditarClienteView(LoginRequiredMixin, UpdateView):
             contatos_qs = cliente_parceiro.id_company_vinculada.empresa_base_contato.all()
             initial = [{'tipo_contato': c.tipo_contato, 'telefone': c.telefone, 'email': c.email, 'site': c.site} for c in contatos_qs] or [{}]
             context['contato_formset'] = ContatoFormSet(initial=initial)
+        
         # Empresa base: apenas a vinculada ao usuário logado
         empresa_vinculada = None
         if hasattr(self.request.user, 'profile'):
             empresa_vinculada = self.request.user.profile.empresa_vinculada
         context['parceiros'] = Empresa.objects.filter(id=empresa_vinculada.id) if empresa_vinculada else Empresa.objects.none()
+        
+        # ===== Sócios logic - similar to EmpresaUpdateView =====
+        from empresas.models import Socio, ParticipacaoSocietaria
+        
+        # Lista todos os sócios para o select
+        context['socios_existentes'] = Socio.objects.all().order_by('nome')
+        
+        # Empresa a ser editada (a vinculada, que é o "cliente")
+        empresa_cliente = cliente_parceiro.id_company_vinculada
+        
+        if self.request.method == 'POST':
+            try:
+                socio_count = int(self.request.POST.get('socio_count', '0') or 0)
+            except ValueError:
+                socio_count = 0
+            socio_entries = []
+            for i in range(1, socio_count + 1):
+                socio_entries.append({
+                    'existing': self.request.POST.get(f'existing_socio_{i}', ''),
+                    'nome': self.request.POST.get(f'nome_novo_{i}', ''),
+                    'cpf': self.request.POST.get(f'cpf_novo_{i}', ''),
+                    'percentual': self.request.POST.get(f'percentual_{i}', ''),
+                    'index': i
+                })
+            if not socio_entries:
+                socio_entries = [{'existing':'','nome':'','cpf':'','percentual':'','index':1}]
+            context['socios_entries'] = socio_entries
+        else:
+            # Carrega participações atuais da empresa cliente
+            participacoes = ParticipacaoSocietaria.objects.filter(empresa=empresa_cliente).select_related('socio')
+            socio_entries = []
+            idx = 1
+            for p in participacoes:
+                socio_entries.append({
+                    'existing': str(p.socio.id),
+                    'nome': '',
+                    'cpf': '',
+                    'percentual': p.percentual if p.percentual is not None else '',
+                    'index': idx
+                })
+                idx += 1
+            if not socio_entries:
+                socio_entries = [{'existing':'','nome':'','cpf':'','percentual':'','index':1}]
+            context['socios_entries'] = socio_entries
+            
+        # Debug info
+        context['participacoes_total'] = ParticipacaoSocietaria.objects.filter(empresa=empresa_cliente).count()
+        
         return context
 
     def get_form_kwargs(self):
@@ -104,6 +157,57 @@ class EditarClienteView(LoginRequiredMixin, UpdateView):
                 try:
                     # Atualiza empresa vinculada
                     empresa = empresa_form.save()
+                    
+                    # ===== Sócios processing (similar to EmpresaUpdateView) =====
+                    from empresas.models import Socio, ParticipacaoSocietaria
+                    from decimal import Decimal
+                    
+                    try:
+                        socio_count = int(self.request.POST.get('socio_count', '0') or 0)
+                    except ValueError:
+                        socio_count = 0
+                    
+                    socios_processados = set()
+                    for i in range(1, socio_count + 1):
+                        existing_id = self.request.POST.get(f'existing_socio_{i}')
+                        novo_nome = self.request.POST.get(f'nome_novo_{i}', '').strip()
+                        novo_cpf = self.request.POST.get(f'cpf_novo_{i}', '').strip()
+                        percentual_raw = self.request.POST.get(f'percentual_{i}', '').strip()
+                        
+                        socio_obj = None
+                        if existing_id:
+                            try:
+                                socio_obj = Socio.objects.get(id=existing_id)
+                            except Socio.DoesNotExist:
+                                socio_obj = None
+                        elif novo_cpf and novo_nome:
+                            cpf_digits = ''.join(ch for ch in novo_cpf if ch.isdigit())
+                            if cpf_digits:
+                                socio_obj, _created = Socio.objects.get_or_create(cpf=cpf_digits, defaults={'nome': novo_nome})
+                        
+                        percentual = None
+                        if percentual_raw:
+                            pr = percentual_raw.replace('%','').replace(',','.')
+                            try:
+                                percentual = Decimal(pr)
+                            except Exception:
+                                percentual = None
+                        
+                        if socio_obj:
+                            socios_processados.add(socio_obj.id)
+                            part, created_part = ParticipacaoSocietaria.objects.get_or_create(
+                                empresa=empresa, 
+                                socio=socio_obj, 
+                                defaults={'percentual': percentual}
+                            )
+                            if not created_part and percentual is not None and part.percentual != percentual:
+                                part.percentual = percentual
+                                part.save()
+                    
+                    # Remove participações não enviadas
+                    if socio_count >= 0:
+                        ParticipacaoSocietaria.objects.filter(empresa=empresa).exclude(socio_id__in=socios_processados).delete()
+                    
                     # Atualiza vínculo - mantém parceiro original
                     # Não usa form.cleaned_data['parceiro'] porque o campo está disabled
                     # cliente_parceiro.id_company_base não muda - mantém o parceiro original
@@ -159,6 +263,27 @@ class NovoClienteView(UserPassesTestMixin, LoginRequiredMixin, CreateView):
             context['contato_formset'] = ContatoFormSet(initial=[{}])
         # Só mostra a empresa vinculada ao usuário
         context['parceiros'] = Empresa.objects.filter(id=empresa_vinculada.id) if empresa_vinculada else Empresa.objects.none()
+        # Sócios existentes ativos para seleção
+        context['socios_existentes'] = Socio.objects.filter(ativo=True).order_by('nome')
+        if self.request.method == 'POST':
+            try:
+                socio_count = int(self.request.POST.get('socio_count', '0') or 0)
+            except ValueError:
+                socio_count = 0
+            socio_entries = []
+            for i in range(1, socio_count + 1):
+                socio_entries.append({
+                    'existing': self.request.POST.get(f'existing_socio_{i}', ''),
+                    'nome': self.request.POST.get(f'nome_novo_{i}', ''),
+                    'cpf': self.request.POST.get(f'cpf_novo_{i}', ''),
+                    'percentual': self.request.POST.get(f'percentual_{i}', ''),
+                    'index': i
+                })
+            if not socio_entries:
+                socio_entries = [{'existing':'','nome':'','cpf':'','percentual':'','index':1}]
+            context['socios_entries'] = socio_entries
+        else:
+            context['socios_entries'] = [{'existing':'','nome':'','cpf':'','percentual':'','index':1}]
         return context
     
     def get_form_kwargs(self):
@@ -185,6 +310,40 @@ class NovoClienteView(UserPassesTestMixin, LoginRequiredMixin, CreateView):
                 try:
                     # Salvar nova empresa
                     nova_empresa = empresa_form.save()
+                    # ================= Sócios =================
+                    socio_count = int(self.request.POST.get('socio_count', 0))
+                    for i in range(1, socio_count + 1):
+                        existing_id = self.request.POST.get(f'existing_socio_{i}')
+                        novo_nome = self.request.POST.get(f'nome_novo_{i}', '').strip()
+                        novo_cpf = self.request.POST.get(f'cpf_novo_{i}', '').strip()
+                        percentual_raw = self.request.POST.get(f'percentual_{i}', '').strip()
+                        socio_obj = None
+                        if existing_id:
+                            try:
+                                socio_obj = Socio.objects.get(id=existing_id)
+                            except Socio.DoesNotExist:
+                                socio_obj = None
+                        elif novo_cpf and novo_nome:
+                            cpf_digits = ''.join(ch for ch in novo_cpf if ch.isdigit())
+                            if cpf_digits:
+                                socio_obj, _created = Socio.objects.get_or_create(cpf=cpf_digits, defaults={'nome': novo_nome})
+                        percentual = None
+                        if percentual_raw:
+                            pr = percentual_raw.replace('%','').replace(',','.')
+                            try:
+                                from decimal import Decimal
+                                percentual = Decimal(pr)
+                            except Exception:
+                                percentual = None
+                        if socio_obj:
+                            part, created_part = ParticipacaoSocietaria.objects.get_or_create(
+                                empresa=nova_empresa,
+                                socio=socio_obj,
+                                defaults={'percentual': percentual}
+                            )
+                            if not created_part and percentual is not None and part.percentual != percentual:
+                                part.percentual = percentual
+                                part.save()
                     # Pegar os dados do formulário principal
                     parceiro = form.cleaned_data['parceiro']
                     cliente = nova_empresa
@@ -274,6 +433,11 @@ class ListClienteParceiroView(LoginRequiredMixin, ListView):
         context['total_empresas_cliente_unicas'] = len(set(cp.id_company_vinculada_id for cp in clientes_parceiros))
         context['empresa_base_atual'] = getattr(getattr(self.request.user, 'profile', None), 'empresa_vinculada', None)
         context['q'] = self.request.GET.get('q', '')
+        
+        # Calcular total de parceiros
+        parceiros_qs = ClientesParceiros.objects.filter(tipo_parceria='parceiro', ativo=True)
+        context['total_parceiros'] = parceiros_qs.count()
+        
         # Lista de parceiros para filtro (apenas para staff/superuser)
         if self.request.user.is_staff or self.request.user.is_superuser:
             # Parceiros são empresas que aparecem como base em vínculos de cliente
@@ -432,12 +596,11 @@ class ClienteParceiroUpdateView(LoginRequiredMixin, UpdateView):
         return initial
 
 # Views para AJAX (se necessário)
-@method_decorator(csrf_exempt, name='dispatch')
 class EmpresasAjaxView(LoginRequiredMixin, View):
     """
     View para buscar empresas via AJAX
     """
-    def get(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):  # Somente GET (idempotente) – CSRF não é exigido para GET
         term = request.GET.get('term', '')
         empresas = Empresa.objects.filter(
             razao_social__icontains=term
@@ -510,7 +673,14 @@ class NovoParceiroView(UserPassesTestMixin, LoginRequiredMixin, CreateView):
 class ParceiroDetailView(LoginRequiredMixin, View):
     template_name = 'parceiro_detail.html'
     def get(self, request, pk):
-        parceiro = get_object_or_404(ClientesParceiros, pk=pk, tipo_parceria='parceiro')
+        qs = ClientesParceiros.objects.filter(tipo_parceria='parceiro')
+        # Restringe para não-admin: somente registros cuja empresa base coincide com empresa_vinculada do perfil
+        if not (request.user.is_staff or request.user.is_superuser):
+            empresa_vinc = getattr(getattr(request.user, 'profile', None), 'empresa_vinculada', None)
+            if not empresa_vinc:
+                raise Http404
+            qs = qs.filter(id_company_base=empresa_vinc)
+        parceiro = get_object_or_404(qs, pk=pk)
         contatos = parceiro.id_company_vinculada.empresa_base_contato.all()
         return render(request, self.template_name, {
             'parceiro': parceiro,
@@ -520,7 +690,20 @@ class ParceiroDetailView(LoginRequiredMixin, View):
 class ClienteDetailView(LoginRequiredMixin, View):
     template_name = 'cliente_detail.html'
     def get(self, request, pk):
-        cliente = get_object_or_404(ClientesParceiros, pk=pk, tipo_parceria='cliente')
+        qs = ClientesParceiros.objects.filter(tipo_parceria='cliente')
+        if not (request.user.is_staff or request.user.is_superuser):
+            profile = getattr(request.user, 'profile', None)
+            empresa_vinc = getattr(profile, 'empresa_vinculada', None)
+            if not empresa_vinc:
+                raise Http404
+            # Permite acesso se for parceiro (empresa base) ou cliente (empresa vinculada)
+            # Caso de cliente: seu relacionamento onde é id_company_vinculada
+            filtro = (
+                models.Q(id_company_base=empresa_vinc) |
+                models.Q(id_company_vinculada=empresa_vinc)
+            )
+            qs = qs.filter(filtro)
+        cliente = get_object_or_404(qs, pk=pk)
         contatos = cliente.id_company_vinculada.empresa_base_contato.all()
         return render(request, self.template_name, {
             'cliente': cliente,
@@ -574,3 +757,67 @@ class EditarParceiroView(LoginRequiredMixin, UpdateView):
 
 # Mantendo compatibilidade com URLs existentes
 NewClienteParceiroView = NovoClienteView
+
+# ================= DRF API Views =================
+
+class IsSuperAdmin(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.is_superuser
+
+class ClientesParceirosListAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+
+    def get(self, request):
+        objetos = ClientesParceiros.objects.all()
+        serializer = ClientesParceirosSerializer(objetos, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class ClientesParceirosCreateAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+
+    def post(self, request):
+        serializer = ClientesParceirosSerializer(data=request.data)
+        if serializer.is_valid():
+            try:
+                obj = serializer.save()
+            except Exception as e:
+                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            out = ClientesParceirosSerializer(obj).data
+            return Response(out, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ClientesParceirosDetailAPI(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+
+    def get_object(self, pk):
+        try:
+            return ClientesParceiros.objects.get(pk=pk)
+        except ClientesParceiros.DoesNotExist:
+            return None
+
+    def get(self, request, pk):
+        obj = self.get_object(pk)
+        if not obj:
+            return Response({'error': 'Registro não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ClientesParceirosSerializer(obj)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, pk):
+        obj = self.get_object(pk)
+        if not obj:
+            return Response({'error': 'Registro não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ClientesParceirosSerializer(obj, data=request.data, partial=True)
+        if serializer.is_valid():
+            try:
+                obj = serializer.save()
+            except Exception as e:
+                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(ClientesParceirosSerializer(obj).data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        obj = self.get_object(pk)
+        if not obj:
+            return Response({'error': 'Registro não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+        obj.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

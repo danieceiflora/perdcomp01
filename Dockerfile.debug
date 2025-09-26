@@ -1,0 +1,16 @@
+FROM node:20-alpine
+WORKDIR /build
+
+# Copia tudo para debug
+COPY . .
+
+# Lista tudo que foi copiado
+RUN echo "=== Arquivos na raiz ===" && ls -la
+RUN echo "=== Estrutura perdcomp ===" && find perdcomp -type f 2>/dev/null || echo "perdcomp não encontrado"
+RUN echo "=== Verificando input.css especificamente ===" && ls -la perdcomp/static/src/input.css 2>/dev/null || echo "input.css AUSENTE"
+
+# Tenta instalar dependências
+RUN npm install --no-audit --no-fund --quiet
+
+# Tenta compilar
+RUN npx tailwindcss -i ./perdcomp/static/src/input.css -o ./perdcomp/static/css/app.css --minify || echo "FALHA na compilação"

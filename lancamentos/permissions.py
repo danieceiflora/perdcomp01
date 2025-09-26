@@ -104,7 +104,7 @@ class LancamentoClienteViewOnlyMixin(LoginRequiredMixin):
                 from django.contrib import messages
                 from django.shortcuts import redirect
                 messages.error(request, "Clientes têm permissão apenas para visualização.")
-                return redirect('accounts:cliente_dashboard')
+                return redirect('accounts:dashboard')
         return super().dispatch(request, *args, **kwargs)
 
 class AdminRequiredMixin(UserPassesTestMixin):
