@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load utils_filters %}
+{% load l10n %}
 
 {% block title %}Detalhes da Adesão{% endblock %}
 
@@ -135,6 +136,24 @@
                   <div class="text-[10px] uppercase tracking-wide text-muted-foreground">Saldo Atual</div>
                   <div class="text-sm font-semibold leading-relaxed">{{ adesao.saldo_atual|br_currency }}</div>
                 </div>
+                <!-- Selic Acumulada (Data Arrecadação -> Hoje) -->
+                <div class="rounded-md border bg-muted/20 p-4 space-y-1 col-span-2 md:col-span-1">
+                  <div class="text-[10px] uppercase tracking-wide text-muted-foreground">
+                    Selic Acumulada
+                    {% if adesao.data_arrecadacao %}
+                      <span class="text-[10px] text-muted-foreground/70">(de {{ adesao.data_arrecadacao|date:'d/m/Y' }} até hoje)</span>
+                    {% endif %}
+                  </div>
+                  <div id="selic-acumulada-text" class="text-sm font-semibold leading-relaxed">--</div>
+                </div>
+                <!-- Valor Corrigido = Saldo Atual * Selic Acumulada do período -->
+                <div class="rounded-md border bg-muted/20 p-4 space-y-1 col-span-2 md:col-span-1">
+                  <div class="text-[10px] uppercase tracking-wide text-muted-foreground">Valor Corrigido</div>
+                  <div id="valor-corrigido-text" class="text-sm font-semibold leading-relaxed">--</div>
+                  <div class="text-[11px] text-muted-foreground">
+                    Rendimento: <span id="valor-rendimento-text">--</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -144,4 +163,96 @@
   </div>
   </div>
 </div>
+<script>
+  (function() {
+    try {
+      // Se não houver data de arrecadação, não tenta buscar
+      var dataArrecStr = "{% if adesao.data_arrecadacao %}{{ adesao.data_arrecadacao|date:'d/m/Y' }}{% endif %}".trim();
+      if (!dataArrecStr) return;
+
+      // Helper: parse número pt-BR ("1.234.567,89" => 1234567.89)
+      function parsePtBrNumber(txt) {
+        if (txt == null) return NaN;
+        txt = String(txt).trim();
+        if (!txt) return NaN;
+        // 1) tenta direto
+        var n = Number(txt);
+        if (!isNaN(n)) return n;
+        // 2) se só tem vírgula, troca por ponto
+        if (txt.indexOf(',') >= 0 && txt.indexOf('.') < 0) {
+          n = Number(txt.replace(/,/g, '.'));
+          if (!isNaN(n)) return n;
+        }
+        // 3) se tem ponto e vírgula, assume ponto = milhar, vírgula = decimal
+        if (txt.indexOf('.') >= 0 && txt.indexOf(',') >= 0) {
+          n = Number(txt.replace(/\./g, '').replace(/,/g, '.'));
+          if (!isNaN(n)) return n;
+        }
+        // 4) remove espaços e tenta novamente
+        txt = txt.replace(/\s/g, '');
+        n = Number(txt);
+        if (!isNaN(n)) return n;
+        return NaN;
+      }
+
+      // Saldo atual (fallback para saldo inicial caso saldo_atual não exista)
+  var saldoAtualStr = "{{ adesao.saldo_atual|default:adesao.saldo|localize }}"; // pode vir localiz.
+      var saldoAtual = parsePtBrNumber(saldoAtualStr);
+      if (!isFinite(saldoAtual)) {
+        // fallback com floatformat garantindo ponto decimal
+        saldoAtual = parsePtBrNumber("{{ adesao.saldo_atual|default:adesao.saldo|floatformat:'6' }}");
+      }
+      if (!isFinite(saldoAtual)) return;
+
+  // Data de hoje no formato dd/mm/aaaa (independente do locale do navegador)
+  var hoje = new Date();
+  function pad2(n){return n<10 ? '0'+n : ''+n}
+  var hojeStr = pad2(hoje.getDate()) + '/' + pad2(hoje.getMonth()+1) + '/' + hoje.getFullYear();
+
+  var baseUrl = "{% url 'selic-acumulada' %}"; // usa a rota nomeada do Django
+  var url = baseUrl + '?dataInicial=' + encodeURIComponent(dataArrecStr) + '&dataFinal=' + encodeURIComponent(hojeStr) + '&codigo_serie=4390&percent=1';
+
+  // feedback de carregamento
+  var elSelic = document.getElementById('selic-acumulada-text');
+  var elCorr = document.getElementById('valor-corrigido-text');
+  var elRend = document.getElementById('valor-rendimento-text');
+  if (elSelic) elSelic.textContent = 'calculando…';
+  if (elCorr) elCorr.textContent = 'calculando…';
+  if (elRend) elRend.textContent = 'calculando…';
+
+      fetch(url, { headers: { 'Accept': 'application/json' }})
+        .then(function(r) { return r.ok ? r.json() : Promise.reject(r); })
+        .then(function(json) {
+          // acumulado_composto vem como string "0.1234" -> 12,34%
+          var acumStr = (json && json.acumulado_composto) ? String(json.acumulado_composto) : null;
+          if (!acumStr) return;
+          // aceita "0,1234" ou notação científica
+          var acumulado = parsePtBrNumber(acumStr);
+          if (!isFinite(acumulado)) return;
+
+          // Exibição: percentual em pt-BR
+          var fmtPercent = new Intl.NumberFormat('pt-BR', { style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 4 });
+          var fmtCurrency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
+          var selicPctText = fmtPercent.format(acumulado);
+          if (elSelic) elSelic.textContent = selicPctText;
+
+          // Valor Corrigido (Saldo Atual + rendimento): saldo_atual * (1 + acumulado)
+          var valorRendimento = saldoAtual * acumulado;
+          var valorCorrigido = saldoAtual * (1 + acumulado);
+          if (elCorr) elCorr.textContent = fmtCurrency.format(valorCorrigido);
+          if (elRend) elRend.textContent = fmtCurrency.format(valorRendimento);
+        })
+        .catch(function(err) {
+          // Silencia erros de rede; mantém "--"
+          console.warn('Falha ao carregar SELIC acumulada:', err);
+          if (elSelic) elSelic.textContent = '--';
+          if (elCorr) elCorr.textContent = '--';
+          if (elRend) elRend.textContent = '--';
+        });
+    } catch (e) {
+      console.warn('Erro no cálculo da SELIC acumulada:', e);
+    }
+  })();
+</script>
 {% endblock %}

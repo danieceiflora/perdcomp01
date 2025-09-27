@@ -8,7 +8,7 @@ from rest_framework_simplejwt.views import (
 from empresas.views import home_view
 from django.views.generic import RedirectView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
-from perdcomp.views import token_jwt_view
+from perdcomp.views import token_jwt_view, selic_acumulada_view
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import get_user_model
@@ -48,4 +48,6 @@ urlpatterns = [
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    # API utilitária
+    path('api/selic-acumulada/', selic_acumulada_view, name='selic-acumulada'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
