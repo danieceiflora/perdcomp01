@@ -145,6 +145,11 @@
                     {% endif %}
                   </div>
                   <div id="selic-acumulada-text" class="text-sm font-semibold leading-relaxed">--</div>
+                  <div class="text-[11px] text-muted-foreground">
+                    Período usado: <span id="selic-periodo-text">--</span>
+                    • Meses: <span id="selic-meses-text">--</span>
+                    • <a id="selic-fonte-link" href="#" target="_blank" rel="noopener" class="underline">fonte</a>
+                  </div>
                 </div>
                 <!-- Valor Corrigido = Saldo Atual * Selic Acumulada do período -->
                 <div class="rounded-md border bg-muted/20 p-4 space-y-1 col-span-2 md:col-span-1">
@@ -216,9 +221,13 @@
   var elSelic = document.getElementById('selic-acumulada-text');
   var elCorr = document.getElementById('valor-corrigido-text');
   var elRend = document.getElementById('valor-rendimento-text');
+  var elPeriodo = document.getElementById('selic-periodo-text');
+  var elMeses = document.getElementById('selic-meses-text');
+  var elFonte = document.getElementById('selic-fonte-link');
   if (elSelic) elSelic.textContent = 'calculando…';
   if (elCorr) elCorr.textContent = 'calculando…';
   if (elRend) elRend.textContent = 'calculando…';
+  if (elPeriodo) elPeriodo.textContent = dataArrecStr + ' — ' + hojeStr;
 
       fetch(url, { headers: { 'Accept': 'application/json' }})
         .then(function(r) { return r.ok ? r.json() : Promise.reject(r); })
@@ -242,6 +251,8 @@
           var valorCorrigido = saldoAtual * (1 + acumulado);
           if (elCorr) elCorr.textContent = fmtCurrency.format(valorCorrigido);
           if (elRend) elRend.textContent = fmtCurrency.format(valorRendimento);
+          if (elMeses && typeof json.quantidade_meses !== 'undefined') elMeses.textContent = String(json.quantidade_meses);
+          if (elFonte && json.fonte) elFonte.href = json.fonte;
         })
         .catch(function(err) {
           // Silencia erros de rede; mantém "--"
@@ -249,6 +260,7 @@
           if (elSelic) elSelic.textContent = '--';
           if (elCorr) elCorr.textContent = '--';
           if (elRend) elRend.textContent = '--';
+          if (elMeses) elMeses.textContent = '--';
         });
     } catch (e) {
       console.warn('Erro no cálculo da SELIC acumulada:', e);
