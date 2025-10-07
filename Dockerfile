@@ -38,6 +38,7 @@ COPY . .
 
 # Copia CSS compilado do estágio de assets
 COPY --from=assets /build/perdcomp/static/css/app.css ./perdcomp/static/css/app.css
+RUN sed -i 's/\r$//' /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh || true
 
 EXPOSE 8000
