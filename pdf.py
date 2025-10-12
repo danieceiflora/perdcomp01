@@ -4,9 +4,18 @@ from pdf2image import convert_from_path
 import pytesseract
 from PIL import ImageOps, Image, ImageFilter
 
-# Caminhos no Windows (ajuste se necessário)
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-POPPLER = r"C:\Program Files\poppler-25.07.0\Library\bin"  # deixe "" se estiver no PATH
+# Caminhos no Windows (ajuste se necessário). Se não existir no ambiente, ignore.
+try:
+    if os.name == 'nt':
+        # Apenas define se o executável existir; evita quebrar em Linux/containers
+        default_tess = r"C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
+        if os.path.exists(default_tess):
+            pytesseract.pytesseract.tesseract_cmd = default_tess
+except Exception:
+    pass
+
+# Poppler opcional (necessário para pdf2image em Windows)
+POPPLER = r"C:\\Program Files\\poppler-25.07.0\\Library\\bin"  # deixe "" se estiver no PATH
 
 def _otsu_threshold(g):
     hist = g.histogram()
@@ -58,34 +67,44 @@ def _ocr_img_pt(img):
         texts.append(txt)
     return max(texts, key=len, default="").strip()
 
+def extract_text(pdf_path: str, force_ocr: bool = False) -> str:
+    """
+    Extrai texto de um PDF preferindo o texto nativo; faz OCR como fallback.
+    - pdf_path: caminho do arquivo PDF
+    - force_ocr: se True, ignora texto nativo e usa OCR diretamente
+    Retorna string (pode ser vazia se nada foi reconhecido).
+    """
+    txt = ""
+    if not force_ocr:
+        try:
+            r = PdfReader(pdf_path)
+            txt = "\n".join((p.extract_text() or "") for p in r.pages).strip()
+        except Exception:
+            txt = ""
+
+    if txt:
+        return txt
+
+    # OCR fallback
+    try:
+        imgs = convert_from_path(pdf_path, dpi=450, poppler_path=(POPPLER or None))
+    except Exception:
+        return ""
+
+    pages = [_ocr_img_pt(im) for im in imgs]
+    ocr_txt = "\n\n".join(p for p in pages if p).strip()
+    return ocr_txt
+
 def main():
     if len(sys.argv) < 2:
         print("Uso: python pdf.py arquivo.pdf [--force-ocr]", file=sys.stderr); return
     pdf = sys.argv[1]
     force_ocr = "--force-ocr" in sys.argv
-
-    txt = ""
-    if not force_ocr:
-        try:
-            r = PdfReader(pdf)
-            txt = "\n".join((p.extract_text() or "") for p in r.pages).strip()
-        except Exception as e:
-            print(f"[warn] Falha na extração nativa: {e}", file=sys.stderr)
-
+    txt = extract_text(pdf, force_ocr=force_ocr)
     if txt:
-        print(txt); return
-
-    try:
-        imgs = convert_from_path(pdf, dpi=450, poppler_path=(POPPLER or None))
-    except Exception as e:
-        print("Erro ao rasterizar PDF (Poppler).", file=sys.stderr)
-        print(f"Detalhe: {e}", file=sys.stderr)
-        sys.exit(1)
-
-    pages = [_ocr_img_pt(im) for im in imgs]
-    ocr_txt = "\n\n".join(p for p in pages if p).strip()
-    print(ocr_txt if ocr_txt else "[sem texto reconhecido]", file=(sys.stdout if ocr_txt else sys.stderr))
-    if not ocr_txt:
+        print(txt)
+    else:
+        print("[sem texto reconhecido]", file=sys.stderr)
         sys.exit(2)
 
 if __name__ == "__main__":

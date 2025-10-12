@@ -10,6 +10,7 @@ urlpatterns = [
     path('editar/<int:pk>/', views.AdesaoUpdateView.as_view(), name='update'),
     path('detalhe/<int:pk>/', views.AdesaoDetailView.as_view(), name='detail'),
     path('historico/<int:pk>/', views.adesao_history_json, name='history_json'),
+    path('importar-pdf/', views.importar_pdf_perdcomp, name='importar_pdf'),
 
     ## API endpoint for listing adesoes 
     path('api/v1/listar-adesao/', views.AdesaoListAPI.as_view(), name='api-adesao-list'),

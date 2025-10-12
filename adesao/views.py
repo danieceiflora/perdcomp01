@@ -11,6 +11,13 @@ from django.utils.timezone import localtime
 from django.views.decorators.http import require_GET
 from django.contrib.auth.decorators import login_required
 from .forms import AdesaoForm
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from django.core.files.uploadedfile import UploadedFile
+from django.utils import timezone
+from utils.pdf_parser import parse_ressarcimento_text
+from pdf import extract_text
+from clientes_parceiros.models import ClientesParceiros
 from .permissions import AdesaoPermissionMixin, AdesaoClienteViewOnlyMixin, AdminRequiredMixin
 
 # Adicionando imports do DRF
@@ -238,3 +245,97 @@ class AdesaoDetailAPI(APIView):
         obj = self.get_object(pk)
         obj.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@login_required
+@require_POST
+def importar_pdf_perdcomp(request):
+    """Recebe um PDF, extrai texto, faz parsing e validações. Retorna JSON.
+    Valida: cliente por CNPJ; unicidade de PERDCOMP.
+    """
+    pdf_file: UploadedFile | None = request.FILES.get('pdf')
+    if not pdf_file:
+        return JsonResponse({'ok': False, 'error': 'Arquivo PDF não enviado (campo "pdf").'}, status=400)
+
+    # Armazena temporário em memória/arquivo
+    import tempfile
+    import os
+    log_data = {
+        'user': getattr(request.user, 'username', None),
+        'filename': pdf_file.name,
+        'ts': timezone.now().isoformat(),
+    }
+    status_code = 200
+    response_payload = None
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp:
+            for chunk in pdf_file.chunks():
+                tmp.write(chunk)
+            tmp_path = tmp.name
+
+        txt = extract_text(tmp_path) or ''
+        parsed = parse_ressarcimento_text(txt)
+
+        log_data['extracted_present'] = bool(txt)
+        log_data['parsed'] = parsed.as_dict()
+
+        # Validar CNPJ -> cliente
+        cnpj = parsed.cnpj or ''
+        cliente_id = None
+        cliente_label = None
+        if cnpj:
+            try:
+                cliente = ClientesParceiros.objects.select_related('id_company_vinculada').get(
+                    id_company_vinculada__cnpj=cnpj
+                )
+                cliente_id = cliente.id
+                emp = cliente.id_company_vinculada
+                cliente_label = f"{emp.nome_fantasia or emp.razao_social} ({cliente.nome_referencia})"
+            except ClientesParceiros.DoesNotExist:
+                status_code = 404
+                response_payload = {'ok': False, 'error': f'Cliente com CNPJ {cnpj} não encontrado.'}
+        else:
+            status_code = 400
+            response_payload = {'ok': False, 'error': 'CNPJ não identificado no PDF.'}
+
+        # Validar PERDCOMP único
+        if status_code == 200 and parsed.perdcomp and Adesao.objects.filter(perdcomp=parsed.perdcomp).exists():
+            status_code = 409
+            response_payload = {'ok': False, 'error': f'PERDCOMP {parsed.perdcomp} já cadastrado.'}
+
+        if status_code == 200:
+            response_payload = {
+                'ok': True,
+                'fields': {
+                    'cliente': {'id': cliente_id, 'label': cliente_label},
+                    'perdcomp': parsed.perdcomp,
+                    'metodo_credito': parsed.metodo_credito,
+                    'data_inicio': parsed.data_criacao,  # poderá ser ajustado no frontend
+                    'valor_do_credito': str(parsed.valor_pedido) if parsed.valor_pedido is not None else None,
+                    'ano': parsed.ano,
+                    'trimestre': parsed.trimestre,
+                    'tipo_credito': parsed.tipo_credito,
+                }
+            }
+    finally:
+        # Audit log simples por arquivo
+        try:
+            from django.conf import settings
+            import json
+            logs_dir = os.path.join(getattr(settings, 'MEDIA_ROOT', ''), 'import_logs')
+            os.makedirs(logs_dir, exist_ok=True)
+            safe_name = os.path.basename(pdf_file.name).replace(' ', '_')
+            log_path = os.path.join(logs_dir, f"import_{timezone.now().strftime('%Y%m%d_%H%M%S')}_{safe_name}.json")
+            with open(log_path, 'w', encoding='utf-8') as f:
+                import json
+                json.dump(log_data, f, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
+        try:
+            if 'tmp_path' in locals() and os.path.exists(tmp_path):
+                os.remove(tmp_path)
+        except Exception:
+            pass
+
+    return JsonResponse(response_payload or {'ok': False, 'error': 'Falha ao processar PDF.'}, status=status_code)
+

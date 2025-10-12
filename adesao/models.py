@@ -170,7 +170,7 @@ class Adesao(models.Model):
                     # Evita persistir saldo negativo; força a zero
                     diferenca = 0
                 self.saldo = diferenca
-        # Se é um novo objeto (não tem ID) e o saldo_atual não foi definido, inicializa com saldo calculado/fornecido
+        # Se é um n8ovo objeto (não tem ID) e o saldo_atual não foi definido, inicializa com saldo calculado/fornecido
         if not self.pk and not self.saldo_atual:
             self.saldo_atual = self.saldo
         super().save(*args, **kwargs)
