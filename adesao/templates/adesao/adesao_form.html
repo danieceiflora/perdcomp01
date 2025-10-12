@@ -53,11 +53,7 @@
                             </div>
                             {% if form.saldo.errors %}<div class="text-sm text-destructive">{{ form.saldo.errors }}</div>{% endif %}
                         </div>
-                        <div class="space-y-2">
-                            <label for="{{ form.tese_credito_id.id_for_label }}" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{{ form.tese_credito_id.label }}:</label>
-                            {{ form.tese_credito_id }}
-                            {% if form.tese_credito_id.errors %}<div class="text-sm text-destructive">{{ form.tese_credito_id.errors }}</div>{% endif %}
-                        </div>
+                        <!-- Campo 'tese_credito_id' removido; usamos 'tipo_credito' abaixo -->
                         <div class="space-y-2">
                             <label for="{{ form.metodo_credito.id_for_label }}" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{{ form.metodo_credito.label }}:</label>
                             {{ form.metodo_credito }}

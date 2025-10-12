@@ -31,7 +31,7 @@ class AdesaoListView(AdesaoClienteViewOnlyMixin, ListView):
     paginate_by = 10
     
     def get_queryset(self):
-        qs = super().get_queryset().select_related('cliente__id_company_vinculada', 'tese_credito_id')
+        qs = super().get_queryset().select_related('cliente__id_company_vinculada')
         perdcomp = (self.request.GET.get('perdcomp') or '').strip()
         empresa = (self.request.GET.get('empresa') or '').strip()
         if perdcomp:
@@ -91,7 +91,7 @@ class AdesaoDetailView(AdesaoClienteViewOnlyMixin, DetailView):
 
     def get_queryset(self):
         # Usa o filtro do mixin e otimiza as relações
-        return super().get_queryset().select_related('cliente__id_company_vinculada', 'tese_credito_id')
+        return super().get_queryset().select_related('cliente__id_company_vinculada')
 
     def get(self, request, *args, **kwargs):
         pk = kwargs.get(self.pk_url_kwarg)

@@ -1,6 +1,5 @@
 from django.db import models
 from clientes_parceiros.models import ClientesParceiros
-from correcao.models import TeseCredito
 from simple_history.models import HistoricalRecords
 
 class Adesao(models.Model):
@@ -11,12 +10,7 @@ class Adesao(models.Model):
         related_name='adesoes'
     )
 
-    tese_credito_id = models.ForeignKey(
-        TeseCredito,
-        on_delete=models.CASCADE,
-        related_name='adesoes',
-        verbose_name='Tese de Crédito'
-    )
+    # Removido relacionamento com TeseCredito; usamos apenas texto em 'tipo_credito'
 
     metodo_credito_options = [
         ('Pedido de ressarcimento', 'Pedido de ressarcimento'),

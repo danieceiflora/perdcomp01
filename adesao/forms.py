@@ -12,7 +12,7 @@ class AdesaoForm(forms.ModelForm):
     class Meta:
         model = Adesao
         fields = [
-            'cliente', 'tese_credito_id', 'metodo_credito', 'data_inicio', 'perdcomp','ano','trimestre',
+            'cliente', 'metodo_credito', 'data_inicio', 'perdcomp','ano','trimestre',
             'periodo_apuracao_credito', 'periodo_apuracao_debito', 'tipo_credito',
             'codigo_receita', 'codigo_receita_denominacao', 'valor_do_principal',
             'credito_original_utilizado', 'total',
@@ -21,9 +21,6 @@ class AdesaoForm(forms.ModelForm):
         ]
         widgets = {
             'cliente': forms.Select(attrs={
-                'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-            }),
-            'tese_credito_id': forms.Select(attrs={
                 'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
             }),
             'metodo_credito': forms.Select(attrs={
