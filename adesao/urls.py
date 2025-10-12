@@ -11,6 +11,9 @@ urlpatterns = [
     path('detalhe/<int:pk>/', views.AdesaoDetailView.as_view(), name='detail'),
     path('historico/<int:pk>/', views.adesao_history_json, name='history_json'),
     path('importar-pdf/', views.importar_pdf_perdcomp, name='importar_pdf'),
+    path('importar-pdf-lote/', views.importar_pdf_perdcomp_lote, name='importar_pdf_lote'),
+    path('importar-lote/', views.importar_lote_page, name='importar_lote_page'),
+    path('importar-logs/', views.importacao_logs_page, name='importacao_logs_page'),
 
     ## API endpoint for listing adesoes 
     path('api/v1/listar-adesao/', views.AdesaoListAPI.as_view(), name='api-adesao-list'),

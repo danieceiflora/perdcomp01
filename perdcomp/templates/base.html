@@ -125,6 +125,8 @@
                                     <a href="{% url 'adesao:list' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"><i class="bi bi-list mr-2"></i>Listar Adesões</a>
                                     {% if user.is_superuser or user.is_staff or perms.adesao.add_adesao %}
                                     <a href="{% url 'adesao:create' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"><i class="bi bi-plus mr-2"></i>Nova Adesão</a>
+                                    <a href="{% url 'adesao:importar_lote_page' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"><i class="bi bi-files mr-2"></i>Adesão em lote</a>
+                                    <a href="{% url 'adesao:importacao_logs_page' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"><i class="bi bi-clipboard-data mr-2"></i>Logs de importação</a>
                                     {% endif %}
                                 </div>
                             </div>

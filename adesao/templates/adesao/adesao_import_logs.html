@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Logs de Importação{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+  <div class="max-w-6xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-semibold"><i class="bi bi-clipboard-data mr-2"></i>Logs de Importação</h1>
+      <a href="{% url 'adesao:importar_lote_page' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium border h-10 px-4 py-2">
+        <i class="bi bi-files mr-2"></i>Importar em lote
+      </a>
+    </div>
+
+    <div class="rounded-lg border bg-card text-card-foreground shadow-sm overflow-x-auto">
+      <table class="min-w-full text-sm">
+        <thead class="bg-slate-50">
+          <tr>
+            <th class="text-left p-3">Quando</th>
+            <th class="text-left p-3">Usuário</th>
+            <th class="text-left p-3">Arquivo</th>
+            <th class="text-left p-3">PERDCOMP</th>
+            <th class="text-left p-3">CNPJ</th>
+            <th class="text-left p-3">Status</th>
+            <th class="text-left p-3">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in entries %}
+          <tr class="border-t">
+            <td class="p-3 whitespace-nowrap">{{ e.when|date:'d/m/Y H:i:s' }}</td>
+            <td class="p-3">{{ e.user }}</td>
+            <td class="p-3">{{ e.filename }}</td>
+            <td class="p-3">{{ e.parsed.perdcomp }}</td>
+            <td class="p-3">{{ e.parsed.cnpj }}</td>
+            <td class="p-3">
+              {% if e.ok %}
+                <span class="text-green-700">OK{% if e.created %} (criado){% endif %}</span>
+              {% else %}
+                <span class="text-red-700">Erro{% if e.error %}: {{ e.error }}{% endif %}</span>
+              {% endif %}
+            </td>
+            <td class="p-3">
+              {% if e.detail_url %}
+              <a class="text-blue-700 underline" href="{{ e.detail_url }}">Ver Adesão</a>
+              {% else %}
+              <span class="text-slate-400">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td class="p-3 text-slate-500" colspan="7">Nenhum log encontrado.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+  
+</div>
+{% endblock %}

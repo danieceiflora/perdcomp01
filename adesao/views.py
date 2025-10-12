@@ -339,3 +339,206 @@ def importar_pdf_perdcomp(request):
 
     return JsonResponse(response_payload or {'ok': False, 'error': 'Falha ao processar PDF.'}, status=status_code)
 
+
+@login_required
+@require_POST
+def importar_pdf_perdcomp_lote(request):
+    """Importação em lote de PDFs PERDCOMP.
+    Campo de arquivos: 'pdfs' (múltiplos). Se 'criar' for truthy, criará as Adesões automaticamente.
+    Retorna JSON com a lista de resultados por arquivo (ok/error, mensagens e link quando criado).
+    """
+    files = request.FILES.getlist('pdfs') or request.FILES.getlist('pdf')
+    criar = str(request.POST.get('criar', '0')).lower() in ('1', 'true', 'on', 'yes')
+    if not files:
+        return JsonResponse({'ok': False, 'error': 'Nenhum arquivo PDF enviado.'}, status=400)
+
+    import tempfile, os, datetime, re
+    from django.conf import settings
+    from django.urls import reverse
+    results = []
+
+    def write_log(base_filename: str, payload: dict):
+        try:
+            logs_dir = os.path.join(getattr(settings, 'MEDIA_ROOT', ''), 'import_logs')
+            os.makedirs(logs_dir, exist_ok=True)
+            ts = datetime.datetime.now().strftime('%Y%m%d_%H%M%S_%f')
+            safe_name = os.path.basename(base_filename).replace(' ', '_')
+            path = os.path.join(logs_dir, f"batch_{ts}_{safe_name}.json")
+            import json
+            with open(path, 'w', encoding='utf-8') as f:
+                json.dump(payload, f, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
+
+    for f in files:
+        context_log = {
+            'user': getattr(request.user, 'username', None),
+            'filename': f.name,
+        }
+        tmp_path = None
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp:
+                for chunk in f.chunks():
+                    tmp.write(chunk)
+                tmp_path = tmp.name
+
+            txt = extract_text(tmp_path) or ''
+            parsed = parse_ressarcimento_text(txt)
+            context_log['extracted_present'] = bool(txt)
+            context_log['parsed'] = parsed.as_dict()
+
+            # Validar CNPJ
+            cnpj = parsed.cnpj or ''
+            if not cnpj:
+                msg = 'CNPJ não identificado no PDF.'
+                res = {'file': f.name, 'ok': False, 'error': msg}
+                results.append(res)
+                context_log['result'] = res
+                write_log(f.name, context_log)
+                continue
+            try:
+                cliente = ClientesParceiros.objects.select_related('id_company_vinculada').get(
+                    id_company_vinculada__cnpj=cnpj
+                )
+            except ClientesParceiros.DoesNotExist:
+                msg = f'Cliente com CNPJ {cnpj} não encontrado.'
+                res = {'file': f.name, 'ok': False, 'error': msg}
+                results.append(res)
+                context_log['result'] = res
+                write_log(f.name, context_log)
+                continue
+
+            # Validar PERDCOMP
+            if not parsed.perdcomp:
+                msg = 'PERDCOMP não identificado no PDF.'
+                res = {'file': f.name, 'ok': False, 'error': msg}
+                results.append(res)
+                context_log['result'] = res
+                write_log(f.name, context_log)
+                continue
+            if Adesao.objects.filter(perdcomp=parsed.perdcomp).exists():
+                msg = f'PERDCOMP {parsed.perdcomp} já cadastrado.'
+                res = {'file': f.name, 'ok': False, 'error': msg}
+                results.append(res)
+                context_log['result'] = res
+                write_log(f.name, context_log)
+                continue
+
+            # Apenas extrair (sem criar)
+            if not criar:
+                res = {
+                    'file': f.name,
+                    'ok': True,
+                    'created': False,
+                    'fields': {
+                        'cliente': cliente.id,
+                        'perdcomp': parsed.perdcomp,
+                        'metodo_credito': parsed.metodo_credito,
+                        'data_inicio': parsed.data_criacao,
+                        'saldo': str(parsed.valor_pedido) if parsed.valor_pedido is not None else None,
+                        'ano': parsed.ano,
+                        'trimestre': parsed.trimestre,
+                        'tipo_credito': parsed.tipo_credito,
+                    }
+                }
+                results.append(res)
+                context_log['result'] = res
+                write_log(f.name, context_log)
+                continue
+
+            # Criar via AdesaoForm para aproveitar validações
+            def _conv_date(dmy: str) -> str | None:
+                m = re.match(r"(\d{2})/(\d{2})/(\d{4})", dmy or '')
+                return f"{m.group(3)}-{m.group(2)}-{m.group(1)}" if m else None
+
+            form_data = {
+                'cliente': str(cliente.id),
+                'perdcomp': parsed.perdcomp or '',
+                'metodo_credito': parsed.metodo_credito or '',
+                'data_inicio': _conv_date(parsed.data_criacao) or '',
+                'saldo': str(parsed.valor_pedido) if parsed.valor_pedido is not None else '',
+                'ano': parsed.ano or '',
+                'trimestre': parsed.trimestre or '',
+                'tipo_credito': (parsed.tipo_credito or '')[:200],
+            }
+            form = AdesaoForm(data=form_data)
+            if not form.is_valid():
+                errs = {k: [str(e) for e in v] for k, v in form.errors.items()}
+                res = {'file': f.name, 'ok': False, 'error': 'Falha na validação.', 'errors': errs}
+                results.append(res)
+                context_log['result'] = res
+                write_log(f.name, context_log)
+                continue
+
+            obj = form.save()
+            detail_url = reverse('adesao:detail', kwargs={'pk': obj.pk})
+            res = {'file': f.name, 'ok': True, 'created': True, 'id': obj.pk, 'detail_url': detail_url}
+            results.append(res)
+            context_log['result'] = res
+            write_log(f.name, context_log)
+        except Exception as e:
+            res = {'file': f.name, 'ok': False, 'error': f'Erro inesperado: {e}'}
+            results.append(res)
+            context_log['result'] = res
+            write_log(f.name, context_log)
+        finally:
+            try:
+                if tmp_path and os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+            except Exception:
+                pass
+
+    return JsonResponse({'ok': True, 'results': results})
+
+
+# Páginas
+@login_required
+def importar_lote_page(request):
+    # Permissão: staff/superuser ou permissão de adicionar adesão
+    if not (request.user.is_superuser or request.user.is_staff or request.user.has_perm('adesao.add_adesao')):
+        messages.error(request, 'Você não tem permissão para importar adesões em lote.')
+        return redirect('adesao:list')
+    return render(request, 'adesao/adesao_import_lote.html', {})
+
+
+@login_required
+def importacao_logs_page(request):
+    # Permissão similar
+    if not (request.user.is_superuser or request.user.is_staff or request.user.has_perm('adesao.view_adesao')):
+        messages.error(request, 'Você não tem permissão para visualizar os logs de importação.')
+        return redirect('adesao:list')
+    import os, json, datetime
+    from django.conf import settings
+    logs_dir = os.path.join(getattr(settings, 'MEDIA_ROOT', ''), 'import_logs')
+    entries = []
+    try:
+        if os.path.isdir(logs_dir):
+            for fname in os.listdir(logs_dir):
+                if not fname.endswith('.json'):
+                    continue
+                fpath = os.path.join(logs_dir, fname)
+                try:
+                    with open(fpath, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                    mtime = datetime.datetime.fromtimestamp(os.path.getmtime(fpath))
+                    # Flatten a few useful fields
+                    result = data.get('result') or {}
+                    entries.append({
+                        'filename': data.get('filename') or fname,
+                        'user': data.get('user'),
+                        'when': mtime,
+                        'parsed': data.get('parsed', {}),
+                        'ok': result.get('ok'),
+                        'error': result.get('error'),
+                        'detail_url': result.get('detail_url'),
+                        'created': result.get('created'),
+                        'raw_name': fname,
+                    })
+                except Exception:
+                    continue
+        # Sort desc by when
+        entries.sort(key=lambda e: e['when'], reverse=True)
+    except Exception:
+        messages.error(request, 'Falha ao ler logs de importação.')
+    return render(request, 'adesao/adesao_import_logs.html', {'entries': entries})
+
