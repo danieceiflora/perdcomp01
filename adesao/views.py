@@ -78,6 +78,17 @@ class AdesaoCreateView(AdminRequiredMixin, CreateView):
     success_url = reverse_lazy('adesao:list')
     
     def form_valid(self, form):
+        # Validação extra: quando método = Escriturial, exigir origem e data_origem
+        metodo = form.cleaned_data.get('metodo_credito')
+        if metodo == 'Escritural':
+            origem = form.cleaned_data.get('origem')
+            data_origem = form.cleaned_data.get('data_origem')
+            if not origem:
+                form.add_error('origem', 'Informe a Origem (escritural).')
+            if not data_origem:
+                form.add_error('data_origem', 'Informe a Data de Origem (escritural).')
+            if form.errors:
+                return self.form_invalid(form)
         messages.success(self.request, 'Adesão cadastrada com sucesso!')
         return super().form_valid(form)
 
@@ -88,6 +99,16 @@ class AdesaoUpdateView(AdminRequiredMixin, UpdateView):
     success_url = reverse_lazy('adesao:list')
     
     def form_valid(self, form):
+        metodo = form.cleaned_data.get('metodo_credito')
+        if metodo == 'Escritural':
+            origem = form.cleaned_data.get('origem')
+            data_origem = form.cleaned_data.get('data_origem')
+            if not origem:
+                form.add_error('origem', 'Informe a Origem (escritural).')
+            if not data_origem:
+                form.add_error('data_origem', 'Informe a Data de Origem (escritural).')
+            if form.errors:
+                return self.form_invalid(form)
         messages.success(self.request, 'Adesão atualizada com sucesso!')
         return super().form_valid(form)
 

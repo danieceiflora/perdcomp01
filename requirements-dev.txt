@@ -1,0 +1,12 @@
+# Minimal dev requirements (SQLite, no OCR, no Excel, no prod server)
+# Django 5.2 requires Python >= 3.10
+Django>=5.2,<5.3
+
+djangorestframework>=3.14,<3.17
+
+django-simple-history>=3.4,<4
+
+djangorestframework-simplejwt>=5.3,<6
+
+# For ImageField support
+Pillow>=10,<12

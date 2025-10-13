@@ -16,6 +16,7 @@ class Adesao(models.Model):
         ('Pedido de ressarcimento', 'Pedido de ressarcimento'),
         ('Pedido de restituição', 'Pedido de restituição'),
         ('Declaração de compensação pagamento indevido', 'Declaração de compensação pagamento indevido'),
+        ('Escritural', 'Escritural'),
     ]
 
     metodo_credito = models.CharField(
@@ -153,6 +154,21 @@ class Adesao(models.Model):
         help_text='Data em que ocorreu a arrecadação relacionada',
         blank=True,
         null=True
+    )
+
+    # Campos específicos para método Escriturial
+    origem = models.CharField(
+        max_length=255,
+        verbose_name='Origem',
+        help_text='Origem do crédito (escritural)',
+        blank=True,
+        null=True,
+    )
+    data_origem = models.DateField(
+        verbose_name='Data de Origem',
+        help_text='Data da origem do crédito (escritural)',
+        blank=True,
+        null=True,
     )
 
     # Audit trail

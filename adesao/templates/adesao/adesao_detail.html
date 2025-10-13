@@ -87,6 +87,14 @@
               <div class="text-xs uppercase tracking-wide text-muted-foreground">Código / Denominação</div>
               <div class="font-medium leading-relaxed">{{ adesao.codigo_receita_denominacao|default:'--' }}</div>
             </div>
+            <div class="space-y-1">
+              <div class="text-xs uppercase tracking-wide text-muted-foreground">Origem (Escritural)</div>
+              <div class="font-medium leading-relaxed">{{ adesao.origem|default:'--' }}</div>
+            </div>
+            <div class="space-y-1">
+              <div class="text-xs uppercase tracking-wide text-muted-foreground">Data da Origem (Escritural)</div>
+              <div class="font-medium leading-relaxed">{% if adesao.data_origem %}{{ adesao.data_origem|date:'d/m/Y' }}{% else %}--{% endif %}</div>
+            </div>
             <div class="sm:col-span-2 space-y-1">
               <div class="text-xs uppercase tracking-wide text-muted-foreground">Crédito Original Utilizado</div>
               <div class="rounded-md border bg-muted/30 px-3 py-2 font-medium leading-relaxed">{{ adesao.credito_original_utilizado|br_currency }}</div>

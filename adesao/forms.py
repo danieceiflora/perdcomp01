@@ -18,7 +18,7 @@ class AdesaoForm(forms.ModelForm):
             'codigo_receita', 'codigo_receita_denominacao', 'valor_do_principal',
             'credito_original_utilizado', 'total',
             'saldo', 'saldo_atual', 'selic_acumulada', 'valor_correcao', 'valor_total_corrigido',
-            'data_arrecadacao'
+            'data_arrecadacao', 'origem', 'data_origem'
         ]
         widgets = {
             'cliente': forms.Select(attrs={
@@ -108,6 +108,14 @@ class AdesaoForm(forms.ModelForm):
             'data_arrecadacao': forms.DateInput(attrs={
                 'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
                 'type': 'date'
+            }),
+            'origem': forms.TextInput(attrs={
+                'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+                'placeholder': 'Origem do crédito (escritural)'
+            }),
+            'data_origem': forms.DateInput(attrs={
+                'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+                'type': 'date'
             })
         }
     
@@ -121,6 +129,7 @@ class AdesaoForm(forms.ModelForm):
                 ('Pedido de ressarcimento', 'Pedido de ressarcimento'),
                 ('Pedido de restituição', 'Pedido de restituição'),
                 ('Declaração de compensação pagamento indevido', 'Declaração de compensação pagamento indevido'),
+                ('Escritural', 'Escritural'),
             ]
             # Se edição (instance.pk), permitir eventualmente futura lógica diferente; por ora igual
             if self.instance.pk:
@@ -184,6 +193,13 @@ class AdesaoForm(forms.ModelForm):
                 self.add_error('codigo_receita_denominacao', 'Informe o Código Receita / Denominação.')
             if not cleaned.get('periodo_apuracao_debito'):
                 self.add_error('periodo_apuracao_debito', 'Informe o Período de Apuração (Débito).')
+
+        elif metodo == 'Escritural':
+            # Exigir campos específicos de escriturial
+            if not cleaned.get('origem'):
+                self.add_error('origem', 'Informe a Origem (escritural).')
+            if not cleaned.get('data_origem'):
+                self.add_error('data_origem', 'Informe a Data de Origem (escritural).')
 
         return cleaned
 

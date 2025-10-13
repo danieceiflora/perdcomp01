@@ -113,6 +113,16 @@
                                     {{ form.valor_do_principal }}
                                     {% if form.valor_do_principal.errors %}<div class="text-sm text-destructive">{{ form.valor_do_principal.errors }}</div>{% endif %}
                                 </div>
+                                <div id="group-origem" class="space-y-2 hidden">
+                                    <label for="{{ form.origem.id_for_label }}" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{{ form.origem.label|default:'Origem' }}:</label>
+                                    {{ form.origem }}
+                                    {% if form.origem.errors %}<div class="text-sm text-destructive">{{ form.origem.errors }}</div>{% endif %}
+                                </div>
+                                <div id="group-data_origem" class="space-y-2 hidden">
+                                    <label for="{{ form.data_origem.id_for_label }}" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{{ form.data_origem.label|default:'Data de Origem' }}:</label>
+                                    {{ form.data_origem }}
+                                    {% if form.data_origem.errors %}<div class="text-sm text-destructive">{{ form.data_origem.errors }}</div>{% endif %}
+                                </div>
                             </div>
                             <!-- Linha dedicada ao Tipo de Crédito para ter mais espaço -->
                             <div class="mt-4">
@@ -182,6 +192,8 @@
         const gTotal = document.getElementById('group-total');
         const secDebito = document.getElementById('sec-debito-card');
         const gTipoCredito = document.getElementById('group-tipo_credito');
+    const gOrigem = document.getElementById('group-origem');
+    const gDataOrigem = document.getElementById('group-data_origem');
 
         function setRequired(selectorList, required) {
             selectorList.forEach(sel => {
@@ -208,7 +220,7 @@
         }
 
         function hideAllGroups() {
-            [gAno, gTrimestre, gTipoCredito, gPerApCred, gRec, gCredOrig, gRecDenom, gPerApDeb, gValPrin, gTotal].forEach(el => {
+            [gAno, gTrimestre, gTipoCredito, gPerApCred, gRec, gCredOrig, gRecDenom, gPerApDeb, gValPrin, gTotal, gOrigem, gDataOrigem].forEach(el => {
                 if (!el) return;
                 el.classList.add('hidden');
             });
@@ -244,7 +256,9 @@
                 '{{ form.credito_original_utilizado.id_for_label }}',
                 '{{ form.valor_do_principal.id_for_label }}',
                 '{{ form.tipo_credito.id_for_label }}',
-                '{{ form.total.id_for_label }}'
+                '{{ form.total.id_for_label }}',
+                '{{ form.origem.id_for_label }}',
+                '{{ form.data_origem.id_for_label }}'
             ], false);
 
             // Show appropriate fields based on original working logic
@@ -277,6 +291,14 @@
                     '{{ form.codigo_receita.id_for_label }}',
                     '{{ form.codigo_receita_denominacao.id_for_label }}',
                     '{{ form.periodo_apuracao_debito.id_for_label }}'
+                ], true);
+            } else if (nval === 'escritural') {
+                // Método Escriturial: exigir origem e data_origem
+                showGroup(gOrigem, ['{{ form.origem.id_for_label }}']);
+                showGroup(gDataOrigem, ['{{ form.data_origem.id_for_label }}']);
+                setRequired([
+                    '{{ form.origem.id_for_label }}',
+                    '{{ form.data_origem.id_for_label }}'
                 ], true);
             }
         }
