@@ -74,9 +74,10 @@
                                 {{ field.label }}
                             </label>
                             {% if field.name == 'logomarca' %}
-                                <input type="{{ field.field.widget.input_type }}" 
-                                       name="{{ field.name }}" 
+                                <input type="file"
+                                       name="{{ field.html_name }}"
                                        id="{{ field.id_for_label }}"
+                                       accept="{{ field.field.widget.attrs.accept|default:'image/*' }}"
                                        class="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 border border-input rounded-md">
                             {% else %}
                                 {{ field|add_class:"input" }}

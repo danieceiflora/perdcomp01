@@ -24,7 +24,7 @@
         <p class="text-muted-foreground mt-1">Informe os dados da empresa parceira e contato de referência.</p>
     </div>
 
-    <form method="post" id="parceiroForm" class="space-y-6">
+    <form method="post" id="parceiroForm" class="space-y-6" enctype="multipart/form-data">
         {% csrf_token %}
                 
         <!-- Company Data Section -->
@@ -48,10 +48,14 @@
                             <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-foreground mb-2">
                                 {{ field.label }}
                             </label>
-                            {% if field.name == 'logomarca' %}
-                                <input type="{{ field.field.widget.input_type }}" 
-                                       name="{{ field.name }}" 
+                            {% if field.name == 'cnpj' and field.field.disabled %}
+                                <input type="text" id="{{ field.id_for_label }}" value="{{ field.value }}" class="input disabled" readonly />
+                                <input type="hidden" name="{{ field.html_name }}" value="{{ field.value }}" />
+                            {% elif field.name == 'logomarca' %}
+                                <input type="file"
+                                       name="{{ field.html_name }}"
                                        id="{{ field.id_for_label }}"
+                                       accept="{{ field.field.widget.attrs.accept|default:'image/*' }}"
                                        class="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 border border-input rounded-md">
                             {% else %}
                                 {{ field|add_class:"input" }}

@@ -118,6 +118,16 @@ class EditarClienteView(LoginRequiredMixin, UpdateView):
         # Debug info
         context['participacoes_total'] = ParticipacaoSocietaria.objects.filter(empresa=empresa_cliente).count()
         
+        # Bloquear edição de CNPJ ao editar cliente
+        ef = context.get('empresa_form')
+        if ef and 'cnpj' in ef.fields:
+            ef.fields['cnpj'].disabled = True
+            try:
+                css = ef.fields['cnpj'].widget.attrs.get('class', '')
+                ef.fields['cnpj'].widget.attrs['class'] = f"{css} disabled".strip()
+                ef.fields['cnpj'].widget.attrs['readonly'] = 'readonly'
+            except Exception:
+                pass
         return context
 
     def get_form_kwargs(self):
@@ -155,7 +165,14 @@ class EditarClienteView(LoginRequiredMixin, UpdateView):
         if form.is_valid() and empresa_form.is_valid() and contato_formset.is_valid():
             with transaction.atomic():
                 try:
-                    # Atualiza empresa vinculada
+                    # CNPJ é imutável na edição: preserva o CNPJ original da empresa antes de salvar
+                    empresa_instance = empresa_form.instance
+                    if empresa_instance and empresa_instance.pk:
+                        try:
+                            original_cnpj = Empresa.objects.only('cnpj').get(pk=empresa_instance.pk).cnpj
+                            empresa_instance.cnpj = original_cnpj
+                        except Empresa.DoesNotExist:
+                            pass
                     empresa = empresa_form.save()
                     
                     # ===== Sócios processing (similar to EmpresaUpdateView) =====
@@ -216,13 +233,14 @@ class EditarClienteView(LoginRequiredMixin, UpdateView):
                     cliente_parceiro.nome_referencia = form.cleaned_data['nome_referencia']
                     cliente_parceiro.cargo_referencia = form.cleaned_data['cargo_referencia']
                     cliente_parceiro.save()
-                    # Atualiza contatos: remove todos e recria
-                    empresa.empresa_base_contato.all().delete()
-                    for contato_form in contato_formset:
-                        if contato_form.cleaned_data and not contato_form.cleaned_data.get('DELETE', False):
-                            contato = contato_form.save(commit=False)
-                            contato.empresa_base = empresa
-                            contato.save()
+                    # Atualiza contatos: só sobrescreve se continuamos editando a mesma empresa
+                    if not (empresa_instance and empresa.pk != empresa_instance.pk):
+                        empresa.empresa_base_contato.all().delete()
+                        for contato_form in contato_formset:
+                            if contato_form.cleaned_data and not contato_form.cleaned_data.get('DELETE', False):
+                                contato = contato_form.save(commit=False)
+                                contato.empresa_base = empresa
+                                contato.save()
                     messages.success(self.request, f'Cliente "{empresa}" atualizado com sucesso!')
                     return redirect(self.success_url)
                 except Exception as e:
@@ -731,6 +749,17 @@ class EditarParceiroView(LoginRequiredMixin, UpdateView):
             contatos_qs = obj.id_company_vinculada.empresa_base_contato.all()
             initial = [{'tipo_contato': c.tipo_contato, 'telefone': c.telefone, 'email': c.email, 'site': c.site} for c in contatos_qs]
             context['contato_formset'] = ContatoFormSet(initial=initial)
+        # Bloquear edição de CNPJ ao editar parceiro
+        ef = context.get('empresa_form')
+        if ef and 'cnpj' in ef.fields:
+            ef.fields['cnpj'].disabled = True
+            # Dica visual
+            try:
+                css = ef.fields['cnpj'].widget.attrs.get('class', '')
+                ef.fields['cnpj'].widget.attrs['class'] = f"{css} disabled".strip()
+                ef.fields['cnpj'].widget.attrs['readonly'] = 'readonly'
+            except Exception:
+                pass
         return context
 
     def form_valid(self, form):
@@ -739,17 +768,29 @@ class EditarParceiroView(LoginRequiredMixin, UpdateView):
         contato_formset = context['contato_formset']
         if form.is_valid() and empresa_form.is_valid() and contato_formset.is_valid():
             with transaction.atomic():
+                # CNPJ é imutável na edição: sempre mantenha o CNPJ original da empresa
+                empresa_instance = empresa_form.instance
+                if empresa_instance and empresa_instance.pk:
+                    try:
+                        original_cnpj = Empresa.objects.only('cnpj').get(pk=empresa_instance.pk).cnpj
+                        empresa_instance.cnpj = original_cnpj
+                    except Empresa.DoesNotExist:
+                        pass
                 empresa = empresa_form.save()
                 obj = form.save(commit=False)
                 obj.id_company_vinculada = empresa
                 obj.tipo_parceria = 'parceiro'
                 obj.save()
-                empresa.empresa_base_contato.all().delete()
-                for contato_f in contato_formset:
-                    if contato_f.cleaned_data and not contato_f.cleaned_data.get('DELETE', False):
-                        c = contato_f.save(commit=False)
-                        c.empresa_base = empresa
-                        c.save()
+                # Atualização de contatos:
+                # Apenas substitui os contatos quando estamos editando a própria empresa do formulário.
+                # Se reutilizamos uma empresa existente diferente, evitamos sobrescrever contatos dela.
+                if not (empresa_instance and empresa.pk != empresa_instance.pk):
+                    empresa.empresa_base_contato.all().delete()
+                    for contato_f in contato_formset:
+                        if contato_f.cleaned_data and not contato_f.cleaned_data.get('DELETE', False):
+                            c = contato_f.save(commit=False)
+                            c.empresa_base = empresa
+                            c.save()
                 messages.success(self.request, 'Parceiro atualizado com sucesso!')
                 return redirect(self.success_url)
         messages.error(self.request, 'Erros ao atualizar parceiro.')
