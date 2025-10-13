@@ -124,6 +124,26 @@ class Lancamentos(models.Model):
         null=True
     )
 
+    # Novos campos para débitos informados junto ao crédito (multi-itens)
+    codigo_receita = models.CharField(
+        max_length=20,
+        verbose_name='Código da Receita (Débito)',
+        blank=True,
+        null=True
+    )
+    codigo_receita_denominacao = models.CharField(
+        max_length=120,
+        verbose_name='Código Receita / Denominação (Débito)',
+        blank=True,
+        null=True
+    )
+    periodo_apuracao_debito = models.CharField(
+        max_length=20,
+        verbose_name='Período de Apuração (Débito)',
+        blank=True,
+        null=True
+    )
+
     def __str__(self):
         return f"{self.id_adesao.perdcomp} - {self.sinal}{self.valor} - {self.data_lancamento}"
     

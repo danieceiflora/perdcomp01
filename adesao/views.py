@@ -4,6 +4,9 @@ from django.urls import reverse_lazy
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import Adesao
+from lancamentos.models import Lancamentos
+from django.db import transaction
+from django.http import HttpResponseRedirect
 from django.db.models import Sum
 from django.http import JsonResponse, Http404
 from django.utils.dateformat import format as date_format
@@ -89,8 +92,64 @@ class AdesaoCreateView(AdminRequiredMixin, CreateView):
                 form.add_error('data_origem', 'Informe a Data de Origem (escritural).')
             if form.errors:
                 return self.form_invalid(form)
+
+        # Processamento de débitos vinculados a tipos específicos (multi-itens)
+        requires_debitos = metodo in (
+            'Compensação vinculada a um pedido de ressarcimento',
+            'Compensação vinculada a um pedido de restituição',
+        )
+
+        # Captura débitos do POST (antes de salvar)
+        total_forms = int(self.request.POST.get('debitos-TOTAL_FORMS') or 0)
+        debitos = []
+        for i in range(total_forms):
+            cod_denom = (self.request.POST.get(f'debitos-{i}-codigo_receita_denominacao') or '').strip()
+            per_ap = (self.request.POST.get(f'debitos-{i}-periodo_apuracao_debito') or '').strip()
+            val = (self.request.POST.get(f'debitos-{i}-total') or '').strip()
+            if not cod_denom and not per_ap and not val:
+                continue
+            try:
+                valor = float(val.replace(',', '.')) if val else None
+            except ValueError:
+                valor = None
+            debitos.append({
+                'codigo_receita_denominacao': cod_denom,
+                'periodo_apuracao_debito': per_ap,
+                'valor': valor,
+            })
+
+        # Validação de quantidade para tipos que exigem ao menos um débito
+        if requires_debitos and not debitos:
+            messages.error(self.request, 'Inclua pelo menos um débito vinculado para este tipo de crédito.')
+            return self.form_invalid(form)
+        # Salva a adesão e cria os débitos de forma atômica
+        from django.utils import timezone as dj_tz
+        try:
+            with transaction.atomic():
+                self.object = form.save()
+                adesao: Adesao = self.object
+                for d in debitos:
+                    if d.get('valor') in (None, ''):
+                        continue
+                    Lancamentos.objects.create(
+                        id_adesao=adesao,
+                        data_lancamento=dj_tz.now(),
+                        valor=d['valor'],
+                        sinal='-',
+                        tipo='Gerado',
+                        descricao='Débito vinculado ao crédito (PERDCOMP) informado na adesão',
+                        metodo=metodo,
+                        codigo_receita_denominacao=d.get('codigo_receita_denominacao') or None,
+                        periodo_apuracao_debito=d.get('periodo_apuracao_debito') or None,
+                        aprovado=True,
+                    )
+        except Exception as e:
+            # Define erro no formulário para exibir feedback
+            form.add_error(None, f"Falha ao salvar débitos vinculados: {e}")
+            return self.form_invalid(form)
+
         messages.success(self.request, 'Adesão cadastrada com sucesso!')
-        return super().form_valid(form)
+        return HttpResponseRedirect(self.get_success_url())
 
 class AdesaoUpdateView(AdminRequiredMixin, UpdateView):
     model = Adesao
@@ -109,8 +168,52 @@ class AdesaoUpdateView(AdminRequiredMixin, UpdateView):
                 form.add_error('data_origem', 'Informe a Data de Origem (escritural).')
             if form.errors:
                 return self.form_invalid(form)
+
+        # Capturar possíveis novos débitos informados no update e criar lançamentos adicionais
+        total_forms = int(self.request.POST.get('debitos-TOTAL_FORMS') or 0)
+        debitos = []
+        for i in range(total_forms):
+            cod_denom = (self.request.POST.get(f'debitos-{i}-codigo_receita_denominacao') or '').strip()
+            per_ap = (self.request.POST.get(f'debitos-{i}-periodo_apuracao_debito') or '').strip()
+            val = (self.request.POST.get(f'debitos-{i}-total') or '').strip()
+            if not cod_denom and not per_ap and not val:
+                continue
+            try:
+                valor = float(val.replace(',', '.')) if val else None
+            except ValueError:
+                valor = None
+            debitos.append({
+                'codigo_receita_denominacao': cod_denom,
+                'periodo_apuracao_debito': per_ap,
+                'valor': valor,
+            })
+
+        from django.utils import timezone as dj_tz
+        try:
+            with transaction.atomic():
+                response = super().form_valid(form)
+                adesao: Adesao = self.object
+                for d in debitos:
+                    if d.get('valor') in (None, ''):
+                        continue
+                    Lancamentos.objects.create(
+                        id_adesao=adesao,
+                        data_lancamento=dj_tz.now(),
+                        valor=d['valor'],
+                        sinal='-',
+                        tipo='Gerado',
+                        descricao='Débito vinculado ao crédito (PERDCOMP) informado na adesão',
+                        metodo=metodo,
+                        codigo_receita_denominacao=d.get('codigo_receita_denominacao') or None,
+                        periodo_apuracao_debito=d.get('periodo_apuracao_debito') or None,
+                        aprovado=True,
+                    )
+        except Exception as e:
+            form.add_error(None, f"Falha ao salvar débitos vinculados no update: {e}")
+            return self.form_invalid(form)
+
         messages.success(self.request, 'Adesão atualizada com sucesso!')
-        return super().form_valid(form)
+        return response
 
 class AdesaoDetailView(AdesaoClienteViewOnlyMixin, DetailView):
     model = Adesao

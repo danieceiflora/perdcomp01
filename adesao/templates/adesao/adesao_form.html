@@ -79,7 +79,7 @@
                     <!-- Seção dinâmica por método -->
                     <div class="rounded-lg border bg-card text-card-foreground shadow-sm mt-6">
                         <div class="flex flex-col space-y-1.5 p-6 border-b">
-                            <h3 class="text-lg font-semibold leading-none tracking-tight">Detalhes do método</h3>
+                            <h3 class="text-lg font-semibold leading-none tracking-tight">Detalhes do tipo</h3>
                         </div>
                         <div class="p-6">
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -103,6 +103,16 @@
                                     {{ form.codigo_receita }}
                                     {% if form.codigo_receita.errors %}<div class="text-sm text-destructive">{{ form.codigo_receita.errors }}</div>{% endif %}
                                 </div>
+                                <div id="group-codigo_receita_denominacao" class="space-y-2 hidden">
+                                    <label for="{{ form.codigo_receita_denominacao.id_for_label }}" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{{ form.codigo_receita_denominacao.label }}:</label>
+                                    {{ form.codigo_receita_denominacao }}
+                                    {% if form.codigo_receita_denominacao.errors %}<div class="text-sm text-destructive">{{ form.codigo_receita_denominacao.errors }}</div>{% endif %}
+                                </div>
+                                <div id="group-periodo_apuracao_debito" class="space-y-2 hidden">
+                                    <label for="{{ form.periodo_apuracao_debito.id_for_label }}" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{{ form.periodo_apuracao_debito.label }}:</label>
+                                    {{ form.periodo_apuracao_debito }}
+                                    {% if form.periodo_apuracao_debito.errors %}<div class="text-sm text-destructive">{{ form.periodo_apuracao_debito.errors }}</div>{% endif %}
+                                </div>
                                 <div id="group-credito_original_utilizado" class="space-y-2 hidden">
                                     <label for="{{ form.credito_original_utilizado.id_for_label }}" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{{ form.credito_original_utilizado.label }}:</label>
                                     {{ form.credito_original_utilizado }}
@@ -112,6 +122,11 @@
                                     <label for="{{ form.valor_do_principal.id_for_label }}" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{{ form.valor_do_principal.label }}:</label>
                                     {{ form.valor_do_principal }}
                                     {% if form.valor_do_principal.errors %}<div class="text-sm text-destructive">{{ form.valor_do_principal.errors }}</div>{% endif %}
+                                </div>
+                                <div id="group-total" class="space-y-2 hidden">
+                                    <label for="{{ form.total.id_for_label }}" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{{ form.total.label }}:</label>
+                                    {{ form.total }}
+                                    {% if form.total.errors %}<div class="text-sm text-destructive">{{ form.total.errors }}</div>{% endif %}
                                 </div>
                                 <div id="group-origem" class="space-y-2 hidden">
                                     <label for="{{ form.origem.id_for_label }}" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{{ form.origem.label|default:'Origem' }}:</label>
@@ -135,29 +150,41 @@
                         </div>
                     </div>
 
-                    <!-- Seção Débito (visível para: Pedido de restituição, Pedido de ressarcimento, Declaração de compensação pagamento indevido) -->
+                    <!-- Seção Débito (permite múltiplos débitos para alguns tipos) -->
                     <div id="sec-debito-card" class="rounded-lg border bg-card text-card-foreground shadow-sm mt-6 hidden">
-                        <div class="flex flex-col space-y-1.5 p-6 border-b">
-                            <h3 class="text-lg font-semibold leading-none tracking-tight">Débito</h3>
+                        <div class="flex items-center justify-between p-6 border-b">
+                            <h3 class="text-lg font-semibold leading-none tracking-tight">Débitos vinculados</h3>
+                            <button type="button" class="inline-flex items-center justify-center rounded-md text-sm font-medium border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3" id="btn-add-debito">
+                                <i class="bi bi-plus-lg mr-2"></i>Adicionar débito
+                            </button>
                         </div>
                         <div class="p-6">
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div id="group-codigo_receita_denominacao" class="space-y-2 hidden">
-                                    <label for="{{ form.codigo_receita_denominacao.id_for_label }}" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{{ form.codigo_receita_denominacao.label }}:</label>
-                                    {{ form.codigo_receita_denominacao }}
-                                    {% if form.codigo_receita_denominacao.errors %}<div class="text-sm text-destructive">{{ form.codigo_receita_denominacao.errors }}</div>{% endif %}
+                            <input type="hidden" id="id_debitos-TOTAL_FORMS" name="debitos-TOTAL_FORMS" value="0">
+                            <div id="debitos-forms" class="space-y-4"></div>
+                            <!-- Template (clonado via JS) -->
+                            <template id="tpl-debito">
+                                <div class="card p-4 border rounded-md bg-muted/30 debito-item" data-index="__idx__">
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-foreground mb-2">Código Receita / Denominação</label>
+                                            <input type="text" class="input" name="debitos-__idx__-codigo_receita_denominacao" id="id_debitos-__idx__-codigo_receita_denominacao" placeholder="Ex.: 1708 - IRPJ...">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-foreground mb-2">Período de Apuração (Débito)</label>
+                                            <input type="text" class="input" name="debitos-__idx__-periodo_apuracao_debito" id="id_debitos-__idx__-periodo_apuracao_debito" placeholder="dd/mm/aaaa ou mm/aaaa">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-foreground mb-2">Total</label>
+                                            <input type="number" step="0.01" class="input" name="debitos-__idx__-total" id="id_debitos-__idx__-total" placeholder="0,00">
+                                        </div>
+                                    </div>
+                                    <div class="mt-3 text-right">
+                                        <button type="button" class="inline-flex items-center justify-center rounded-md text-xs font-medium border border-input bg-background hover:bg-destructive hover:text-destructive-foreground h-8 px-3 btn-remove-debito">
+                                            <i class="bi bi-x mr-1"></i>Remover
+                                        </button>
+                                    </div>
                                 </div>
-                                <div id="group-periodo_apuracao_debito" class="space-y-2">
-                                    <label for="{{ form.periodo_apuracao_debito.id_for_label }}" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{{ form.periodo_apuracao_debito.label }}:</label>
-                                    {{ form.periodo_apuracao_debito }}
-                                    {% if form.periodo_apuracao_debito.errors %}<div class="text-sm text-destructive">{{ form.periodo_apuracao_debito.errors }}</div>{% endif %}
-                                </div>
-                                <div id="group-total" class="space-y-2">
-                                    <label for="{{ form.total.id_for_label }}" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{{ form.total.label }}:</label>
-                                    {{ form.total }}
-                                    {% if form.total.errors %}<div class="text-sm text-destructive">{{ form.total.errors }}</div>{% endif %}
-                                </div>
-                            </div>
+                            </template>
                         </div>
                     </div>
 
@@ -191,9 +218,12 @@
         const gValPrin = document.getElementById('group-valor_do_principal');
         const gTotal = document.getElementById('group-total');
         const secDebito = document.getElementById('sec-debito-card');
-        const gTipoCredito = document.getElementById('group-tipo_credito');
+    const gTipoCredito = document.getElementById('group-tipo_credito');
     const gOrigem = document.getElementById('group-origem');
     const gDataOrigem = document.getElementById('group-data_origem');
+    const debitosForms = document.getElementById('debitos-forms');
+    const debitosTotal = document.getElementById('id_debitos-TOTAL_FORMS');
+    const btnAddDebito = document.getElementById('btn-add-debito');
 
         function setRequired(selectorList, required) {
             selectorList.forEach(sel => {
@@ -261,7 +291,7 @@
                 '{{ form.data_origem.id_for_label }}'
             ], false);
 
-            // Show appropriate fields based on original working logic
+            // Show appropriate fields based on selected tipo de crédito
             if (nval === 'pedido de compensacao' || nval === 'pedido de ressarcimento') {
                 // Pedido de compensação / ressarcimento: ano, trimestre e tipo de crédito
                 showGroup(gAno, ['{{ form.ano.id_for_label }}']);
@@ -282,7 +312,7 @@
                 showGroup(gPerApCred, ['{{ form.periodo_apuracao_credito.id_for_label }}']);
                 showGroup(gRec, ['{{ form.codigo_receita.id_for_label }}']);
                 showGroup(gRecDenom, ['{{ form.codigo_receita_denominacao.id_for_label }}']);
-                if (secDebito) secDebito.classList.remove('hidden');
+                // Seção de múltiplos débitos não se aplica aqui; usamos os campos únicos abaixo
                 showGroup(gPerApDeb, ['{{ form.periodo_apuracao_debito.id_for_label }}']);
                 showGroup(gValPrin, ['{{ form.valor_do_principal.id_for_label }}']);
                 showGroup(gTotal, ['{{ form.total.id_for_label }}']);
@@ -292,6 +322,19 @@
                     '{{ form.codigo_receita_denominacao.id_for_label }}',
                     '{{ form.periodo_apuracao_debito.id_for_label }}'
                 ], true);
+            } else if (nval === 'compensacao vinculada a um pedido de ressarcimento') {
+                // Mesma lógica de Pedido de ressarcimento + obrigar débitos
+                showGroup(gAno, ['{{ form.ano.id_for_label }}']);
+                showGroup(gTrimestre, ['{{ form.trimestre.id_for_label }}']);
+                showGroup(gTipoCredito, ['{{ form.tipo_credito.id_for_label }}']);
+                setRequired(['{{ form.ano.id_for_label }}', '{{ form.tipo_credito.id_for_label }}'], true);
+                if (secDebito) secDebito.classList.remove('hidden');
+            } else if (nval === 'compensacao vinculada a um pedido de restituição' || nval === 'compensacao vinculada a um pedido de restituicao') {
+                // Mesma lógica de Pedido de restituição + obrigar débitos
+                showGroup(gPerApCred, ['{{ form.periodo_apuracao_credito.id_for_label }}']);
+                showGroup(gRec, ['{{ form.codigo_receita.id_for_label }}']);
+                setRequired(['{{ form.periodo_apuracao_credito.id_for_label }}', '{{ form.codigo_receita.id_for_label }}'], true);
+                if (secDebito) secDebito.classList.remove('hidden');
             } else if (nval === 'escritural') {
                 // Método Escriturial: exigir origem e data_origem
                 showGroup(gOrigem, ['{{ form.origem.id_for_label }}']);
@@ -307,6 +350,46 @@
             metodo.addEventListener('change', updateVisibility);
             updateVisibility(); // Initial state on load
         }
+
+        // Débitos dinâmicos
+        function addDebito() {
+            if (!debitosForms || !debitosTotal) return;
+            const idx = parseInt(debitosTotal.value || '0');
+            const tpl = document.getElementById('tpl-debito');
+            if (!tpl) return;
+            const html = tpl.innerHTML.replace(/__idx__/g, String(idx));
+            const wrap = document.createElement('div');
+            wrap.innerHTML = html.trim();
+            const node = wrap.firstElementChild;
+            debitosForms.appendChild(node);
+            debitosTotal.value = String(idx + 1);
+            // bind remove
+            const btn = node.querySelector('.btn-remove-debito');
+            if (btn) btn.addEventListener('click', function(){ removeDebito(node); });
+        }
+        function removeDebito(node) {
+            if (!debitosForms || !debitosTotal || !node) return;
+            debitosForms.removeChild(node);
+            // Reindex
+            const items = debitosForms.querySelectorAll('.debito-item');
+            let i = 0;
+            items.forEach(it => {
+                const old = it.getAttribute('data-index');
+                if (String(old) === String(i)) { i++; return; }
+                // rename inputs
+                it.querySelectorAll('input').forEach(inp => {
+                    inp.name = inp.name.replace(/debitos-\d+-/g, `debitos-${i}-`);
+                    inp.id = inp.id.replace(/id_debitos-\d+-/g, `id_debitos-${i}-`);
+                });
+                it.setAttribute('data-index', String(i));
+                i++;
+            });
+            debitosTotal.value = String(items.length);
+        }
+        if (btnAddDebito) btnAddDebito.addEventListener('click', addDebito);
+        // Inicializa com 1 formulário de débito vazio quando a seção estiver visível
+        // (deixa zerado e o usuário adiciona; se quiser forçar mínimo 1, descomente)
+        // addDebito();
 
         // Validação visual simples ao submeter
         const form = document.querySelector('form');

@@ -129,6 +129,8 @@ class AdesaoForm(forms.ModelForm):
                 ('Pedido de ressarcimento', 'Pedido de ressarcimento'),
                 ('Pedido de restituição', 'Pedido de restituição'),
                 ('Declaração de compensação pagamento indevido', 'Declaração de compensação pagamento indevido'),
+                ('Compensação vinculada a um pedido de ressarcimento', 'Compensação vinculada a um pedido de ressarcimento'),
+                ('Compensação vinculada a um pedido de restituição', 'Compensação vinculada a um pedido de restituição'),
                 ('Escritural', 'Escritural'),
             ]
             # Se edição (instance.pk), permitir eventualmente futura lógica diferente; por ora igual
@@ -200,6 +202,26 @@ class AdesaoForm(forms.ModelForm):
                 self.add_error('origem', 'Informe a Origem (escritural).')
             if not cleaned.get('data_origem'):
                 self.add_error('data_origem', 'Informe a Data de Origem (escritural).')
+
+        # Novos tipos vinculados: refletem regras de ressarcimento/restituição e exigem seção de débito
+        elif metodo == 'Compensação vinculada a um pedido de ressarcimento':
+            # espelha Pedido de ressarcimento
+            if not cleaned.get('ano'):
+                self.add_error('ano', 'Informe o Ano.')
+            if not cleaned.get('trimestre'):
+                self.add_error('trimestre', 'Informe o Trimestre.')
+            if not cleaned.get('tipo_credito'):
+                self.add_error('tipo_credito', 'Informe o Tipo de Crédito.')
+            # Exigir pelo menos um débito (campos virão como listas; validação detalhada ficará na view)
+            debitos = self.data.getlist('debitos-TOTAL_FORMS') if hasattr(self.data, 'getlist') else None
+            # Não validamos aqui quantidade por causa da estrutura, a view fará a checagem final
+        elif metodo == 'Compensação vinculada a um pedido de restituição':
+            # espelha Pedido de restituição
+            if not cleaned.get('periodo_apuracao_credito'):
+                self.add_error('periodo_apuracao_credito', 'Informe o Período de Apuração (Crédito).')
+            if not cleaned.get('codigo_receita'):
+                self.add_error('codigo_receita', 'Informe o Código da Receita.')
+            # ver observação sobre débito acima
 
         return cleaned
 

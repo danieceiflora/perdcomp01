@@ -16,13 +16,15 @@ class Adesao(models.Model):
         ('Pedido de ressarcimento', 'Pedido de ressarcimento'),
         ('Pedido de restituição', 'Pedido de restituição'),
         ('Declaração de compensação pagamento indevido', 'Declaração de compensação pagamento indevido'),
+        ('Compensação vinculada a um pedido de ressarcimento', 'Compensação vinculada a um pedido de ressarcimento'),
+        ('Compensação vinculada a um pedido de restituição', 'Compensação vinculada a um pedido de restituição'),
         ('Escritural', 'Escritural'),
     ]
 
     metodo_credito = models.CharField(
         max_length=50,
         choices=metodo_credito_options,
-        verbose_name='Método de Crédito',
+        verbose_name='Tipo de Crédito',
         blank=True,
         null=True
     )
