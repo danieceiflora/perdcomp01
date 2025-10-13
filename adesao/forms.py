@@ -6,6 +6,7 @@ from clientes_parceiros.models import ClientesParceiros
 import re
 
 MMYYYY_REGEX = re.compile(r'^(0[1-9]|1[0-2])/\d{4}$')
+DDMMYYYY_REGEX = re.compile(r'^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\d{4}$')
 
 class AdesaoForm(forms.ModelForm):
     
@@ -44,11 +45,11 @@ class AdesaoForm(forms.ModelForm):
             }),
             'periodo_apuracao_credito': forms.TextInput(attrs={
                 'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-                'placeholder': 'mm/aaaa'
+                'placeholder': 'dd/mm/aaaa ou mm/aaaa'
             }),
             'periodo_apuracao_debito': forms.TextInput(attrs={
                 'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-                'placeholder': 'mm/aaaa'
+                'placeholder': 'dd/mm/aaaa ou mm/aaaa'
             }),
             'tipo_credito': forms.TextInput(attrs={
                 'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
@@ -158,7 +159,7 @@ class AdesaoForm(forms.ModelForm):
         cleaned = super().clean()
         metodo = cleaned.get('metodo_credito')
 
-        if metodo == 'Pedido de compensação':  # Ressarcimento
+        if metodo == 'Pedido de ressarcimento':  # Ressarcimento
             if not cleaned.get('ano'):
                 self.add_error('ano', 'Informe o Ano.')
             if not cleaned.get('trimestre'):
@@ -192,14 +193,14 @@ class AdesaoForm(forms.ModelForm):
         v = self.cleaned_data.get('periodo_apuracao_credito')
         if not v:
             return v
-        if not MMYYYY_REGEX.match(v):
-            raise forms.ValidationError('Formato deve ser mm/aaaa.')
+        if not (MMYYYY_REGEX.match(v) or DDMMYYYY_REGEX.match(v)):
+            raise forms.ValidationError('Formato deve ser dd/mm/aaaa ou mm/aaaa.')
         return v
 
     def clean_periodo_apuracao_debito(self):
         v = self.cleaned_data.get('periodo_apuracao_debito')
         if not v:
             return v
-        if not MMYYYY_REGEX.match(v):
-            raise forms.ValidationError('Formato deve ser mm/aaaa.')
+        if not (MMYYYY_REGEX.match(v) or DDMMYYYY_REGEX.match(v)):
+            raise forms.ValidationError('Formato deve ser dd/mm/aaaa ou mm/aaaa.')
         return v

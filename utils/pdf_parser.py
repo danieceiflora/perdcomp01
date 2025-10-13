@@ -31,6 +31,10 @@ class PDFParsed:
     ano: Optional[str] = None
     trimestre: Optional[str] = None  # 1..4
     tipo_credito: Optional[str] = None
+    # Campos específicos (principalmente usados em Pedido de restituição)
+    data_arrecadacao: Optional[str] = None  # dd/mm/aaaa
+    periodo_apuracao_credito: Optional[str] = None  # mm/aaaa
+    codigo_receita: Optional[str] = None
 
     def as_dict(self) -> Dict[str, Any]:
         return {
@@ -42,6 +46,9 @@ class PDFParsed:
             'ano': self.ano,
             'trimestre': self.trimestre,
             'tipo_credito': self.tipo_credito,
+            'data_arrecadacao': self.data_arrecadacao,
+            'periodo_apuracao_credito': self.periodo_apuracao_credito,
+            'codigo_receita': self.codigo_receita,
         }
 
 
@@ -95,10 +102,40 @@ def parse_ressarcimento_text(txt: str) -> PDFParsed:
     if m:
         p.data_criacao = m.group(1)
 
-    # Valor do Pedido de Ressarcimento
+    # Data de Arrecadação dd/mm/aaaa (para Pedido de restituição)
+    m = re.search(r"Data de Arrecada[cç][aã]o\s*[:\-]?\s*(\d{2}/\d{2}/\d{4})", norm, flags=re.IGNORECASE)
+    if m:
+        p.data_arrecadacao = m.group(1)
+
+    # Valor do Pedido (Ressarcimento/Restituição)
     m = re.search(r"Valor do Pedido.*?([0-9.]+,\d{2})", norm, flags=re.IGNORECASE | re.DOTALL)
     if m:
         p.valor_pedido = _parse_ptbr_number(m.group(1))
+
+    # Período de Apuração (Crédito): pode vir como dd/mm/aaaa (ex.: 30/06/2020) ou mm/aaaa.
+    # 1) Captura direta com dd/mm/aaaa
+    m = re.search(r"(?:\b\d+\s*\.\s*)?Per[ií]odo\s+de\s+Apura[cç][aã]o\s*[:\-]?\s*(\d{2}/\d{2}/\d{4})", norm, flags=re.IGNORECASE)
+    if m:
+        # Manter como aparece no PDF (dd/mm/aaaa)
+        p.periodo_apuracao_credito = m.group(1)
+    else:
+        # 2) Captura direta com mm/aaaa
+        m = re.search(r"(?:\b\d+\s*\.\s*)?Per[ií]odo\s+de\s+Apura[cç][aã]o\s*[:\-]?\s*(\d{2}/\d{4})", norm, flags=re.IGNORECASE)
+        if m:
+            p.periodo_apuracao_credito = m.group(1)
+        else:
+            # 3) Fallback: encontra o rótulo e procura a primeira data próxima em até ~120 caracteres
+            label = re.search(r"(?:\b\d+\s*\.\s*)?Per[ií]odo\s+de\s+Apura[cç][aã]o", norm, flags=re.IGNORECASE)
+            if label:
+                tail = norm[label.end():label.end() + 200]
+                m = re.search(r"(\d{2}/\d{2}/\d{4}|\d{2}/\d{4})", tail)
+                if m:
+                    p.periodo_apuracao_credito = m.group(1)
+
+    # Código da Receita
+    m = re.search(r"C[oó]digo (?:da|de) Receita\s*[:\-]?\s*([0-9.]+)", norm, flags=re.IGNORECASE)
+    if m:
+        p.codigo_receita = m.group(1).strip()
 
     # Ano
     m = re.search(r"\bAno\b\s*[:\-]?\s*(\d{4})", norm, flags=re.IGNORECASE)

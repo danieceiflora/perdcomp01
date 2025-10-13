@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Adesão em lote{% endblock %}
+{% block title %}Importação de PDFs{% endblock %}
 
 {% block content %}
 <div class="container mx-auto px-4 py-6">
   <div class="max-w-5xl mx-auto">
     <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-semibold"><i class="bi bi-files mr-2"></i>Importar Adesões em lote</h1>
+  <h1 class="text-2xl font-semibold"><i class="bi bi-files mr-2"></i>Importação de PDFs</h1>
       <a href="{% url 'adesao:list' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium border h-10 px-4 py-2">
         <i class="bi bi-arrow-left mr-2"></i>Voltar
       </a>
@@ -16,7 +16,7 @@
     <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
       <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
         <div class="space-y-2 md:col-span-2">
-          <label class="text-sm font-medium leading-none">Selecionar PDFs (múltiplos):</label>
+          <label class="text-sm font-medium leading-none">Selecionar PDFs (um ou mais):</label>
           <input id="pdf-files-batch" type="file" accept="application/pdf" multiple class="block w-full text-sm border rounded-lg" />
           <div class="flex items-center gap-2 mt-2">
             <input id="toggle-criar" type="checkbox" class="h-4 w-4" checked />
@@ -72,6 +72,34 @@
           if (item.detail_url) {
             const a = document.createElement('a'); a.href = item.detail_url; a.textContent = 'Ver detalhes'; a.className = 'text-blue-700 underline ml-2';
             msg.appendChild(a);
+          }
+          // Quando não criar automaticamente, exibir campos extraídos
+          if (!item.created && item.fields) {
+            const f = item.fields || {};
+            const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : String(v));
+            const details = document.createElement('div');
+            details.className = 'mt-2 grid grid-cols-1 md:grid-cols-2 gap-2';
+            const pairs = [
+              ['Cliente', f.cliente_label || f.cliente],
+              ['PERDCOMP', f.perdcomp],
+              ['Método', f.metodo_credito],
+              ['Data de Criação', f.data_inicio],
+              ['Data de Arrecadação', f.data_arrecadacao],
+              ['Saldo (Valor do Pedido)', f.saldo],
+              ['Ano', f.ano],
+              ['Trimestre', f.trimestre],
+              ['Tipo de Crédito', f.tipo_credito],
+              ['Período Apuração (Crédito)', f.periodo_apuracao_credito],
+              ['Código da Receita', f.codigo_receita],
+            ];
+            pairs.forEach(([label, value]) => {
+              const row = document.createElement('div');
+              row.className = 'flex items-center justify-between border-b border-slate-100 py-1';
+              const l = document.createElement('span'); l.className = 'text-slate-500'; l.textContent = label;
+              const v = document.createElement('span'); v.className = 'font-medium'; v.textContent = fmt(value);
+              row.appendChild(l); row.appendChild(v); details.appendChild(row);
+            });
+            div.appendChild(details);
           }
         } else { msg.textContent = item.error || 'Erro'; }
         div.appendChild(msg);

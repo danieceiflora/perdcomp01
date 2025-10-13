@@ -74,27 +74,7 @@
                         </div>
                     </div>
 
-                    <!-- Importar PDF -->
-                    <div class="rounded-lg border bg-card text-card-foreground shadow-sm mt-6">
-                        <div class="flex flex-col space-y-1.5 p-6 border-b">
-                            <h3 class="text-lg font-semibold leading-none tracking-tight">Importar PDF PERDCOMP</h3>
-                        </div>
-                        <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                            <div class="space-y-2 md:col-span-2">
-                                <label class="text-sm font-medium leading-none">Selecione o PDF:</label>
-                                <input id="pdf-file" type="file" accept="application/pdf" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none" />
-                            </div>
-                            <div class="flex gap-2">
-                                <button id="btn-import-pdf" type="button" class="inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
-                                    <i class="bi bi-file-earmark-arrow-up mr-2"></i> Importar PDF
-                                </button>
-                                <div id="pdf-loading" class="hidden items-center text-sm text-muted-foreground"><span class="animate-pulse">Processando...</span></div>
-                            </div>
-                        </div>
-                        <div id="pdf-feedback" class="px-6 pb-4 text-sm"></div>
-
-                        
-                    </div>
+                    
 
                     <!-- Seção dinâmica por método -->
                     <div class="rounded-lg border bg-card text-card-foreground shadow-sm mt-6">
@@ -190,100 +170,6 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const importBtn = document.getElementById('btn-import-pdf');
-        const inputFile = document.getElementById('pdf-file');
-        const feedback = document.getElementById('pdf-feedback');
-        const loading = document.getElementById('pdf-loading');
-
-    
-
-        function setFeedback(msg, ok=true) {
-            if (!feedback) return;
-            feedback.className = 'px-6 pb-4 text-sm ' + (ok ? 'text-green-700' : 'text-red-700');
-            feedback.textContent = msg || '';
-        }
-
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-        }
-
-        async function importarPDF() {
-            if (!inputFile || !inputFile.files || inputFile.files.length === 0) {
-                setFeedback('Selecione um arquivo PDF primeiro.', false);
-                return;
-            }
-            const file = inputFile.files[0];
-            const formData = new FormData();
-            formData.append('pdf', file);
-
-            setFeedback('');
-            if (loading) loading.classList.remove('hidden');
-            importBtn && (importBtn.disabled = true);
-            try {
-                const resp = await fetch("{% url 'adesao:importar_pdf' %}", {
-                    method: 'POST',
-                    headers: { 'X-CSRFToken': getCookie('csrftoken') || '' },
-                    body: formData
-                });
-                const data = await resp.json();
-                if (!resp.ok || !data.ok) {
-                    setFeedback(data.error || 'Falha ao importar PDF.', false);
-                    return;
-                }
-                preencherCampos(data.fields);
-                setFeedback('PDF importado com sucesso. Campos preenchidos, revise antes de salvar.', true);
-            } catch (err) {
-                setFeedback('Erro inesperado ao importar PDF.', false);
-            } finally {
-                if (loading) loading.classList.add('hidden');
-                importBtn && (importBtn.disabled = false);
-            }
-        }
-
-        
-
-        function preencherCampos(fields) {
-            if (!fields) return;
-            // Perdcomp
-            const perd = document.getElementById('{{ form.perdcomp.id_for_label }}') || document.querySelector('[name="perdcomp"]');
-            if (perd && fields.perdcomp) perd.value = fields.perdcomp;
-            // Cliente select
-            const cli = document.getElementById('{{ form.cliente.id_for_label }}') || document.querySelector('[name="cliente"]');
-            if (cli && fields.cliente && fields.cliente.id) {
-                cli.value = fields.cliente.id;
-            }
-            // Método de crédito
-            const met = document.getElementById('{{ form.metodo_credito.id_for_label }}') || document.querySelector('[name="metodo_credito"]');
-            if (met && fields.metodo_credito) {
-                met.value = fields.metodo_credito;
-                met.dispatchEvent(new Event('change'));
-            }
-            // Data de início
-            const di = document.getElementById('{{ form.data_inicio.id_for_label }}') || document.querySelector('[name="data_inicio"]');
-            if (di && fields.data_inicio) {
-                // Converter dd/mm/aaaa -> aaaa-mm-dd
-                const m = fields.data_inicio.match(/(\d{2})\/(\d{2})\/(\d{4})/);
-                if (m) di.value = `${m[3]}-${m[2]}-${m[1]}`;
-            }
-            // Valor do crédito -> saldo
-            const sal = document.getElementById('{{ form.saldo.id_for_label }}') || document.querySelector('[name="saldo"]');
-            if (sal && fields.valor_do_credito) {
-                // valor no backend vem como string com ponto decimal
-                sal.value = fields.valor_do_credito;
-            }
-            // Ano / Trimestre / Tipo de Crédito
-            const ano = document.getElementById('{{ form.ano.id_for_label }}') || document.querySelector('[name="ano"]');
-            if (ano && fields.ano) ano.value = fields.ano;
-            const tri = document.getElementById('{{ form.trimestre.id_for_label }}') || document.querySelector('[name="trimestre"]');
-            if (tri && fields.trimestre) tri.value = fields.trimestre;
-            const tipo = document.getElementById('{{ form.tipo_credito.id_for_label }}') || document.querySelector('[name="tipo_credito"]');
-            if (tipo && fields.tipo_credito) tipo.value = fields.tipo_credito;
-        }
-
-        if (importBtn) importBtn.addEventListener('click', importarPDF);
-    
         const metodo = document.getElementById('{{ form.metodo_credito.id_for_label }}') || document.querySelector('select[name="metodo_credito"]');
         const gAno = document.getElementById('group-ano');
         const gTrimestre = document.getElementById('grupo-trimestre');

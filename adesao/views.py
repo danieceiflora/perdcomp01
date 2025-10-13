@@ -315,6 +315,10 @@ def importar_pdf_perdcomp(request):
                     'ano': parsed.ano,
                     'trimestre': parsed.trimestre,
                     'tipo_credito': parsed.tipo_credito,
+                    # Novos campos para Pedido de restituição
+                    'data_arrecadacao': parsed.data_arrecadacao,
+                    'periodo_apuracao_credito': parsed.periodo_apuracao_credito,
+                    'codigo_receita': parsed.codigo_receita,
                 }
             }
     finally:
@@ -426,12 +430,15 @@ def importar_pdf_perdcomp_lote(request):
 
             # Apenas extrair (sem criar)
             if not criar:
+                emp = cliente.id_company_vinculada
+                cliente_label = f"{emp.nome_fantasia or emp.razao_social} ({cliente.nome_referencia})"
                 res = {
                     'file': f.name,
                     'ok': True,
                     'created': False,
                     'fields': {
                         'cliente': cliente.id,
+                        'cliente_label': cliente_label,
                         'perdcomp': parsed.perdcomp,
                         'metodo_credito': parsed.metodo_credito,
                         'data_inicio': parsed.data_criacao,
@@ -439,6 +446,9 @@ def importar_pdf_perdcomp_lote(request):
                         'ano': parsed.ano,
                         'trimestre': parsed.trimestre,
                         'tipo_credito': parsed.tipo_credito,
+                        'data_arrecadacao': parsed.data_arrecadacao,
+                        'periodo_apuracao_credito': parsed.periodo_apuracao_credito,
+                        'codigo_receita': parsed.codigo_receita,
                     }
                 }
                 results.append(res)
@@ -456,10 +466,15 @@ def importar_pdf_perdcomp_lote(request):
                 'perdcomp': parsed.perdcomp or '',
                 'metodo_credito': parsed.metodo_credito or '',
                 'data_inicio': _conv_date(parsed.data_criacao) or '',
+                # saldo recebe o valor do pedido (tanto para ressarcimento quanto para restituição)
                 'saldo': str(parsed.valor_pedido) if parsed.valor_pedido is not None else '',
                 'ano': parsed.ano or '',
                 'trimestre': parsed.trimestre or '',
                 'tipo_credito': (parsed.tipo_credito or '')[:200],
+                # Campos específicos utilizados em Pedido de restituição
+                'data_arrecadacao': _conv_date(parsed.data_arrecadacao) or '',
+                'periodo_apuracao_credito': parsed.periodo_apuracao_credito or '',
+                'codigo_receita': (parsed.codigo_receita or '')[:100],
             }
             form = AdesaoForm(data=form_data)
             if not form.is_valid():
