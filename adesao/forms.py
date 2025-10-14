@@ -128,9 +128,10 @@ class AdesaoForm(forms.ModelForm):
                 ('', 'Selecione...'),
                 ('Pedido de ressarcimento', 'Pedido de ressarcimento'),
                 ('Pedido de restituição', 'Pedido de restituição'),
-                ('Declaração de compensação pagamento indevido', 'Declaração de compensação pagamento indevido'),
                 ('Compensação vinculada a um pedido de ressarcimento', 'Compensação vinculada a um pedido de ressarcimento'),
                 ('Compensação vinculada a um pedido de restituição', 'Compensação vinculada a um pedido de restituição'),
+                ('Declaração vinculada a um pedido de ressarcimento', 'Declaração vinculada a um pedido de ressarcimento'),
+                ('Declaração vinculada a um pedido de restituição', 'Declaração vinculada a um pedido de restituição'),
                 ('Escritural', 'Escritural'),
             ]
             # Se edição (instance.pk), permitir eventualmente futura lógica diferente; por ora igual
@@ -185,16 +186,19 @@ class AdesaoForm(forms.ModelForm):
         elif metodo == 'Declaração de compensação':
             if cleaned.get('credito_original_utilizado') in (None, ''):
                 self.add_error('credito_original_utilizado', 'Informe o Crédito Original Utilizado.')
-        elif metodo == 'Declaração de compensação pagamento indevido':
-            # Exigir: periodo_apuracao_credito, codigo_receita, codigo_receita_denominacao, periodo_apuracao_debito
+        # Tipos 'Declaração vinculada ...' seguem as mesmas regras de pedido correspondente e exigem débitos (validados na view)
+        elif metodo == 'Declaração vinculada a um pedido de ressarcimento':
+            if not cleaned.get('ano'):
+                self.add_error('ano', 'Informe o Ano.')
+            if not cleaned.get('trimestre'):
+                self.add_error('trimestre', 'Informe o Trimestre.')
+            if not cleaned.get('tipo_credito'):
+                self.add_error('tipo_credito', 'Informe o Tipo de Crédito.')
+        elif metodo == 'Declaração vinculada a um pedido de restituição':
             if not cleaned.get('periodo_apuracao_credito'):
                 self.add_error('periodo_apuracao_credito', 'Informe o Período de Apuração (Crédito).')
             if not cleaned.get('codigo_receita'):
                 self.add_error('codigo_receita', 'Informe o Código da Receita.')
-            if not cleaned.get('codigo_receita_denominacao'):
-                self.add_error('codigo_receita_denominacao', 'Informe o Código Receita / Denominação.')
-            if not cleaned.get('periodo_apuracao_debito'):
-                self.add_error('periodo_apuracao_debito', 'Informe o Período de Apuração (Débito).')
 
         elif metodo == 'Escritural':
             # Exigir campos específicos de escriturial

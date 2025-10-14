@@ -322,14 +322,14 @@
                     '{{ form.codigo_receita_denominacao.id_for_label }}',
                     '{{ form.periodo_apuracao_debito.id_for_label }}'
                 ], true);
-            } else if (nval === 'compensacao vinculada a um pedido de ressarcimento') {
+            } else if (nval === 'compensacao vinculada a um pedido de ressarcimento' || nval === 'declaracao vinculada a um pedido de ressarcimento') {
                 // Mesma lógica de Pedido de ressarcimento + obrigar débitos
                 showGroup(gAno, ['{{ form.ano.id_for_label }}']);
                 showGroup(gTrimestre, ['{{ form.trimestre.id_for_label }}']);
                 showGroup(gTipoCredito, ['{{ form.tipo_credito.id_for_label }}']);
                 setRequired(['{{ form.ano.id_for_label }}', '{{ form.tipo_credito.id_for_label }}'], true);
                 if (secDebito) secDebito.classList.remove('hidden');
-            } else if (nval === 'compensacao vinculada a um pedido de restituição' || nval === 'compensacao vinculada a um pedido de restituicao') {
+            } else if (nval === 'compensacao vinculada a um pedido de restituição' || nval === 'compensacao vinculada a um pedido de restituicao' || nval === 'declaracao vinculada a um pedido de restituição' || nval === 'declaracao vinculada a um pedido de restituicao') {
                 // Mesma lógica de Pedido de restituição + obrigar débitos
                 showGroup(gPerApCred, ['{{ form.periodo_apuracao_credito.id_for_label }}']);
                 showGroup(gRec, ['{{ form.codigo_receita.id_for_label }}']);

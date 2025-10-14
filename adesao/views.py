@@ -15,6 +15,7 @@ from django.views.decorators.http import require_GET
 from django.contrib.auth.decorators import login_required
 from .forms import AdesaoForm
 from django.views.decorators.http import require_POST
+import re
 from django.views.decorators.csrf import csrf_exempt
 from django.core.files.uploadedfile import UploadedFile
 from django.utils import timezone
@@ -97,6 +98,8 @@ class AdesaoCreateView(AdminRequiredMixin, CreateView):
         requires_debitos = metodo in (
             'Compensação vinculada a um pedido de ressarcimento',
             'Compensação vinculada a um pedido de restituição',
+            'Declaração vinculada a um pedido de ressarcimento',
+            'Declaração vinculada a um pedido de restituição',
         )
 
         # Captura débitos do POST (antes de salvar)
@@ -428,23 +431,101 @@ def importar_pdf_perdcomp(request):
             response_payload = {'ok': False, 'error': f'PERDCOMP {parsed.perdcomp} já cadastrado.'}
 
         if status_code == 200:
-            response_payload = {
-                'ok': True,
-                'fields': {
-                    'cliente': {'id': cliente_id, 'label': cliente_label},
-                    'perdcomp': parsed.perdcomp,
-                    'metodo_credito': parsed.metodo_credito,
-                    'data_inicio': parsed.data_criacao,  # poderá ser ajustado no frontend
-                    'valor_do_credito': str(parsed.valor_pedido) if parsed.valor_pedido is not None else None,
-                    'ano': parsed.ano,
-                    'trimestre': parsed.trimestre,
-                    'tipo_credito': parsed.tipo_credito,
-                    # Novos campos para Pedido de restituição
-                    'data_arrecadacao': parsed.data_arrecadacao,
-                    'periodo_apuracao_credito': parsed.periodo_apuracao_credito,
-                    'codigo_receita': parsed.codigo_receita,
+            criar = str(request.POST.get('criar', '0')).lower() in ('1','true','on','yes')
+            comp_vinc = parsed.metodo_credito in (
+                'Compensação vinculada a um pedido de ressarcimento',
+                'Compensação vinculada a um pedido de restituição',
+            )
+            if criar and comp_vinc and cliente_id:
+                # Criar Adesão + Lançamentos (débitos) seguindo lógica do lançamento manual
+                from decimal import Decimal
+                from django.db import transaction
+                # saldo base: valor do pedido se existir, senão soma dos débitos
+                soma_debitos = Decimal('0')
+                for d in (parsed.debitos or []):
+                    v = d.get('valor')
+                    if v is not None:
+                        try:
+                            soma_debitos += Decimal(str(v))
+                        except Exception:
+                            pass
+                # Regra unificada: usar "Valor Original do Crédito Inicial" para saldo base
+                saldo_base = getattr(parsed, 'valor_original_credito_inicial', None)
+                if saldo_base is None:
+                    saldo_base = parsed.valor_pedido if parsed.valor_pedido is not None else soma_debitos
+                # helper de data
+                def _conv_date(dmy: str) -> str | None:
+                    m = re.match(r"(\d{2})/(\d{2})/(\d{4})", dmy or '')
+                    return f"{m.group(3)}-{m.group(2)}-{m.group(1)}" if m else None
+                try:
+                    with transaction.atomic():
+                        cliente_obj = ClientesParceiros.objects.get(id=cliente_id)
+                        ad = Adesao.objects.create(
+                            cliente=cliente_obj,
+                            perdcomp=parsed.perdcomp or '',
+                            metodo_credito=parsed.metodo_credito,
+                            data_inicio=_conv_date(parsed.data_criacao) or timezone.now().date(),
+                            saldo=float(saldo_base or 0),
+                            ano=parsed.ano or None,
+                            trimestre=parsed.trimestre or None,
+                            tipo_credito=(parsed.tipo_credito or '')[:200] or None,
+                            periodo_apuracao_credito=parsed.periodo_apuracao_credito or None,
+                            codigo_receita=(parsed.codigo_receita or '')[:100] or None,
+                        )
+                        from django.utils import timezone as dj_tz
+                        for d in (parsed.debitos or []):
+                            val = d.get('valor')
+                            if val is None:
+                                continue
+                            Lancamentos.objects.create(
+                                id_adesao=ad,
+                                data_lancamento=dj_tz.now(),
+                                valor=float(val),
+                                sinal='-',
+                                tipo='Gerado',
+                                descricao='Débito vinculado (importado do PDF) - Declaração de Compensação',
+                                metodo=parsed.metodo_credito,
+                                codigo_receita_denominacao=(d.get('codigo_receita_denominacao') or None),
+                                periodo_apuracao_debito=(d.get('periodo_apuracao_debito') or None),
+                                aprovado=True,
+                            )
+                    response_payload = {
+                        'ok': True,
+                        'created': True,
+                        'id': ad.pk,
+                        'detail_url': reverse_lazy('adesao:detail', kwargs={'pk': ad.pk}),
+                    }
+                except Exception as e:
+                    status_code = 400
+                    response_payload = {'ok': False, 'error': f'Falha ao criar adesão e débitos: {e}'}
+            else:
+                response_payload = {
+                    'ok': True,
+                    'fields': {
+                        'cliente': {'id': cliente_id, 'label': cliente_label},
+                        'perdcomp': parsed.perdcomp,
+                        'metodo_credito': parsed.metodo_credito,
+                        'data_inicio': parsed.data_criacao,  # poderá ser ajustado no frontend
+                        'valor_do_credito': str(parsed.valor_pedido) if parsed.valor_pedido is not None else None,
+                        'valor_total_origem': str(parsed.valor_total_origem) if getattr(parsed, 'valor_total_origem', None) is not None else None,
+                        'valor_original_credito_inicial': str(getattr(parsed, 'valor_original_credito_inicial', None)) if getattr(parsed, 'valor_original_credito_inicial', None) is not None else None,
+                        'ano': parsed.ano,
+                        'trimestre': parsed.trimestre,
+                        'tipo_credito': parsed.tipo_credito,
+                        # Novos campos para Pedido de restituição
+                        'data_arrecadacao': parsed.data_arrecadacao,
+                        'periodo_apuracao_credito': parsed.periodo_apuracao_credito,
+                        'codigo_receita': parsed.codigo_receita,
+                        'debitos': [
+                            {
+                                'codigo_receita_denominacao': d.get('codigo_receita_denominacao'),
+                                'periodo_apuracao_debito': d.get('periodo_apuracao_debito'),
+                                'valor': str(d.get('valor')) if d.get('valor') is not None else None,
+                            }
+                            for d in (parsed.debitos or [])
+                        ],
+                    }
                 }
-            }
     finally:
         # Audit log simples por arquivo
         try:
@@ -567,12 +648,22 @@ def importar_pdf_perdcomp_lote(request):
                         'metodo_credito': parsed.metodo_credito,
                         'data_inicio': parsed.data_criacao,
                         'saldo': str(parsed.valor_pedido) if parsed.valor_pedido is not None else None,
+                        'valor_total_origem': str(getattr(parsed, 'valor_total_origem', None)) if getattr(parsed, 'valor_total_origem', None) is not None else None,
+                        'valor_original_credito_inicial': str(getattr(parsed, 'valor_original_credito_inicial', None)) if getattr(parsed, 'valor_original_credito_inicial', None) is not None else None,
                         'ano': parsed.ano,
                         'trimestre': parsed.trimestre,
                         'tipo_credito': parsed.tipo_credito,
                         'data_arrecadacao': parsed.data_arrecadacao,
                         'periodo_apuracao_credito': parsed.periodo_apuracao_credito,
                         'codigo_receita': parsed.codigo_receita,
+                        'debitos': [
+                            {
+                                'codigo_receita_denominacao': d.get('codigo_receita_denominacao'),
+                                'periodo_apuracao_debito': d.get('periodo_apuracao_debito'),
+                                'valor': str(d.get('valor')) if d.get('valor') is not None else None,
+                            }
+                            for d in (parsed.debitos or [])
+                        ],
                     }
                 }
                 results.append(res)
@@ -580,41 +671,99 @@ def importar_pdf_perdcomp_lote(request):
                 write_log(f.name, context_log)
                 continue
 
-            # Criar via AdesaoForm para aproveitar validações
+            # Criar registro(s)
+            comp_vinc = parsed.metodo_credito in (
+                'Compensação vinculada a um pedido de ressarcimento',
+                'Compensação vinculada a um pedido de restituição',
+            )
             def _conv_date(dmy: str) -> str | None:
                 m = re.match(r"(\d{2})/(\d{2})/(\d{4})", dmy or '')
                 return f"{m.group(3)}-{m.group(2)}-{m.group(1)}" if m else None
 
-            form_data = {
-                'cliente': str(cliente.id),
-                'perdcomp': parsed.perdcomp or '',
-                'metodo_credito': parsed.metodo_credito or '',
-                'data_inicio': _conv_date(parsed.data_criacao) or '',
-                # saldo recebe o valor do pedido (tanto para ressarcimento quanto para restituição)
-                'saldo': str(parsed.valor_pedido) if parsed.valor_pedido is not None else '',
-                'ano': parsed.ano or '',
-                'trimestre': parsed.trimestre or '',
-                'tipo_credito': (parsed.tipo_credito or '')[:200],
-                # Campos específicos utilizados em Pedido de restituição
-                'data_arrecadacao': _conv_date(parsed.data_arrecadacao) or '',
-                'periodo_apuracao_credito': parsed.periodo_apuracao_credito or '',
-                'codigo_receita': (parsed.codigo_receita or '')[:100],
-            }
-            form = AdesaoForm(data=form_data)
-            if not form.is_valid():
-                errs = {k: [str(e) for e in v] for k, v in form.errors.items()}
-                res = {'file': f.name, 'ok': False, 'error': 'Falha na validação.', 'errors': errs}
+            if comp_vinc:
+                # Saldo base: usar "Valor Original do Crédito Inicial" quando disponível;
+                # fallback para valor do pedido e, por fim, soma dos débitos
+                from decimal import Decimal
+                from django.db import transaction
+                soma_debitos = Decimal('0')
+                for d in (parsed.debitos or []):
+                    v = d.get('valor')
+                    if v is not None:
+                        try:
+                            soma_debitos += Decimal(str(v))
+                        except Exception:
+                            pass
+                saldo_base = getattr(parsed, 'valor_original_credito_inicial', None)
+                if saldo_base is None:
+                    saldo_base = parsed.valor_pedido if parsed.valor_pedido is not None else soma_debitos
+                try:
+                    with transaction.atomic():
+                        ad = Adesao.objects.create(
+                            cliente=cliente,
+                            perdcomp=parsed.perdcomp or '',
+                            metodo_credito=parsed.metodo_credito,
+                            data_inicio=_conv_date(parsed.data_criacao) or timezone.now().date(),
+                            saldo=float(saldo_base or 0),
+                            ano=parsed.ano or None,
+                            trimestre=parsed.trimestre or None,
+                            tipo_credito=(parsed.tipo_credito or '')[:200] or None,
+                            periodo_apuracao_credito=parsed.periodo_apuracao_credito or None,
+                            codigo_receita=(parsed.codigo_receita or '')[:100] or None,
+                        )
+                        from django.utils import timezone as dj_tz
+                        for d in (parsed.debitos or []):
+                            val = d.get('valor')
+                            if val is None:
+                                continue
+                            Lancamentos.objects.create(
+                                id_adesao=ad,
+                                data_lancamento=dj_tz.now(),
+                                valor=float(val),
+                                sinal='-',
+                                tipo='Gerado',
+                                descricao='Débito vinculado (importado do PDF) - Declaração de Compensação',
+                                metodo=parsed.metodo_credito,
+                                codigo_receita_denominacao=(d.get('codigo_receita_denominacao') or None),
+                                periodo_apuracao_debito=(d.get('periodo_apuracao_debito') or None),
+                                aprovado=True,
+                            )
+                    detail_url = reverse('adesao:detail', kwargs={'pk': ad.pk})
+                    res = {'file': f.name, 'ok': True, 'created': True, 'id': ad.pk, 'detail_url': detail_url}
+                except Exception as e:
+                    res = {'file': f.name, 'ok': False, 'error': f'Falha ao criar adesão e débitos: {e}'}
                 results.append(res)
                 context_log['result'] = res
                 write_log(f.name, context_log)
                 continue
-
-            obj = form.save()
-            detail_url = reverse('adesao:detail', kwargs={'pk': obj.pk})
-            res = {'file': f.name, 'ok': True, 'created': True, 'id': obj.pk, 'detail_url': detail_url}
-            results.append(res)
-            context_log['result'] = res
-            write_log(f.name, context_log)
+            else:
+                # Fluxo padrão (Pedido de ressarcimento/restituição): usa o Form para validações
+                form_data = {
+                    'cliente': str(cliente.id),
+                    'perdcomp': parsed.perdcomp or '',
+                    'metodo_credito': parsed.metodo_credito or '',
+                    'data_inicio': _conv_date(parsed.data_criacao) or '',
+                    'saldo': str(parsed.valor_pedido) if parsed.valor_pedido is not None else '',
+                    'ano': parsed.ano or '',
+                    'trimestre': parsed.trimestre or '',
+                    'tipo_credito': (parsed.tipo_credito or '')[:200],
+                    'data_arrecadacao': _conv_date(parsed.data_arrecadacao) or '',
+                    'periodo_apuracao_credito': parsed.periodo_apuracao_credito or '',
+                    'codigo_receita': (parsed.codigo_receita or '')[:100],
+                }
+                form = AdesaoForm(data=form_data)
+                if not form.is_valid():
+                    errs = {k: [str(e) for e in v] for k, v in form.errors.items()}
+                    res = {'file': f.name, 'ok': False, 'error': 'Falha na validação.', 'errors': errs}
+                    results.append(res)
+                    context_log['result'] = res
+                    write_log(f.name, context_log)
+                    continue
+                obj = form.save()
+                detail_url = reverse('adesao:detail', kwargs={'pk': obj.pk})
+                res = {'file': f.name, 'ok': True, 'created': True, 'id': obj.pk, 'detail_url': detail_url}
+                results.append(res)
+                context_log['result'] = res
+                write_log(f.name, context_log)
         except Exception as e:
             res = {'file': f.name, 'ok': False, 'error': f'Erro inesperado: {e}'}
             results.append(res)

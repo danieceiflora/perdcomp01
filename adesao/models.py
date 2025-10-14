@@ -15,9 +15,10 @@ class Adesao(models.Model):
     metodo_credito_options = [
         ('Pedido de ressarcimento', 'Pedido de ressarcimento'),
         ('Pedido de restituição', 'Pedido de restituição'),
-        ('Declaração de compensação pagamento indevido', 'Declaração de compensação pagamento indevido'),
         ('Compensação vinculada a um pedido de ressarcimento', 'Compensação vinculada a um pedido de ressarcimento'),
         ('Compensação vinculada a um pedido de restituição', 'Compensação vinculada a um pedido de restituição'),
+        ('Declaração vinculada a um pedido de ressarcimento', 'Declaração vinculada a um pedido de ressarcimento'),
+        ('Declaração vinculada a um pedido de restituição', 'Declaração vinculada a um pedido de restituição'),
         ('Escritural', 'Escritural'),
     ]
 
@@ -178,17 +179,7 @@ class Adesao(models.Model):
     
     def save(self, *args, **kwargs):
         """Sobrescreve o método save para garantir que o saldo_atual seja inicializado corretamente"""
-        # Regras específicas para 'Declaração de compensação pagamento indevido'
-        if self.metodo_credito == 'Declaração de compensação pagamento indevido':
-            # Se ambos valores existem, calcula saldo como diferença
-            if self.valor_do_principal is not None and self.total is not None:
-                diferenca = self.valor_do_principal - self.total
-                # Garante que não fique negativo
-                if diferenca < 0:
-                    # Evita persistir saldo negativo; força a zero
-                    diferenca = 0
-                self.saldo = diferenca
-        # Se é um n8ovo objeto (não tem ID) e o saldo_atual não foi definido, inicializa com saldo calculado/fornecido
+        # Se é um novo objeto (não tem ID) e o saldo_atual não foi definido, inicializa com saldo informado
         if not self.pk and not self.saldo_atual:
             self.saldo_atual = self.saldo
         super().save(*args, **kwargs)
@@ -206,15 +197,9 @@ class Adesao(models.Model):
         return f"{self.perdcomp} - N/A"
 
     def clean(self):
-        from django.core.exceptions import ValidationError
-        # Validação específica do método pagamento indevido
-        if self.metodo_credito == 'Declaração de compensação pagamento indevido':
-            if self.valor_do_principal is not None and self.total is not None:
-                if self.total > self.valor_do_principal:
-                    raise ValidationError({'total': 'O Total não pode ser maior que o Valor do Principal.'})
-            # Exige ambos preenchidos
-            if (self.valor_do_principal is None) or (self.total is None):
-                raise ValidationError('Preencha Valor do Principal e Total para este método.')
+        # Validações específicas por método (se necessário) podem ser adicionadas aqui.
+        # As regras de negócio detalhadas ficaram centralizadas no Form e na View.
+        return super().clean()
     
     
     class Meta:
