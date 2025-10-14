@@ -98,8 +98,6 @@ class AdesaoCreateView(AdminRequiredMixin, CreateView):
         requires_debitos = metodo in (
             'Compensação vinculada a um pedido de ressarcimento',
             'Compensação vinculada a um pedido de restituição',
-            'Declaração vinculada a um pedido de ressarcimento',
-            'Declaração vinculada a um pedido de restituição',
         )
 
         # Captura débitos do POST (antes de salvar)

@@ -130,8 +130,6 @@ class AdesaoForm(forms.ModelForm):
                 ('Pedido de restituição', 'Pedido de restituição'),
                 ('Compensação vinculada a um pedido de ressarcimento', 'Compensação vinculada a um pedido de ressarcimento'),
                 ('Compensação vinculada a um pedido de restituição', 'Compensação vinculada a um pedido de restituição'),
-                ('Declaração vinculada a um pedido de ressarcimento', 'Declaração vinculada a um pedido de ressarcimento'),
-                ('Declaração vinculada a um pedido de restituição', 'Declaração vinculada a um pedido de restituição'),
                 ('Escritural', 'Escritural'),
             ]
             # Se edição (instance.pk), permitir eventualmente futura lógica diferente; por ora igual

@@ -17,8 +17,6 @@ class Adesao(models.Model):
         ('Pedido de restituição', 'Pedido de restituição'),
         ('Compensação vinculada a um pedido de ressarcimento', 'Compensação vinculada a um pedido de ressarcimento'),
         ('Compensação vinculada a um pedido de restituição', 'Compensação vinculada a um pedido de restituição'),
-        ('Declaração vinculada a um pedido de ressarcimento', 'Declaração vinculada a um pedido de ressarcimento'),
-        ('Declaração vinculada a um pedido de restituição', 'Declaração vinculada a um pedido de restituição'),
         ('Escritural', 'Escritural'),
     ]
 
