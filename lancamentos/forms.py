@@ -89,7 +89,7 @@ class LancamentosForm(forms.ModelForm):
 
     class Meta:
         model = Lancamentos
-        fields = ['id_adesao', 'metodo_escolhido', 'data_lancamento', 'valor', 'tipo', 'descricao',
+        fields = ['id_adesao', 'metodo_escolhido', 'data_lancamento', 'valor', 'tipo', 'descricao', 'codigo_guia',
                   'lanc_total_credito_original_utilizado', 'lanc_debito', 'lanc_periodo_apuracao',
                   'lanc_debito_r', 'lanc_periodo_apuracao_r', 'lanc_total_r',
                   'metodo', 'total', 'total_credito_original_utilizado', 'periodo_apuracao',
@@ -101,6 +101,7 @@ class LancamentosForm(forms.ModelForm):
             'valor': forms.HiddenInput(),
             'tipo': forms.Select(attrs={'class': 'input w-full'}),
             'descricao': forms.Textarea(attrs={'class': 'input w-full','placeholder': 'Observações adicionais','rows': 3}),
+            'codigo_guia': forms.TextInput(attrs={'class': 'input w-full', 'placeholder': 'Informe o código da guia'}),
             'aprovado': forms.Select(choices=[(True, 'Sim'), (False, 'Não')], attrs={'class': 'input w-full'}),
             'data_aprovacao': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'input w-full'}),
             'observacao_aprovacao': forms.Textarea(attrs={'class': 'input w-full', 'rows': 3}),

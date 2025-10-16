@@ -60,6 +60,14 @@ class Lancamentos(models.Model):
         verbose_name='Observação'
     )
     
+    codigo_guia = models.CharField(
+        max_length=60,
+        verbose_name='Código da Guia',
+        blank=True,
+        null=True,
+        help_text='Identificador da guia vinculada ao lançamento.'
+    )
+
     saldo_restante = models.FloatField(
         verbose_name='Saldo Restante',
         help_text='Saldo da adesão após este lançamento',

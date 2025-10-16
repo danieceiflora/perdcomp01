@@ -55,6 +55,10 @@
                             <div class="font-medium">{{ lancamento.id_adesao.perdcomp|default:'--' }}</div>
                         </div>
                         <div>
+                            <div class="text-xs uppercase tracking-wide text-muted-foreground">Código da Guia</div>
+                            <div class="font-medium">{{ lancamento.codigo_guia|default:'--' }}</div>
+                        </div>
+                        <div>
                             <div class="text-xs uppercase tracking-wide text-muted-foreground">Data do Lançamento</div>
                             <div class="font-medium">{{ lancamento.data_lancamento|date:"d/m/Y" }}</div>
                         </div>
@@ -81,7 +85,7 @@
                         {% with metodo_raw=lancamento.metodo|default:'' ml=lancamento.metodo|default:''|lower %}
                             {% if metodo_raw %}
                             <div>
-                                <div class="text-xs uppercase tracking-wide text-muted-foreground">Método</div>
+                                <div class="text-xs uppercase tracking-wide text-muted-foreground">Tipo de Crédito</div>
                                 <div class="font-medium">{{ metodo_raw }}</div>
                             </div>
                             <div class="space-y-3">
@@ -112,7 +116,7 @@
                                         <div class="font-medium">{{ lancamento.periodo_apuracao_r|default:'--' }}</div>
                                     </div>
                                 {% else %}
-                                    <div class="text-muted-foreground text-sm">Nenhum detalhe adicional para este método.</div>
+                                    <div class="text-muted-foreground text-sm">Nenhum detalhe adicional para este tipo de crédito.</div>
                                 {% endif %}
                             </div>
                             {% endif %}

@@ -78,6 +78,7 @@
                         <thead>
                             <tr class="border-b bg-muted/50 text-muted-foreground">
                                 <th class="h-10 px-4 text-left font-medium">Perdcomp</th>
+                                <th class="h-10 px-4 text-left font-medium">Código da Guia</th>
                                 <th class="h-10 px-4 text-left font-medium">Cliente</th>
                                 <th class="h-10 px-4 text-left font-medium">Data de Criação</th>
                                 <th class="h-10 px-4 text-left font-medium">Valor</th>
@@ -92,6 +93,7 @@
                             {% for lancamento in lancamentos %}
                             <tr class="border-b last:border-0 hover:bg-muted/50 transition-colors">
                                 <td class="px-4 py-3 font-medium">{{ lancamento.id_adesao.perdcomp }}</td>
+                                <td class="px-4 py-3">{{ lancamento.codigo_guia|default:'--' }}</td>
                                 <td class="px-4 py-3">{% if lancamento.id_adesao.cliente.id_company_vinculada %}{{ lancamento.id_adesao.cliente.id_company_vinculada.razao_social }}{% else %}{{ lancamento.id_adesao.cliente }}{% endif %}</td>
                                 <td class="px-4 py-3">{{ lancamento.data_criacao }}</td>
                                 <td class="px-4 py-3 font-semibold {% if lancamento.sinal == '+' %}text-green-600 dark:text-green-400{% else %}text-destructive{% endif %}">{{ lancamento.sinal }} {{ lancamento.valor|br_currency }}</td>
@@ -130,6 +132,7 @@
                     </div>
                     <div class="p-4 space-y-2 text-sm">
                         <div><span class="text-muted-foreground">Cliente:</span> {% if lancamento.id_adesao.cliente.id_company_vinculada %}{{ lancamento.id_adesao.cliente.id_company_vinculada.razao_social }}{% else %}{{ lancamento.id_adesao.cliente }}{% endif %}</div>
+                        <div><span class="text-muted-foreground">Código da Guia:</span> {{ lancamento.codigo_guia|default:'--' }}</div>
                         <div><span class="text-muted-foreground">Data:</span> {{ lancamento.data_lancamento|date:"d/m/Y" }}</div>
                         <div><span class="text-muted-foreground">Valor:</span> <span class="font-semibold {% if lancamento.sinal == '+' %}text-green-600 dark:text-green-400{% else %}text-destructive{% endif %}">{{ lancamento.sinal }} {{ lancamento.valor|br_currency }}</span></div>
                         <div><span class="text-muted-foreground">Saldo Restante:</span> <span class="font-semibold {% if lancamento.saldo_restante > 0 %}text-green-600 dark:text-green-400{% elif lancamento.saldo_restante < 0 %}text-destructive{% endif %}">{% if lancamento.saldo_restante != None %}{{ lancamento.saldo_restante|br_currency }}{% else %}<span class="text-muted-foreground">--</span>{% endif %}</span></div>
