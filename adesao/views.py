@@ -556,6 +556,8 @@ def importar_pdf_perdcomp_lote(request):
     Campo de arquivos: 'pdfs' (múltiplos). Se 'criar' for truthy, criará as Adesões automaticamente.
     Retorna JSON com a lista de resultados por arquivo (ok/error, mensagens e link quando criado).
     """
+    if not (request.user.is_superuser or request.user.is_staff or request.user.has_perm('adesao.add_adesao')):
+        return JsonResponse({'ok': False, 'error': 'Permissão negada para importar adesões.'}, status=403)
     files = request.FILES.getlist('pdfs') or request.FILES.getlist('pdf')
     criar = str(request.POST.get('criar', '0')).lower() in ('1', 'true', 'on', 'yes')
     if not files:

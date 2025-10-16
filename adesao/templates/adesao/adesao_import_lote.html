@@ -14,6 +14,7 @@
     </div>
 
     <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+      <form id="csrf-helper-form" class="hidden">{% csrf_token %}</form>
       <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
         <div class="space-y-2 md:col-span-2">
           <label class="text-sm font-medium leading-none">Selecionar PDFs (um ou mais):</label>
@@ -55,6 +56,12 @@
       const value = `; ${document.cookie}`;
       const parts = value.split(`; ${name}=`);
       if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+    function getCsrfToken() {
+      const cookieToken = getCookie('csrftoken');
+      if (cookieToken) return cookieToken;
+      const hiddenInput = document.querySelector('#csrf-helper-form input[name="csrfmiddlewaretoken"]');
+      return hiddenInput ? hiddenInput.value : '';
     }
     function setFeedback(msg, ok=true) {
       if (!feedback) return; feedback.className = 'px-6 pb-4 text-sm ' + (ok ? 'text-green-700' : 'text-red-700');
@@ -147,9 +154,12 @@
       formData.append('criar', toggleCriar && toggleCriar.checked ? '1' : '0');
       setFeedback(''); renderResults([]);
       loading && loading.classList.remove('hidden'); btnBatch && (btnBatch.disabled = true);
-      try {
+    try {
   const resp = await fetch("{% url 'adesao:importar_pdf_lote' %}", {
-          method: 'POST', headers: { 'X-CSRFToken': getCookie('csrftoken') || '' }, body: formData
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'X-CSRFToken': getCsrfToken() },
+      body: formData
         });
         const data = await resp.json();
         if (!resp.ok || !data.ok) { setFeedback(data.error || 'Falha ao importar em lote.', false); return; }
