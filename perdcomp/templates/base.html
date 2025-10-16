@@ -222,6 +222,8 @@
                         <a href="{% url 'adesao:list' %}" class="flex items-center gap-2 px-2 py-2 rounded text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-list"></i> Listar Adesões</a>
                         {% if user.is_superuser or user.is_staff or perms.adesao.add_adesao %}
                         <a href="{% url 'adesao:create' %}" class="flex items-center gap-2 px-2 py-2 rounded text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-plus"></i> Nova Adesão</a>
+                        <a href="{% url 'adesao:importar_lote_page' %}" class="flex items-center gap-2 px-2 py-2 rounded text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-files"></i> Importação de PDFs</a>
+                        <a href="{% url 'adesao:importacao_logs_page' %}" class="flex items-center gap-2 px-2 py-2 rounded text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-clipboard-data"></i> Logs de Importação</a>
                         {% endif %}
                     </div>
                 </div>

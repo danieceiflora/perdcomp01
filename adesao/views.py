@@ -16,7 +16,7 @@ from django.contrib.auth.decorators import login_required
 from .forms import AdesaoForm
 from django.views.decorators.http import require_POST
 import re
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.core.files.uploadedfile import UploadedFile
 from django.utils import timezone
 from utils.pdf_parser import parse_ressarcimento_text
@@ -549,6 +549,8 @@ def importar_pdf_perdcomp(request):
 
 @login_required
 @require_POST
+@login_required
+@require_POST
 def importar_pdf_perdcomp_lote(request):
     """Importação em lote de PDFs PERDCOMP.
     Campo de arquivos: 'pdfs' (múltiplos). Se 'criar' for truthy, criará as Adesões automaticamente.
@@ -779,6 +781,7 @@ def importar_pdf_perdcomp_lote(request):
 
 # Páginas
 @login_required
+@ensure_csrf_cookie
 def importar_lote_page(request):
     # Permissão: staff/superuser ou permissão de adicionar adesão
     if not (request.user.is_superuser or request.user.is_staff or request.user.has_perm('adesao.add_adesao')):
