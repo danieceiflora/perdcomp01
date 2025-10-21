@@ -8,7 +8,13 @@ from django.urls import reverse_lazy
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import UserProfile
-from utils.dashboard_access import build_dashboard_context, metricas_por_empresa, admin_counts, admin_metricas_globais
+from utils.dashboard_access import (
+    build_dashboard_context,
+    metricas_por_empresa,
+    admin_counts,
+    admin_metricas_globais,
+    metricas_por_parceiro,
+)
 from django.http import JsonResponse, HttpResponseBadRequest
 
 ## Legacy login views removidas em favor de login unificado
@@ -70,17 +76,44 @@ class UnifiedDashboardView(LoginRequiredMixin, TemplateView):
             if user.is_superuser or user.is_staff:
                 counts = admin_counts()
                 metricas = admin_metricas_globais()
-                # Coleta todas as empresas clientes distintas para permitir filtro
                 from clientes_parceiros.models import ClientesParceiros
-                clientes_ids = ClientesParceiros.objects.filter(
-                    tipo_parceria='cliente', ativo=True
-                ).values_list('id_company_vinculada_id', flat=True).distinct()
-                from empresas.models import Empresa
-                clientes_empresas = Empresa.objects.filter(id__in=clientes_ids)
-                empresas_info = [
-                    {'empresa': e, 'origem': 'cliente-global', 'is_base': False}
-                    for e in clientes_empresas
+                clientes_rel = ClientesParceiros.objects.filter(
+                    tipo_parceria='cliente',
+                    ativo=True
+                ).select_related('id_company_vinculada', 'id_company_base')
+
+                empresas_info = []
+                parceiros_map = {}
+                clientes_seen = set()
+
+                for rel in clientes_rel:
+                    cliente_emp = rel.id_company_vinculada
+                    parceiro_emp = rel.id_company_base
+
+                    if cliente_emp and cliente_emp.id not in clientes_seen:
+                        empresas_info.append({
+                            'empresa': cliente_emp,
+                            'origem': 'cliente-global',
+                            'is_base': False,
+                            'parceiro_id': parceiro_emp.id if parceiro_emp else None,
+                        })
+                        clientes_seen.add(cliente_emp.id)
+
+                    if parceiro_emp:
+                        entry = parceiros_map.setdefault(
+                            parceiro_emp.id,
+                            {
+                                'id': parceiro_emp.id,
+                                'nome': parceiro_emp.nome_fantasia or parceiro_emp.razao_social,
+                            }
+                        )
+
+                parceiros_info = [
+                    {'id': data['id'], 'nome': data['nome']}
+                    for data in parceiros_map.values()
                 ]
+                parceiros_info.sort(key=lambda item: (item['nome'] or '').lower())
+
                 context.update({
                     'profile': None,
                     'tipo_usuario': 'Administrador',
@@ -93,6 +126,7 @@ class UnifiedDashboardView(LoginRequiredMixin, TemplateView):
                     'parceiro_base': None,
                     'total_parceiros': counts['total_parceiros'],
                     'total_clientes': counts['total_clientes'],
+                    'parceiros_info': parceiros_info,
                 })
             else:
                 context.update({
@@ -106,6 +140,7 @@ class UnifiedDashboardView(LoginRequiredMixin, TemplateView):
                     'empresas_info': [],
                     'parceiro_base': None,
                 })
+        context.setdefault('parceiros_info', [])
         return context
 
 class DashboardMetricsView(LoginRequiredMixin, TemplateView):
@@ -115,11 +150,15 @@ class DashboardMetricsView(LoginRequiredMixin, TemplateView):
         except Exception:
             profile = None
         empresa_id = request.GET.get('empresa')
+        parceiro_id = request.GET.get('parceiro')
+
+        empresa_id_int = int(empresa_id) if empresa_id and empresa_id.isdigit() else None
+        parceiro_id_int = int(parceiro_id) if parceiro_id and parceiro_id.isdigit() else None
+
         if profile:
             ctx = build_dashboard_context(profile)
             acessiveis_ids = {item['empresa'].id for item in ctx['empresas_info']}
-            if empresa_id and empresa_id.isdigit():
-                empresa_id_int = int(empresa_id)
+            if empresa_id_int:
                 if empresa_id_int not in acessiveis_ids:
                     return HttpResponseBadRequest('Empresa não acessível.')
                 m = metricas_por_empresa(empresa_id_int)
@@ -129,13 +168,29 @@ class DashboardMetricsView(LoginRequiredMixin, TemplateView):
                 'credito_utilizado': ctx['credito_utilizado'],
                 'saldo_credito': ctx['saldo_credito']
             })
+
         # Sem profile: admin genérico ou usuário sem perfil -> métricas globais (se admin) ou zeros
         user = request.user
         if user.is_superuser or user.is_staff:
             from clientes_parceiros.models import ClientesParceiros
-            if empresa_id and empresa_id.isdigit():
-                empresa_id_int = int(empresa_id)
-                # Verifica se é uma empresa cliente válida
+
+            if parceiro_id_int:
+                vinculos_parceiro = ClientesParceiros.objects.filter(
+                    id_company_base_id=parceiro_id_int,
+                    tipo_parceria='cliente',
+                    ativo=True
+                )
+                if not vinculos_parceiro.exists():
+                    return HttpResponseBadRequest('Parceiro não acessível.')
+                if empresa_id_int:
+                    if not vinculos_parceiro.filter(id_company_vinculada_id=empresa_id_int).exists():
+                        return HttpResponseBadRequest('Empresa não vinculada ao parceiro.')
+                    m = metricas_por_empresa(empresa_id_int)
+                    return JsonResponse(m)
+                m = metricas_por_parceiro(parceiro_id_int)
+                return JsonResponse(m)
+
+            if empresa_id_int:
                 valido = ClientesParceiros.objects.filter(
                     id_company_vinculada_id=empresa_id_int,
                     tipo_parceria='cliente',
@@ -145,8 +200,10 @@ class DashboardMetricsView(LoginRequiredMixin, TemplateView):
                     return HttpResponseBadRequest('Empresa não acessível.')
                 m = metricas_por_empresa(empresa_id_int)
                 return JsonResponse(m)
+
             metricas = admin_metricas_globais()
             return JsonResponse(metricas)
+
         return JsonResponse({'credito_recuperado': 0, 'credito_utilizado': 0, 'saldo_credito': 0})
 
 

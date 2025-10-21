@@ -4,98 +4,151 @@
 {% block dashboard_type %}{{ tipo_usuario }}{% endblock %}
 
 {% block stat_cards %}
-<div class="mb-6">
-  <div class="flex items-center justify-end mb-4 gap-4">
-    {% if empresas_info and empresas_info|length > 1 %}
-    <div class="flex items-center gap-2">
-      <label for="filtro-empresa" class="text-sm text-muted-foreground">Filtrar Empresa:</label>
-      <select id="filtro-empresa" class="border rounded px-2 py-1 bg-background text-sm">
-        <option value="">Todas</option>
-        {% for item in empresas_info %}
-        <option value="{{ item.empresa.id }}">{{ item.empresa.nome_fantasia|default:item.empresa.razao_social }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    {% endif %}
-  </div>
-  <!-- Banner: Empresa selecionada -->
-  <div id="empresa-selecionada-banner" class="hidden mb-4">
-    <div class="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary">
-      <i class="bi bi-building"></i>
-      <span>Empresa selecionada:</span>
-      <span id="empresa-selecionada-nome" class="font-semibold"></span>
-    </div>
-  </div>
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    {% if tipo_usuario == 'Administrador' %}
-    <div class="stat-card rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-lg transition-all">
-      <div class="p-6 flex items-center">
-        <div class="flex items-center justify-center w-16 h-16 bg-orange-500/10 rounded-full mr-4">
-          <i class="bi bi-diagram-3 text-2xl text-orange-600 dark:text-orange-500"></i>
+<div class="space-y-6">
+  {% if tipo_usuario == 'Administrador' %}
+  <section class="rounded-lg border bg-card text-card-foreground shadow-sm">
+    <div class="p-6">
+      <h2 class="text-lg font-semibold mb-4">Visão Geral</h2>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div class="stat-card rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-lg transition-all">
+          <div class="p-6 flex items-center">
+            <div class="flex items-center justify-center w-16 h-16 bg-orange-500/10 rounded-full mr-4">
+              <i class="bi bi-diagram-3 text-2xl text-orange-600 dark:text-orange-500"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-medium text-muted-foreground">Total de Parceiros</h3>
+              <p class="text-3xl font-bold mt-1 text-foreground">{{ total_parceiros|default:0 }}</p>
+              <p class="text-xs text-muted-foreground mt-1">Vínculos ativos</p>
+            </div>
+          </div>
         </div>
-        <div>
-          <h3 class="text-sm font-medium text-muted-foreground">Total de Parceiros</h3>
-          <p class="text-3xl font-bold mt-1 text-foreground">{{ total_parceiros|default:0 }}</p>
-          <p class="text-xs text-muted-foreground mt-1">Vínculos ativos</p>
+        <div class="stat-card rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-lg transition-all">
+          <div class="p-6 flex items-center">
+            <div class="flex items-center justify-center w-16 h-16 bg-cyan-500/10 rounded-full mr-4">
+              <i class="bi bi-people text-2xl text-cyan-600 dark:text-cyan-500"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-medium text-muted-foreground">Total de Clientes</h3>
+              <p class="text-3xl font-bold mt-1 text-foreground">{{ total_clientes|default:0 }}</p>
+              <p class="text-xs text-muted-foreground mt-1">Empresas clientes</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-    <div class="stat-card rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-lg transition-all">
-      <div class="p-6 flex items-center">
-        <div class="flex items-center justify-center w-16 h-16 bg-cyan-500/10 rounded-full mr-4">
-          <i class="bi bi-people text-2xl text-cyan-600 dark:text-cyan-500"></i>
+  </section>
+  {% endif %}
+
+  <section class="rounded-lg border bg-card text-card-foreground shadow-sm">
+    <div class="p-6">
+      {% if parceiros_info or empresas_info and empresas_info|length > 1 %}
+      <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
+        <div class="flex flex-wrap gap-4 justify-end md:justify-end">
+          {% if parceiros_info %}
+          <div class="flex items-center gap-2">
+            <label for="filtro-parceiro" class="text-sm text-muted-foreground">Filtrar Parceiro:</label>
+            <select id="filtro-parceiro" class="border rounded px-2 py-1 bg-background text-sm min-w-[12rem]">
+              <option value="">Todos</option>
+              {% for parceiro in parceiros_info %}
+              <option value="{{ parceiro.id }}">{{ parceiro.nome }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endif %}
+          {% if empresas_info and empresas_info|length > 1 %}
+          <div class="flex items-center gap-2">
+            <label for="filtro-empresa" class="text-sm text-muted-foreground">Filtrar Empresa:</label>
+            <select id="filtro-empresa" class="border rounded px-2 py-1 bg-background text-sm min-w-[12rem]">
+              <option value="">Todas</option>
+              {% for item in empresas_info %}
+              <option value="{{ item.empresa.id }}" data-parceiro="{{ item.parceiro_id|default_if_none:'' }}">{{ item.empresa.nome_fantasia|default:item.empresa.razao_social }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endif %}
         </div>
-        <div>
-          <h3 class="text-sm font-medium text-muted-foreground">Total de Clientes</h3>
-          <p class="text-3xl font-bold mt-1 text-foreground">{{ total_clientes|default:0 }}</p>
-          <p class="text-xs text-muted-foreground mt-1">Empresas clientes</p>
+        <div class="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>Clientes exibidos:</span>
+          <span id="clientes-filtrados-total" data-total="{{ empresas_total|default:0 }}" class="font-semibold text-foreground">{{ empresas_total|default:0 }}</span>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if parceiros_info %}
+      <div id="parceiro-selecionado-banner" class="hidden mb-4">
+        <div class="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary">
+          <i class="bi bi-handshake"></i>
+          <span>Parceiro selecionado:</span>
+          <span id="parceiro-selecionado-nome" class="font-semibold"></span>
+        </div>
+      </div>
+      {% endif %}
+      <div id="empresa-selecionada-banner" class="hidden mb-4">
+        <div class="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary">
+          <i class="bi bi-building"></i>
+          <span>Empresa selecionada:</span>
+          <span id="empresa-selecionada-nome" class="font-semibold"></span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-4">
+        <div class="stat-card rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-lg transition-all">
+          <div class="p-6 flex items-center">
+            <div class="flex items-center justify-center w-16 h-16 bg-amber-500/10 rounded-full mr-4">
+              <i class="bi bi-building-check text-2xl text-amber-600 dark:text-amber-500"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-medium text-muted-foreground">Clientes Exibidos</h3>
+              <p id="clientes-filtrados-card" data-total="{{ empresas_total|default:0 }}" class="text-3xl font-bold mt-1 text-foreground">{{ empresas_total|default:0 }}</p>
+              <p class="text-xs text-muted-foreground mt-1">Associados ao filtro atual</p>
+            </div>
+          </div>
+        </div>
+        <div class="stat-card rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-lg transition-all">
+          <div class="p-6 flex items-center">
+            <div class="flex items-center justify-center w-16 h-16 bg-green-500/10 rounded-full mr-4">
+              <i class="bi bi-cash-stack text-2xl text-green-600 dark:text-green-500"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-medium text-muted-foreground">Crédito Recuperado</h3>
+              <p id="metrica-credito-recuperado" class="text-3xl font-bold mt-1 text-foreground">R$ {{ credito_recuperado|brl }}</p>
+              <p class="text-xs text-muted-foreground mt-1">Total das adesões</p>
+            </div>
+          </div>
+        </div>
+        <div class="stat-card rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-lg transition-all">
+          <div class="p-6 flex items-center">
+            <div class="flex items-center justify-center w-16 h-16 bg-blue-500/10 rounded-full mr-4">
+              <i class="bi bi-credit-card text-2xl text-blue-600 dark:text-blue-500"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-medium text-muted-foreground">Crédito Utilizado</h3>
+              <p id="metrica-credito-utilizado" class="text-3xl font-bold mt-1 text-foreground">R$ {{ credito_utilizado|brl }}</p>
+              <p class="text-xs text-muted-foreground mt-1">Total de lançamentos</p>
+            </div>
+          </div>
+        </div>
+        <div class="stat-card rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-lg transition-all">
+          <div class="p-6 flex items-center">
+            <div class="flex items-center justify-center w-16 h-16 bg-purple-500/10 rounded-full mr-4">
+              <i class="bi bi-wallet2 text-2xl text-purple-600 dark:text-purple-500"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-medium text-muted-foreground">Saldo de Crédito</h3>
+              <p id="metrica-saldo-credito" class="text-3xl font-bold mt-1 text-foreground">R$ {{ saldo_credito|brl }}</p>
+              <p class="text-xs text-muted-foreground mt-1">Disponível atual</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-    {% endif %}
-        <div class="stat-card rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-lg transition-all">
-            <div class="p-6 flex items-center">
-                <div class="flex items-center justify-center w-16 h-16 bg-green-500/10 rounded-full mr-4">
-                    <i class="bi bi-cash-stack text-2xl text-green-600 dark:text-green-500"></i>
-                </div>
-                <div>
-                    <h3 class="text-sm font-medium text-muted-foreground">Crédito Recuperado</h3>
-                    <p id="metrica-credito-recuperado" class="text-3xl font-bold mt-1 text-foreground">R$ {{ credito_recuperado|brl }}</p>
-                    <p class="text-xs text-muted-foreground mt-1">Total das adesões</p>
-                </div>
-            </div>
-        </div>
-        <div class="stat-card rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-lg transition-all">
-            <div class="p-6 flex items-center">
-                <div class="flex items-center justify-center w-16 h-16 bg-blue-500/10 rounded-full mr-4">
-                    <i class="bi bi-credit-card text-2xl text-blue-600 dark:text-blue-500"></i>
-                </div>
-                <div>
-                    <h3 class="text-sm font-medium text-muted-foreground">Crédito Utilizado</h3>
-                    <p id="metrica-credito-utilizado" class="text-3xl font-bold mt-1 text-foreground">R$ {{ credito_utilizado|brl }}</p>
-                    <p class="text-xs text-muted-foreground mt-1">Total de lançamentos</p>
-                </div>
-            </div>
-        </div>
-        <div class="stat-card rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-lg transition-all">
-            <div class="p-6 flex items-center">
-                <div class="flex items-center justify-center w-16 h-16 bg-purple-500/10 rounded-full mr-4">
-                    <i class="bi bi-wallet2 text-2xl text-purple-600 dark:text-purple-500"></i>
-                </div>
-                <div>
-                    <h3 class="text-sm font-medium text-muted-foreground">Saldo de Crédito</h3>
-                    <p id="metrica-saldo-credito" class="text-3xl font-bold mt-1 text-foreground">R$ {{ saldo_credito|brl }}</p>
-                    <p class="text-xs text-muted-foreground mt-1">Disponível atual</p>
-                </div>
-            </div>
-        </div>
-    </div>
+  </section>
 </div>
 {% endblock %}
 
 {% block extra_content %}
 <div class="border rounded-lg bg-card p-4">
-  <h2 class="text-sm font-semibold mb-3">Empresas Relacionadas ({{ empresas_total }})</h2>
+  <h2 class="text-sm font-semibold mb-3">Empresas Relacionadas (<span id="empresas-relacionadas-contador" data-total="{{ empresas_total }}">{{ empresas_total }}</span>)</h2>
   {% if empresas_info %}
   <div class="overflow-x-auto">
     <table class="w-full text-sm">
@@ -108,7 +161,7 @@
       </thead>
       <tbody>
         {% for item in empresas_info %}
-        <tr class="border-b last:border-0">
+  <tr class="border-b last:border-0" data-empresa-row data-parceiro-id="{{ item.parceiro_id|default_if_none:'' }}">
           <td class="py-2 pr-4">{{ item.empresa.nome_fantasia|default:item.empresa.razao_social }}</td>
           <td class="py-2 pr-4">{{ item.empresa.cnpj|format_cnpj }}</td>
           <td class="py-2 pr-4">
@@ -116,6 +169,7 @@
             {% if item.origem == 'manual' %}<span class="px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-xs">Manual</span>{% endif %}
             {% if item.origem == 'socio' %}<span class="px-2 py-0.5 rounded bg-purple-100 text-purple-700 text-xs">Sócio</span>{% endif %}
             {% if item.origem == 'superuser' %}<span class="px-2 py-0.5 rounded bg-red-100 text-red-700 text-xs">Superuser</span>{% endif %}
+            {% if item.origem == 'cliente-global' %}<span class="px-2 py-0.5 rounded bg-sky-100 text-sky-700 text-xs">Cliente</span>{% endif %}
           </td>
         </tr>
         {% endfor %}
@@ -136,18 +190,90 @@ function formatBRL(valor){
 }
 
 document.addEventListener('DOMContentLoaded', function(){
-  const select = document.getElementById('filtro-empresa');
-  if(!select) return;
+  const empresaSelect = document.getElementById('filtro-empresa');
+  const parceiroSelect = document.getElementById('filtro-parceiro');
+  if(!empresaSelect && !parceiroSelect) return;
+
   const recEl = document.getElementById('metrica-credito-recuperado');
   const utiEl = document.getElementById('metrica-credito-utilizado');
   const salEl = document.getElementById('metrica-saldo-credito');
-  const banner = document.getElementById('empresa-selecionada-banner');
-  const bannerNome = document.getElementById('empresa-selecionada-nome');
+  const empresaBanner = document.getElementById('empresa-selecionada-banner');
+  const empresaBannerNome = document.getElementById('empresa-selecionada-nome');
+  const parceiroBanner = document.getElementById('parceiro-selecionado-banner');
+  const parceiroBannerNome = document.getElementById('parceiro-selecionado-nome');
+  const empresasCountEl = document.getElementById('empresas-relacionadas-contador');
+  const clientesFiltradosTotalEl = document.getElementById('clientes-filtrados-total');
+  const clientesFiltradosCardEl = document.getElementById('clientes-filtrados-card');
+  const empresaRows = Array.from(document.querySelectorAll('[data-empresa-row]'));
 
+  function filtrarEmpresasPorParceiro(){
+    const parceiroAtual = parceiroSelect ? parceiroSelect.value : '';
+    if(empresaSelect){
+      Array.from(empresaSelect.options).forEach(function(opt){
+        if(!opt.value){
+          opt.hidden = false;
+          opt.disabled = false;
+          return;
+        }
+        const corresponde = !parceiroAtual || opt.dataset.parceiro === parceiroAtual;
+        opt.hidden = !corresponde;
+        opt.disabled = !corresponde;
+        if(!corresponde && opt.selected){
+          opt.selected = false;
+        }
+      });
+      if(parceiroAtual){
+        empresaSelect.value = '';
+      }
+      if(!empresaSelect.value && empresaSelect.options.length){
+        empresaSelect.selectedIndex = 0;
+      }
+    }
+    aplicarFiltroTabela(parceiroAtual);
+  }
+
+
+  function aplicarFiltroTabela(parceiroAtual){
+    if(!empresaRows.length) return;
+    let visiveis = 0;
+    empresaRows.forEach(function(row){
+      const rowParceiro = row.getAttribute('data-parceiro-id') || '';
+      const corresponde = !parceiroAtual || rowParceiro === parceiroAtual;
+      row.style.display = corresponde ? '' : 'none';
+      if(corresponde) visiveis += 1;
+    });
+    if(empresasCountEl){
+      if(parceiroAtual){
+        empresasCountEl.textContent = visiveis;
+      } else {
+        const totalOriginal = empresasCountEl.getAttribute('data-total');
+        empresasCountEl.textContent = totalOriginal || String(visiveis);
+      }
+    }
+    if(clientesFiltradosTotalEl){
+      if(parceiroAtual){
+        clientesFiltradosTotalEl.textContent = visiveis;
+      } else {
+        const totalOriginal = clientesFiltradosTotalEl.getAttribute('data-total');
+        clientesFiltradosTotalEl.textContent = totalOriginal || String(visiveis);
+      }
+    }
+    if(clientesFiltradosCardEl){
+      if(parceiroAtual){
+        clientesFiltradosCardEl.textContent = visiveis;
+      } else {
+        const totalOriginal = clientesFiltradosCardEl.getAttribute('data-total');
+        clientesFiltradosCardEl.textContent = totalOriginal || String(visiveis);
+      }
+    }
+  }
   async function atualizar(){
-    const emp = select.value;
+    const empresaValor = empresaSelect ? empresaSelect.value : '';
+    const parceiroValor = parceiroSelect ? parceiroSelect.value : '';
     const url = new URL(window.location.origin + '/accounts/dashboard/metrics/');
-    if(emp) url.searchParams.set('empresa', emp);
+    if(empresaValor) url.searchParams.set('empresa', empresaValor);
+    if(parceiroValor) url.searchParams.set('parceiro', parceiroValor);
+
     try {
       const resp = await fetch(url, {headers:{'X-Requested-With':'XMLHttpRequest'}});
       if(!resp.ok) throw new Error('Falha ao carregar métricas');
@@ -159,18 +285,44 @@ document.addEventListener('DOMContentLoaded', function(){
       console.error(e);
     }
 
-    // Atualiza banner da empresa selecionada
-    const optionText = select.options[select.selectedIndex]?.text || '';
-    if(emp){
-      bannerNome.textContent = optionText;
-      banner.classList.remove('hidden');
-    } else {
-      banner.classList.add('hidden');
-      bannerNome.textContent = '';
+    if(parceiroBanner){
+      if(parceiroValor && parceiroSelect){
+        const parceiroOption = parceiroSelect.options[parceiroSelect.selectedIndex];
+        const parceiroTexto = parceiroOption ? parceiroOption.text : '';
+        parceiroBannerNome.textContent = parceiroTexto;
+        parceiroBanner.classList.remove('hidden');
+      } else {
+        parceiroBanner.classList.add('hidden');
+        parceiroBannerNome.textContent = '';
+      }
+    }
+
+    if(empresaBanner && empresaSelect){
+      const empresaOption = empresaSelect.options[empresaSelect.selectedIndex];
+      const empresaTexto = empresaOption ? empresaOption.text : '';
+      if(empresaValor){
+        empresaBannerNome.textContent = empresaTexto;
+        empresaBanner.classList.remove('hidden');
+      } else {
+        empresaBanner.classList.add('hidden');
+        empresaBannerNome.textContent = '';
+      }
     }
   }
-  select.addEventListener('change', atualizar);
-  // Inicializa estado do banner ao carregar
+
+  if(parceiroSelect){
+    parceiroSelect.addEventListener('change', function(){
+      filtrarEmpresasPorParceiro();
+      atualizar();
+    });
+  }
+
+  if(empresaSelect){
+    empresaSelect.addEventListener('change', atualizar);
+  }
+
+  filtrarEmpresasPorParceiro();
+  aplicarFiltroTabela(parceiroSelect ? parceiroSelect.value : '');
   atualizar();
 });
 </script>

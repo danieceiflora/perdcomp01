@@ -124,6 +124,28 @@ def metricas_por_empresa(empresa_id: int):
     }
 
 
+def metricas_por_parceiro(parceiro_id: int):
+    """Agrega métricas considerando todas as empresas clientes vinculadas a um parceiro específico."""
+    vinculos = ClientesParceiros.objects.filter(
+        id_company_base_id=parceiro_id,
+        tipo_parceria='cliente',
+        ativo=True
+    )
+    if not vinculos.exists():
+        return {'credito_recuperado': 0.0, 'credito_utilizado': 0.0, 'saldo_credito': 0.0}
+    adesoes = Adesao.objects.filter(cliente__in=vinculos)
+    from django.db.models import Sum
+    credito_recuperado = adesoes.aggregate(total=Sum('saldo'))['total'] or 0
+    saldo_credito = adesoes.aggregate(total=Sum('saldo_atual'))['total'] or 0
+    lanc_debitos = Lancamentos.objects.filter(id_adesao__in=adesoes, sinal='-').aggregate(total=Sum('valor'))['total'] or 0
+    credito_utilizado = abs(lanc_debitos or 0)
+    return {
+        'credito_recuperado': float(credito_recuperado or 0),
+        'credito_utilizado': float(credito_utilizado or 0),
+        'saldo_credito': float(saldo_credito or 0)
+    }
+
+
 # ================== Helpers para visão administrativa (superuser sem profile) ==================
 def admin_counts():
     """Retorna total de parceiros e total de clientes (distintos)."""
