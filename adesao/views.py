@@ -423,6 +423,11 @@ def importar_pdf_perdcomp(request):
             status_code = 400
             response_payload = {'ok': False, 'error': 'CNPJ não identificado no PDF.'}
 
+        # Validar PERDCOMP presente
+        if status_code == 200 and not parsed.perdcomp:
+            status_code = 400
+            response_payload = {'ok': False, 'error': 'Declaração PERDCOMP não identificada no PDF.'}
+
         # Validar PERDCOMP único
         if status_code == 200 and parsed.perdcomp and Adesao.objects.filter(perdcomp=parsed.perdcomp).exists():
             status_code = 409
@@ -430,9 +435,15 @@ def importar_pdf_perdcomp(request):
 
         if status_code == 200:
             criar = str(request.POST.get('criar', '0')).lower() in ('1','true','on','yes')
-            comp_vinc = parsed.metodo_credito in (
-                'Compensação vinculada a um pedido de ressarcimento',
-                'Compensação vinculada a um pedido de restituição',
+            metodo_credito_val = (parsed.metodo_credito or '').strip()
+            metodo_credito_lower = metodo_credito_val.lower()
+            comp_vinc = any(
+                keyword in metodo_credito_lower for keyword in (
+                    'compensação vinculada a um pedido de ressarcimento',
+                    'compensação vinculada a um pedido de restituição',
+                    'pedido de ressarcimento',
+                    'pedido de restituição',
+                )
             )
             if criar and comp_vinc and cliente_id:
                 # Criar Adesão + Lançamentos (débitos) seguindo lógica do lançamento manual
@@ -461,7 +472,7 @@ def importar_pdf_perdcomp(request):
                         ad = Adesao.objects.create(
                             cliente=cliente_obj,
                             perdcomp=parsed.perdcomp or '',
-                            metodo_credito=parsed.metodo_credito,
+                            metodo_credito=metodo_credito_val or None,
                             data_inicio=_conv_date(parsed.data_criacao) or timezone.now().date(),
                             saldo=float(saldo_base or 0),
                             ano=parsed.ano or None,
@@ -544,7 +555,12 @@ def importar_pdf_perdcomp(request):
         except Exception:
             pass
 
-    return JsonResponse(response_payload or {'ok': False, 'error': 'Falha ao processar PDF.'}, status=status_code)
+    # Attach result metadata for logging purposes
+    final_payload = response_payload or {'ok': False, 'error': 'Falha ao processar PDF.'}
+    log_data['result'] = final_payload
+    log_data['status_code'] = status_code
+
+    return JsonResponse(final_payload, status=status_code)
 
 
 @login_required

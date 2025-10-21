@@ -5,58 +5,148 @@
 
 {% block content %}
 <div class="container mx-auto px-4 py-6">
-  <div class="max-w-6xl mx-auto">
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-semibold"><i class="bi bi-clipboard-data mr-2"></i>Logs de Importação</h1>
-      <a href="{% url 'adesao:importar_lote_page' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium border h-10 px-4 py-2">
-        <i class="bi bi-files mr-2"></i>Importação de PDFs
-      </a>
-    </div>
+    <div class="max-w-6xl mx-auto">
+        <!-- Header Card -->
+        <div class="bg-card border rounded-lg shadow-sm mb-6">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-6 border-b">
+                <h1 class="text-2xl font-semibold text-card-foreground mb-4 sm:mb-0">
+                    <i class="bi bi-clock-history mr-2"></i>Histórico de Importações
+                </h1>
+                <a href="{% url 'adesao:importar_lote_page' %}" 
+                   class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
+                    <i class="bi bi-upload mr-2"></i>
+                    Nova Importação
+                </a>
+            </div>
 
-    <div class="rounded-lg border bg-card text-card-foreground shadow-sm overflow-x-auto">
-      <table class="min-w-full text-sm">
-        <thead class="bg-slate-50">
-          <tr>
-            <th class="text-left p-3">Quando</th>
-            <th class="text-left p-3">Usuário</th>
-            <th class="text-left p-3">Arquivo</th>
-            <th class="text-left p-3">PERDCOMP</th>
-            <th class="text-left p-3">CNPJ</th>
-            <th class="text-left p-3">Status</th>
-            <th class="text-left p-3">Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for e in entries %}
-          <tr class="border-t">
-            <td class="p-3 whitespace-nowrap">{{ e.when|date:'d/m/Y H:i:s' }}</td>
-            <td class="p-3">{{ e.user }}</td>
-            <td class="p-3">{{ e.filename }}</td>
-            <td class="p-3">{{ e.parsed.perdcomp }}</td>
-            <td class="p-3">{{ e.parsed.cnpj }}</td>
-            <td class="p-3">
-              {% if e.ok %}
-                <span class="text-green-700">OK{% if e.created %} (criado){% endif %}</span>
-              {% else %}
-                <span class="text-red-700">Erro{% if e.error %}: {{ e.error }}{% endif %}</span>
-              {% endif %}
-            </td>
-            <td class="p-3">
-              {% if e.detail_url %}
-              <a class="text-blue-700 underline" href="{{ e.detail_url }}">Ver Adesão</a>
-              {% else %}
-              <span class="text-slate-400">—</span>
-              {% endif %}
-            </td>
-          </tr>
-          {% empty %}
-          <tr><td class="p-3 text-slate-500" colspan="7">Nenhum log encontrado.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+            <div class="p-6">
+                {% if entries %}
+                    <!-- Desktop Table View -->
+                    <div class="hidden md:block">
+                        <div class="rounded-md border">
+                            <table class="w-full text-sm">
+                                <thead class="bg-muted">
+                                    <tr class="border-b">
+                                        <th class="text-left font-semibold text-muted-foreground px-4 py-3">Quando</th>
+                                        <th class="text-left font-semibold text-muted-foreground px-4 py-3">Usuário</th>
+                                        <th class="text-left font-semibold text-muted-foreground px-4 py-3">Arquivo</th>
+                                        <th class="text-left font-semibold text-muted-foreground px-4 py-3">PERDCOMP</th>
+                                        <th class="text-left font-semibold text-muted-foreground px-4 py-3">CNPJ</th>
+                                        <th class="text-left font-semibold text-muted-foreground px-4 py-3">Status</th>
+                                        <th class="text-left font-semibold text-muted-foreground px-4 py-3">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for e in entries %}
+                                    <tr class="border-b hover:bg-muted/50 transition-colors">
+                                        <td class="px-4 py-3 whitespace-nowrap text-card-foreground">{{ e.when|date:'d/m/Y H:i:s' }}</td>
+                                        <td class="px-4 py-3 text-card-foreground">{{ e.user|default:"—" }}</td>
+                                        <td class="px-4 py-3 text-card-foreground max-w-xs truncate" title="{{ e.filename }}">{{ e.filename }}</td>
+                                        <td class="px-4 py-3 text-card-foreground font-mono">{{ e.parsed.perdcomp|default:"—" }}</td>
+                                        <td class="px-4 py-3 text-card-foreground font-mono">{{ e.parsed.cnpj|default:"—" }}</td>
+                                        <td class="px-4 py-3">
+                                            {% if e.ok %}
+                                                <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
+                                                    <i class="bi bi-check-circle-fill"></i>
+                                                    OK{% if e.created %} (criado){% endif %}
+                                                </span>
+                                            {% else %}
+                                                <div class="flex flex-col gap-1">
+                                                    <span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700 w-fit">
+                                                        <i class="bi bi-exclamation-circle-fill"></i>
+                                                        Erro
+                                                    </span>
+                                                    {% if e.error %}<span class="text-xs text-red-600 max-w-xs" title="{{ e.error }}">{{ e.error|truncatewords:5 }}</span>{% endif %}
+                                                </div>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            {% if e.detail_url %}
+                                            <a href="{{ e.detail_url }}" class="inline-flex items-center gap-1 text-primary hover:text-primary/80 font-medium transition-colors">
+                                                <i class="bi bi-eye"></i>
+                                                <span class="text-xs">Ver</span>
+                                            </a>
+                                            {% else %}
+                                            <span class="text-muted-foreground text-xs">—</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
 
-  </div>
-  
+                    <!-- Mobile Card View -->
+                    <div class="md:hidden space-y-4">
+                        {% for e in entries %}
+                        <div class="rounded-md border bg-card p-4">
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex items-start gap-3 flex-1">
+                                    <i class="bi bi-file-pdf-fill text-red-600 text-lg flex-shrink-0 mt-1"></i>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="font-semibold text-sm truncate text-card-foreground" title="{{ e.filename }}">{{ e.filename }}</p>
+                                        <p class="text-xs text-muted-foreground mt-1">{{ e.when|date:'d/m/Y H:i:s' }}</p>
+                                    </div>
+                                </div>
+                                {% if e.ok %}
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700 flex-shrink-0">
+                                        <i class="bi bi-check-circle-fill"></i>
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700 flex-shrink-0">
+                                        <i class="bi bi-exclamation-circle-fill"></i>
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3 mb-3 text-xs">
+                                <div>
+                                    <span class="text-muted-foreground">PERDCOMP:</span>
+                                    <p class="font-mono font-semibold text-card-foreground">{{ e.parsed.perdcomp|default:"—" }}</p>
+                                </div>
+                                <div>
+                                    <span class="text-muted-foreground">CNPJ:</span>
+                                    <p class="font-mono font-semibold text-card-foreground">{{ e.parsed.cnpj|default:"—" }}</p>
+                                </div>
+                                <div>
+                                    <span class="text-muted-foreground">Usuário:</span>
+                                    <p class="font-semibold text-card-foreground">{{ e.user|default:"—" }}</p>
+                                </div>
+                                <div>
+                                    <span class="text-muted-foreground">Status:</span>
+                                    <p class="font-semibold text-card-foreground">{% if e.ok %}OK{% if e.created %} (criado){% endif %}{% else %}Erro{% endif %}</p>
+                                </div>
+                            </div>
+
+                            {% if e.error %}
+                            <div class="bg-red-50 border border-red-200 rounded-lg p-2 mb-3">
+                                <p class="text-xs text-red-700">{{ e.error }}</p>
+                            </div>
+                            {% endif %}
+
+                            {% if e.detail_url %}
+                            <a href="{{ e.detail_url }}" class="inline-flex items-center gap-1 text-primary hover:text-primary/80 font-medium text-xs transition-colors">
+                                <i class="bi bi-eye"></i>
+                                <span>Ver Adesão</span>
+                            </a>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <!-- Empty State -->
+                    <div class="text-center py-12">
+                        <i class="bi bi-inbox text-4xl text-muted-foreground mb-3 inline-block"></i>
+                        <h3 class="text-lg font-semibold text-card-foreground mb-2">Nenhum log encontrado</h3>
+                        <p class="text-muted-foreground mb-6">Comece importando PDFs para visualizar o histórico</p>
+                        <a href="{% url 'adesao:importar_lote_page' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-6">
+                            <i class="bi bi-upload mr-2"></i>Ir para Importação
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

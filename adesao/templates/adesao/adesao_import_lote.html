@@ -3,39 +3,151 @@
 
 {% block title %}Importação de PDFs{% endblock %}
 
+{% block extra_css %}
+<style>
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+  
+  .animate-shimmer {
+    animation: shimmer 1.5s infinite;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container mx-auto px-4 py-6">
-  <div class="max-w-5xl mx-auto">
+  <div class="max-w-6xl mx-auto">
+    <!-- Cabeçalho -->
     <div class="flex items-center justify-between mb-6">
-  <h1 class="text-2xl font-semibold"><i class="bi bi-files mr-2"></i>Importação de PDFs</h1>
-      <a href="{% url 'adesao:list' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium border h-10 px-4 py-2">
+      <h1 class="text-3xl font-bold tracking-tight">
+        <i class="bi bi-files mr-2"></i>Importação em Lote de PDFs
+      </h1>
+      <a href="{% url 'adesao:list' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
         <i class="bi bi-arrow-left mr-2"></i>Voltar
       </a>
     </div>
 
-    <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
-      <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-        <div class="space-y-2 md:col-span-2">
-          <label class="text-sm font-medium leading-none">Selecionar PDFs (um ou mais):</label>
-          <input id="pdf-files-batch" type="file" accept="application/pdf" multiple class="block w-full text-sm border rounded-lg" />
-          <div class="flex items-center gap-2 mt-2">
-            <input id="toggle-criar" type="checkbox" class="h-4 w-4" checked />
-            <label for="toggle-criar" class="text-sm">Criar adesões automaticamente</label>
+    <!-- Card de Upload -->
+    <div class="rounded-lg border bg-card text-card-foreground shadow-sm mb-6">
+      <div class="flex flex-col space-y-1.5 p-6 border-b">
+        <h3 class="text-lg font-semibold leading-none tracking-tight">
+          <i class="bi bi-cloud-upload mr-2"></i>Selecionar PDFs
+        </h3>
+        <p class="text-sm text-muted-foreground">Arraste múltiplos arquivos PDF aqui ou clique para selecionar</p>
+      </div>
+      <div class="p-6">
+        <!-- Drag and Drop Zone -->
+        <div id="pdf-drop-zone-batch" class="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer bg-slate-50/50">
+          <input type="file" id="pdf-files-batch" accept="application/pdf" multiple class="hidden" />
+          <div id="pdf-drop-placeholder-batch">
+            <i class="bi bi-cloud-upload text-4xl text-slate-400 mb-3"></i>
+            <p class="text-sm text-slate-600 mb-1">Arraste múltiplos arquivos PDF aqui ou <span class="text-primary font-medium">clique para selecionar</span></p>
+            <p class="text-xs text-slate-500">Apenas arquivos PDF são aceitos</p>
           </div>
+          <div id="pdf-files-list-batch" class="hidden mt-4 text-left"></div>
         </div>
-        <div class="flex gap-2">
-          <button id="btn-import-pdf-batch" type="button" class="inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
+
+        <!-- Opções e Botão de Processar -->
+        <div class="mt-6 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <input id="toggle-criar" type="checkbox" class="h-4 w-4 rounded border-gray-300" checked />
+            <label for="toggle-criar" class="text-sm font-medium">Criar adesões automaticamente</label>
+            <div class="text-xs text-muted-foreground ml-2">
+              (Se desmarcado, apenas pré-visualiza os dados)
+            </div>
+          </div>
+          <button id="btn-import-pdf-batch" type="button" class="inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-6 py-2">
             <i class="bi bi-upload mr-2"></i>Processar PDFs
           </button>
-          <div id="pdf-loading-batch" class="hidden items-center text-sm text-muted-foreground"><span class="animate-pulse">Processando lote...</span></div>
         </div>
+
+        <!-- Loading e Feedback -->
+        <div id="pdf-loading-batch" class="hidden mt-4">
+          <div class="flex items-center justify-center text-sm text-muted-foreground mb-2">
+            <span class="animate-pulse">Processando lote...</span>
+          </div>
+          <!-- Progress Bar -->
+          <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+            <div id="progress-bar" class="bg-primary h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+          <div class="flex items-center justify-between mt-2 text-xs text-muted-foreground">
+            <span id="progress-text">0 de 0 processados</span>
+            <span id="progress-percentage">0%</span>
+          </div>
+        </div>
+        <div id="pdf-feedback-batch" class="mt-4 text-sm"></div>
       </div>
-      <div id="pdf-feedback-batch" class="px-6 pb-4 text-sm"></div>
-      <div id="pdf-results-batch" class="px-6 pb-6 space-y-2"></div>
     </div>
 
-    <div class="mt-6">
-      <a href="{% url 'adesao:importacao_logs_page' %}" class="text-sm text-blue-700 underline">Ver histórico de importações</a>
+    <!-- Resultados -->
+    <div id="pdf-results-batch" class="space-y-4"></div>
+
+    <!-- Processing Overlay Modal -->
+    <div id="processing-overlay" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+      <div class="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full mx-4 transform transition-all">
+        <!-- Animated Icon -->
+        <div class="flex justify-center mb-6">
+          <div class="relative">
+            <div class="w-20 h-20 border-4 border-primary/20 rounded-full"></div>
+            <div class="w-20 h-20 border-4 border-primary border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
+            <div class="absolute inset-0 flex items-center justify-center">
+              <i class="bi bi-file-earmark-pdf text-3xl text-primary"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status Text -->
+        <div class="text-center mb-6">
+          <h3 class="text-xl font-semibold text-gray-900 mb-2">Processando PDFs</h3>
+          <p class="text-sm text-gray-600">Aguarde enquanto processamos seus arquivos...</p>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="mb-4">
+          <div class="flex justify-between text-sm text-gray-600 mb-2">
+            <span id="overlay-progress-text">0 de 0 processados</span>
+            <span id="overlay-progress-percentage">0%</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-3">
+            <div id="overlay-progress-bar" class="bg-primary h-3 rounded-full transition-all duration-300 relative overflow-hidden" style="width: 0%">
+              <!-- Shimmer effect -->
+              <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Current File -->
+        <div class="bg-gray-50 rounded-lg p-3 text-center">
+          <p class="text-xs text-gray-500 mb-1">Processando:</p>
+          <p id="overlay-current-file" class="text-sm font-medium text-gray-900 truncate">—</p>
+        </div>
+
+        <!-- Success Message (hidden initially) -->
+        <div id="overlay-success-message" class="hidden mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+          <div class="flex items-center justify-center text-green-700">
+            <i class="bi bi-check-circle-fill mr-2"></i>
+            <span id="overlay-success-text" class="text-sm font-medium">Processamento concluído!</span>
+          </div>
+        </div>
+
+        <!-- Close Button (appears only after completion) -->
+        <button id="overlay-close-btn" class="hidden mt-6 w-full bg-primary text-primary-foreground py-2.5 rounded-md hover:bg-primary/90 transition-colors font-medium">
+          <i class="bi bi-check-lg mr-2"></i>OK, Fechar
+        </button>
+      </div>
+    </div>
+
+    <!-- Link para Logs -->
+    <div class="mt-6 text-center">
+      <a href="{% url 'adesao:importacao_logs_page' %}" class="inline-flex items-center text-sm text-primary hover:underline">
+        <i class="bi bi-clock-history mr-2"></i>Ver histórico de importações
+      </a>
     </div>
   </div>
 </div>
@@ -50,112 +162,452 @@
     const feedback = document.getElementById('pdf-feedback-batch');
     const loading = document.getElementById('pdf-loading-batch');
     const results = document.getElementById('pdf-results-batch');
+    const dropZone = document.getElementById('pdf-drop-zone-batch');
+    const dropPlaceholder = document.getElementById('pdf-drop-placeholder-batch');
+    const filesList = document.getElementById('pdf-files-list-batch');
+    const processingOverlay = document.getElementById('processing-overlay');
+    const overlayProgressBar = document.getElementById('overlay-progress-bar');
+    const overlayProgressText = document.getElementById('overlay-progress-text');
+    const overlayProgressPercentage = document.getElementById('overlay-progress-percentage');
+    const overlayCurrentFile = document.getElementById('overlay-current-file');
+    const overlayCloseBtn = document.getElementById('overlay-close-btn');
+    const overlaySuccessMessage = document.getElementById('overlay-success-message');
+    const overlaySuccessText = document.getElementById('overlay-success-text');
+
+    let selectedFiles = [];
+
+    // Close button handler
+    if (overlayCloseBtn) {
+      overlayCloseBtn.addEventListener('click', hideProcessingOverlay);
+    }
+
+    // Drag and Drop handlers
+    dropZone.addEventListener('click', () => inputFilesBatch.click());
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('border-primary', 'bg-primary/5');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('border-primary', 'bg-primary/5');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('border-primary', 'bg-primary/5');
+      const files = Array.from(e.dataTransfer.files).filter(f => f.type.match('application/pdf'));
+      if (files.length > 0) {
+        handleFilesSelection(files);
+      } else {
+        setFeedback('Apenas arquivos PDF são aceitos.', false);
+      }
+    });
+
+    inputFilesBatch.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files).filter(f => f.type.match('application/pdf'));
+      if (files.length > 0) {
+        handleFilesSelection(files);
+      } else {
+        setFeedback('Apenas arquivos PDF são aceitos.', false);
+      }
+    });
+
+    function handleFilesSelection(files) {
+      selectedFiles = files;
+      dropPlaceholder.classList.add('hidden');
+      filesList.classList.remove('hidden');
+      
+      filesList.innerHTML = '<p class="text-sm font-medium text-slate-700 mb-2">' + files.length + ' arquivo(s) selecionado(s):</p>';
+      const ul = document.createElement('ul');
+      ul.className = 'list-disc list-inside text-sm text-slate-600 space-y-1';
+      files.forEach(file => {
+        const li = document.createElement('li');
+        li.innerHTML = `<i class="bi bi-file-pdf-fill text-red-600 mr-1"></i>${file.name}`;
+        ul.appendChild(li);
+      });
+      filesList.appendChild(ul);
+      setFeedback('', true);
+    }
 
     function getCookie(name) {
       const value = `; ${document.cookie}`;
       const parts = value.split(`; ${name}=`);
       if (parts.length === 2) return parts.pop().split(';').shift();
     }
+
     function setFeedback(msg, ok=true) {
-      if (!feedback) return; feedback.className = 'px-6 pb-4 text-sm ' + (ok ? 'text-green-700' : 'text-red-700');
+      if (!feedback) return;
+      feedback.className = 'mt-4 text-sm ' + (ok ? 'text-green-600' : 'text-red-600');
       feedback.textContent = msg || '';
     }
-    function renderResults(list) {
-      if (!results) return; results.innerHTML = '';
-      (list || []).forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'rounded border p-3 text-sm ' + (item.ok ? 'border-green-300' : 'border-red-300');
-        const name = document.createElement('div'); name.className = 'font-medium'; name.textContent = item.file || '(arquivo)'; div.appendChild(name);
-        const msg = document.createElement('div');
-        if (item.ok) {
-          msg.textContent = item.created ? 'Criado com sucesso.' : 'Extraído com sucesso.';
-          if (item.detail_url) {
-            const a = document.createElement('a'); a.href = item.detail_url; a.textContent = 'Ver detalhes'; a.className = 'text-blue-700 underline ml-2';
-            msg.appendChild(a);
-          }
-          // Quando não criar automaticamente, exibir campos extraídos
-          if (!item.created && item.fields) {
-            const f = item.fields || {};
-            const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : String(v));
-            const details = document.createElement('div');
-            details.className = 'mt-2 grid grid-cols-1 md:grid-cols-2 gap-2';
-            // Saldo do Crédito deve priorizar "Valor Original do Crédito Inicial"
-            // Fallbacks: valor do pedido (saldo) e, por último, Valor Total (Origem do Crédito)
-            let saldoCredito = (f.valor_original_credito_inicial ?? f.saldo ?? f.valor_total_origem);
-            const pairs = [
-              ['Cliente', f.cliente_label || f.cliente],
-              ['PERDCOMP', f.perdcomp],
-              ['Método', f.metodo_credito],
-              ['Data de Criação', f.data_inicio],
-              ['Data de Arrecadação', f.data_arrecadacao],
-              ['Saldo do Crédito (Origem do Crédito)', saldoCredito],
-              ['Ano', f.ano],
-              ['Trimestre', f.trimestre],
-              ['Tipo de Crédito', f.tipo_credito],
-              ['Período Apuração (Crédito)', f.periodo_apuracao_credito],
-              ['Código da Receita', f.codigo_receita],
-            ];
-            // Se quiser mostrar também o Valor do Pedido separadamente (se existir)
-            if (f.valor_total_origem && (!saldoCredito || saldoCredito !== f.valor_total_origem)) {
-              pairs.splice(6, 0, ['Valor Total (Origem do Crédito)', f.valor_total_origem]);
-            }
-            if (f.valor_original_credito_inicial && (!saldoCredito || saldoCredito !== f.valor_original_credito_inicial)) {
-              pairs.splice(7, 0, ['Valor Original do Crédito Inicial', f.valor_original_credito_inicial]);
-            }
-            pairs.forEach(([label, value]) => {
-              const row = document.createElement('div');
-              row.className = 'flex items-center justify-between border-b border-slate-100 py-1';
-              const l = document.createElement('span'); l.className = 'text-slate-500'; l.textContent = label;
-              const v = document.createElement('span'); v.className = 'font-medium'; v.textContent = fmt(value);
-              row.appendChild(l); row.appendChild(v); details.appendChild(row);
-            });
-            div.appendChild(details);
 
-            // Renderizar débitos (se houver)
-            if (Array.isArray(f.debitos) && f.debitos.length > 0) {
-              const debTitle = document.createElement('div');
-              debTitle.className = 'mt-3 font-semibold';
-              debTitle.textContent = 'Débitos vinculados (extraídos)';
-              div.appendChild(debTitle);
-              const list = document.createElement('div');
-              list.className = 'mt-1 space-y-1';
-              f.debitos.forEach((d, idx) => {
-                const item = document.createElement('div');
-                item.className = 'text-xs border rounded p-2 bg-muted/30';
-                const linha1 = document.createElement('div');
-                linha1.textContent = `${idx+1}. ${d.codigo_receita_denominacao || '—'}`;
-                const linha2 = document.createElement('div');
-                linha2.className = 'text-slate-600';
-                linha2.textContent = `Período: ${fmt(d.periodo_apuracao_debito)} | Valor: ${fmt(d.valor)}`;
-                item.appendChild(linha1); item.appendChild(linha2); list.appendChild(item);
-              });
-              div.appendChild(list);
-            }
+    function renderSingleResult(item) {
+      if (!results) return;
+
+      const card = document.createElement('div');
+      card.className = 'rounded-lg border p-4 ' + (item.ok ? 'border-green-300 bg-green-50/50' : 'border-red-300 bg-red-50/50');
+      
+      // Header
+      const header = document.createElement('div');
+      header.className = 'flex items-center justify-between mb-3';
+      
+      const fileName = document.createElement('h4');
+      fileName.className = 'font-semibold flex items-center';
+      fileName.innerHTML = `<i class="bi bi-file-pdf-fill ${item.ok ? 'text-green-600' : 'text-red-600'} mr-2"></i>${item.file || '(arquivo)'}`;
+      header.appendChild(fileName);
+      
+      if (item.ok && item.detail_url) {
+        const link = document.createElement('a');
+        link.href = item.detail_url;
+        link.className = 'text-xs bg-primary text-primary-foreground hover:bg-primary/90 rounded px-3 py-1';
+        link.innerHTML = '<i class="bi bi-eye mr-1"></i>Ver detalhes';
+        header.appendChild(link);
+      }
+      
+      card.appendChild(header);
+      
+      // Status message
+      const statusMsg = document.createElement('div');
+      statusMsg.className = 'text-sm mb-3 ' + (item.ok ? 'text-green-700' : 'text-red-700');
+      if (item.ok) {
+        statusMsg.textContent = item.created ? '✓ Adesão criada com sucesso!' : '✓ Dados extraídos com sucesso (pré-visualização)';
+      } else {
+        statusMsg.textContent = '✗ ' + (item.error || 'Erro ao processar');
+      }
+      card.appendChild(statusMsg);
+      
+      // Show extracted fields if not created
+      if (item.ok && !item.created && item.fields) {
+        const f = item.fields || {};
+        const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : String(v));
+        
+        const detailsContainer = document.createElement('div');
+        detailsContainer.className = 'rounded-lg border bg-white p-4';
+        
+        const detailsTitle = document.createElement('h5');
+        detailsTitle.className = 'font-semibold mb-3 text-sm';
+        detailsTitle.textContent = 'Dados Extraídos';
+        detailsContainer.appendChild(detailsTitle);
+        
+        const details = document.createElement('div');
+        details.className = 'grid grid-cols-1 md:grid-cols-2 gap-2 text-sm';
+        
+        // Saldo priority: valor_original_credito_inicial → valor_do_credito → valor_total_origem
+        let saldoCredito = f.valor_original_credito_inicial || f.valor_do_credito || f.valor_total_origem || null;
+        
+        const pairs = [
+          ['Cliente', f.cliente?.label || f.cliente_label || f.cliente],
+          ['PERDCOMP', f.perdcomp],
+          ['Método de Crédito', f.metodo_credito],
+          ['Data de Criação', f.data_inicio],
+          ['Data de Arrecadação', f.data_arrecadacao],
+          ['Saldo do Crédito', saldoCredito],
+          ['Ano', f.ano],
+          ['Trimestre', f.trimestre],
+          ['Tipo de Crédito', f.tipo_credito],
+          ['Período Apuração (Crédito)', f.periodo_apuracao_credito],
+          ['Código da Receita', f.codigo_receita],
+        ];
+        
+        pairs.forEach(([label, value]) => {
+          if (value !== undefined && value !== null) {
+            const row = document.createElement('div');
+            row.className = 'flex justify-between py-1 border-b border-slate-200';
+            const l = document.createElement('span');
+            l.className = 'text-muted-foreground';
+            l.textContent = label + ':';
+            const v = document.createElement('span');
+            v.className = 'font-medium';
+            v.textContent = fmt(value);
+            row.appendChild(l);
+            row.appendChild(v);
+            details.appendChild(row);
           }
-        } else { msg.textContent = item.error || 'Erro'; }
-        div.appendChild(msg);
-        results.appendChild(div);
-      });
+        });
+        
+        detailsContainer.appendChild(details);
+        
+        // Show all available fields for debugging (optional - can be removed later)
+        if (f.valor_original_credito_inicial || f.valor_do_credito || f.valor_total_origem) {
+          const debugInfo = document.createElement('div');
+          debugInfo.className = 'mt-3 pt-3 border-t border-slate-200 text-xs text-slate-500';
+          const debugFields = [];
+          if (f.valor_original_credito_inicial) debugFields.push(`Valor Original Crédito Inicial: ${f.valor_original_credito_inicial}`);
+          if (f.valor_do_credito) debugFields.push(`Valor do Crédito: ${f.valor_do_credito}`);
+          if (f.valor_total_origem) debugFields.push(`Valor Total Origem: ${f.valor_total_origem}`);
+          debugInfo.textContent = '📋 Campos de saldo disponíveis: ' + debugFields.join(' | ');
+          detailsContainer.appendChild(debugInfo);
+        }
+        
+        // Render debitos if present
+        if (Array.isArray(f.debitos) && f.debitos.length > 0) {
+          const debitosSection = document.createElement('div');
+          debitosSection.className = 'mt-4';
+          
+          const debTitle = document.createElement('h6');
+          debTitle.className = 'font-semibold text-sm mb-2';
+          debTitle.textContent = 'Débitos Extraídos (' + f.debitos.length + ')';
+          debitosSection.appendChild(debTitle);
+          
+          const debList = document.createElement('div');
+          debList.className = 'space-y-2';
+          
+          f.debitos.forEach((d, idx) => {
+            const debItem = document.createElement('div');
+            debItem.className = 'text-xs border rounded-lg p-3 bg-muted/30';
+            
+            const linha1 = document.createElement('div');
+            linha1.className = 'font-medium mb-1';
+            linha1.textContent = `${idx + 1}. ${d.codigo_receita_denominacao || '—'}`;
+            debItem.appendChild(linha1);
+            
+            const linha2 = document.createElement('div');
+            linha2.className = 'text-slate-600';
+            linha2.textContent = `Período: ${fmt(d.periodo_apuracao_debito)} | Valor: ${fmt(d.valor)}`;
+            debItem.appendChild(linha2);
+            
+            debList.appendChild(debItem);
+          });
+          
+          debitosSection.appendChild(debList);
+          detailsContainer.appendChild(debitosSection);
+        }
+        
+        card.appendChild(detailsContainer);
+      }
+      
+      results.appendChild(card);
     }
 
     async function processarLote() {
-      if (!inputFilesBatch || !inputFilesBatch.files || inputFilesBatch.files.length === 0) {
-        setFeedback('Selecione um ou mais arquivos PDF.', false); return;
+      if (!selectedFiles || selectedFiles.length === 0) {
+        setFeedback('Selecione um ou mais arquivos PDF.', false);
+        return;
       }
-      const formData = new FormData();
-      Array.from(inputFilesBatch.files).forEach(f => formData.append('pdfs', f));
-      formData.append('criar', toggleCriar && toggleCriar.checked ? '1' : '0');
-      setFeedback(''); renderResults([]);
-      loading && loading.classList.remove('hidden'); btnBatch && (btnBatch.disabled = true);
+      
+      const totalFiles = selectedFiles.length;
+      const criar = toggleCriar && toggleCriar.checked;
+      
+      setFeedback('');
+      results.innerHTML = '';
+      loading.classList.remove('hidden');
+      btnBatch.disabled = true;
+      
+      // Show overlay
+      showProcessingOverlay();
+      
+      // Reset progress
+      updateProgress(0, totalFiles, 'Iniciando...');
+      
+      const allResults = [];
+      
       try {
-  const resp = await fetch("{% url 'adesao:importar_pdf_lote' %}", {
-          method: 'POST', headers: { 'X-CSRFToken': getCookie('csrftoken') || '' }, body: formData
+        // Process files one by one to show progress
+        for (let i = 0; i < selectedFiles.length; i++) {
+          const file = selectedFiles[i];
+          
+          // Update current file being processed
+          updateProgress(i, totalFiles, file.name);
+          
+          try {
+            const result = await processarArquivo(file, criar);
+            allResults.push(result);
+            
+            // Update progress
+            updateProgress(i + 1, totalFiles, i + 1 === totalFiles ? 'Concluído!' : null);
+            
+            // Render result immediately
+            renderSingleResult(result);
+            
+          } catch (error) {
+            allResults.push({
+              ok: false,
+              file: file.name,
+              error: error.message || 'Erro ao processar arquivo'
+            });
+            updateProgress(i + 1, totalFiles, i + 1 === totalFiles ? 'Concluído!' : null);
+            renderSingleResult(allResults[allResults.length - 1]);
+          }
+        }
+        
+        // Final feedback
+        const successCount = allResults.filter(r => r.ok).length;
+        const errorCount = allResults.filter(r => !r.ok).length;
+        const createdCount = allResults.filter(r => r.ok && r.created).length;
+        
+        // Show completion state in overlay
+        showCompletionState(successCount, errorCount, createdCount, criar);
+        
+        // Set feedback message in the page
+        if (criar && createdCount > 0) {
+          setFeedback(`✓ ${createdCount} adesão(ões) criada(s) com sucesso!${errorCount > 0 ? ` (${errorCount} com erro)` : ''}`, true);
+        } else if (!criar && successCount > 0) {
+          setFeedback(`✓ ${successCount} arquivo(s) processado(s) - Dados extraídos com sucesso!${errorCount > 0 ? ` (${errorCount} com erro)` : ''}`, true);
+        } else if (errorCount > 0) {
+          setFeedback(`✗ ${errorCount} erro(s) ao processar arquivos`, false);
+        }
+        
+      } catch (e) {
+        setFeedback('Erro inesperado ao importar em lote: ' + e.message, false);
+        
+        // Show error state in overlay
+        if (overlayCurrentFile) overlayCurrentFile.textContent = 'Erro!';
+        if (overlaySuccessMessage && overlaySuccessText) {
+          overlaySuccessMessage.classList.remove('bg-green-50', 'border-green-200');
+          overlaySuccessMessage.classList.add('bg-red-50', 'border-red-200');
+          overlaySuccessText.textContent = 'Erro inesperado ao processar';
+          overlaySuccessMessage.classList.remove('hidden');
+        }
+        if (overlayCloseBtn) overlayCloseBtn.classList.remove('hidden');
+      } finally {
+        loading.classList.add('hidden');
+        btnBatch.disabled = false;
+        
+        // Don't auto-hide overlay - user must click to close
+      }
+    }
+
+    async function processarArquivo(file, criar) {
+      const formData = new FormData();
+      formData.append('pdf', file);
+      formData.append('criar', criar ? '1' : '0');
+      
+      try {
+        const resp = await fetch("{% url 'adesao:importar_pdf' %}", {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCookie('csrftoken') || '' },
+          body: formData
         });
+        
         const data = await resp.json();
-        if (!resp.ok || !data.ok) { setFeedback(data.error || 'Falha ao importar em lote.', false); return; }
-        setFeedback('Lote processado.', true); renderResults(data.results || []);
-      } catch (e) { setFeedback('Erro inesperado ao importar em lote.', false); }
-      finally { loading && loading.classList.add('hidden'); btnBatch && (btnBatch.disabled = false); }
+        
+        // Check if the response indicates an error
+        if (!data.ok) {
+          return {
+            ok: false,
+            file: file.name,
+            created: false,
+            detail_url: null,
+            fields: null,
+            error: data.error || 'Erro ao processar o arquivo'
+          };
+        }
+        
+        return {
+          ok: true,
+          file: file.name,
+          created: data.created || false,
+          detail_url: data.detail_url || null,
+          fields: data.fields || null,
+          error: null
+        };
+      } catch (error) {
+        // Network error or JSON parsing error
+        return {
+          ok: false,
+          file: file.name,
+          created: false,
+          detail_url: null,
+          fields: null,
+          error: error.message || 'Erro de rede ao processar o arquivo'
+        };
+      }
+    }
+
+    function updateProgress(current, total, currentFileName = null) {
+      const progressBar = document.getElementById('progress-bar');
+      const progressText = document.getElementById('progress-text');
+      const progressPercentage = document.getElementById('progress-percentage');
+      
+      const percentage = total > 0 ? Math.round((current / total) * 100) : 0;
+      
+      // Update main progress bar
+      if (progressBar) {
+        progressBar.style.width = percentage + '%';
+      }
+      
+      if (progressText) {
+        progressText.textContent = `${current} de ${total} processados`;
+      }
+      
+      if (progressPercentage) {
+        progressPercentage.textContent = percentage + '%';
+      }
+
+      // Update overlay progress
+      if (overlayProgressBar) {
+        overlayProgressBar.style.width = percentage + '%';
+      }
+      
+      if (overlayProgressText) {
+        overlayProgressText.textContent = `${current} de ${total} processados`;
+      }
+      
+      if (overlayProgressPercentage) {
+        overlayProgressPercentage.textContent = percentage + '%';
+      }
+
+      if (overlayCurrentFile && currentFileName) {
+        overlayCurrentFile.textContent = currentFileName;
+      }
+    }
+
+    function showProcessingOverlay() {
+      if (processingOverlay) {
+        processingOverlay.classList.remove('hidden');
+        document.body.style.overflow = 'hidden'; // Prevent scrolling
+        
+        // Hide close button and success message initially
+        if (overlayCloseBtn) overlayCloseBtn.classList.add('hidden');
+        if (overlaySuccessMessage) overlaySuccessMessage.classList.add('hidden');
+      }
+    }
+
+    function hideProcessingOverlay() {
+      if (processingOverlay) {
+        processingOverlay.classList.add('hidden');
+        document.body.style.overflow = ''; // Restore scrolling
+        
+        // Reset close button and success message for next time
+        if (overlayCloseBtn) overlayCloseBtn.classList.add('hidden');
+        if (overlaySuccessMessage) overlaySuccessMessage.classList.add('hidden');
+      }
+    }
+
+    function showCompletionState(successCount, errorCount, createdCount, criar) {
+      // Update current file text
+      if (overlayCurrentFile) {
+        overlayCurrentFile.textContent = 'Concluído!';
+      }
+
+      // Show success message with details
+      if (overlaySuccessMessage && overlaySuccessText) {
+        let message = '';
+        if (criar && createdCount > 0) {
+          message = `${createdCount} adesão(ões) criada(s) com sucesso!`;
+          if (errorCount > 0) message += ` (${errorCount} com erro)`;
+        } else if (!criar && successCount > 0) {
+          message = `${successCount} arquivo(s) processado(s)!`;
+          if (errorCount > 0) message += ` (${errorCount} com erro)`;
+        } else if (errorCount > 0) {
+          message = `${errorCount} erro(s) ao processar arquivos`;
+          overlaySuccessMessage.classList.remove('bg-green-50', 'border-green-200');
+          overlaySuccessMessage.classList.add('bg-red-50', 'border-red-200');
+          overlaySuccessMessage.querySelector('.text-green-700')?.classList.remove('text-green-700');
+          overlaySuccessMessage.querySelector('div > div')?.classList.add('text-red-700');
+          overlaySuccessMessage.querySelector('.bi-check-circle-fill')?.classList.remove('bi-check-circle-fill');
+          overlaySuccessMessage.querySelector('i')?.classList.add('bi-x-circle-fill');
+        }
+        
+        overlaySuccessText.textContent = message;
+        overlaySuccessMessage.classList.remove('hidden');
+      }
+
+      // Show close button
+      if (overlayCloseBtn) {
+        overlayCloseBtn.classList.remove('hidden');
+      }
     }
 
     if (btnBatch) btnBatch.addEventListener('click', processarLote);
