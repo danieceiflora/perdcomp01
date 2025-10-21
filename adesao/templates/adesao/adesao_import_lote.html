@@ -43,12 +43,12 @@
       </div>
       <div class="p-6">
         <!-- Drag and Drop Zone -->
-        <div id="pdf-drop-zone-batch" class="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer bg-slate-50/50">
+        <div id="pdf-drop-zone-batch" class="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer bg-slate-50/50 dark:bg-slate-900/40">
           <input type="file" id="pdf-files-batch" accept="application/pdf" multiple class="hidden" />
           <div id="pdf-drop-placeholder-batch">
-            <i class="bi bi-cloud-upload text-4xl text-slate-400 mb-3"></i>
-            <p class="text-sm text-slate-600 mb-1">Arraste múltiplos arquivos PDF aqui ou <span class="text-primary font-medium">clique para selecionar</span></p>
-            <p class="text-xs text-slate-500">Apenas arquivos PDF são aceitos</p>
+            <i class="bi bi-cloud-upload text-4xl text-slate-400 dark:text-slate-500 mb-3"></i>
+            <p class="text-sm text-slate-600 dark:text-slate-300 mb-1">Arraste múltiplos arquivos PDF aqui ou <span class="text-primary font-medium">clique para selecionar</span></p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Apenas arquivos PDF são aceitos</p>
           </div>
           <div id="pdf-files-list-batch" class="hidden mt-4 text-left"></div>
         </div>
@@ -73,7 +73,7 @@
             <span class="animate-pulse">Processando lote...</span>
           </div>
           <!-- Progress Bar -->
-          <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+          <div class="w-full bg-muted/60 dark:bg-slate-800 rounded-full h-2.5">
             <div id="progress-bar" class="bg-primary h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
           </div>
           <div class="flex items-center justify-between mt-2 text-xs text-muted-foreground">
@@ -90,7 +90,7 @@
 
     <!-- Processing Overlay Modal -->
     <div id="processing-overlay" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-      <div class="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full mx-4 transform transition-all">
+      <div class="bg-card text-card-foreground dark:bg-slate-900 dark:text-slate-100 rounded-lg shadow-2xl p-8 max-w-md w-full mx-4 transform transition-all">
         <!-- Animated Icon -->
         <div class="flex justify-center mb-6">
           <div class="relative">
@@ -104,34 +104,34 @@
 
         <!-- Status Text -->
         <div class="text-center mb-6">
-          <h3 class="text-xl font-semibold text-gray-900 mb-2">Processando PDFs</h3>
-          <p class="text-sm text-gray-600">Aguarde enquanto processamos seus arquivos...</p>
+          <h3 class="text-xl font-semibold text-card-foreground mb-2">Processando PDFs</h3>
+          <p class="text-sm text-muted-foreground">Aguarde enquanto processamos seus arquivos...</p>
         </div>
 
         <!-- Progress Bar -->
         <div class="mb-4">
-          <div class="flex justify-between text-sm text-gray-600 mb-2">
+          <div class="flex justify-between text-sm text-muted-foreground mb-2">
             <span id="overlay-progress-text">0 de 0 processados</span>
             <span id="overlay-progress-percentage">0%</span>
           </div>
-          <div class="w-full bg-gray-200 rounded-full h-3">
+          <div class="w-full bg-muted/60 dark:bg-slate-800 rounded-full h-3">
             <div id="overlay-progress-bar" class="bg-primary h-3 rounded-full transition-all duration-300 relative overflow-hidden" style="width: 0%">
               <!-- Shimmer effect -->
-              <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
+              <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 dark:via-white/20 to-transparent animate-shimmer"></div>
             </div>
           </div>
         </div>
 
         <!-- Current File -->
-        <div class="bg-gray-50 rounded-lg p-3 text-center">
-          <p class="text-xs text-gray-500 mb-1">Processando:</p>
-          <p id="overlay-current-file" class="text-sm font-medium text-gray-900 truncate">—</p>
+        <div class="bg-muted/40 dark:bg-slate-800/60 rounded-lg p-3 text-center">
+          <p class="text-xs text-muted-foreground mb-1">Processando:</p>
+          <p id="overlay-current-file" class="text-sm font-medium text-card-foreground truncate">—</p>
         </div>
 
         <!-- Success Message (hidden initially) -->
-        <div id="overlay-success-message" class="hidden mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-          <div class="flex items-center justify-center text-green-700">
-            <i class="bi bi-check-circle-fill mr-2"></i>
+        <div id="overlay-success-message" class="hidden mt-4 p-3 bg-green-50 dark:bg-green-500/15 border border-green-200 dark:border-green-500/40 rounded-lg">
+          <div class="flex items-center justify-center text-green-700 dark:text-green-400 overlay-success-content">
+            <i class="bi bi-check-circle-fill mr-2 overlay-success-icon"></i>
             <span id="overlay-success-text" class="text-sm font-medium">Processamento concluído!</span>
           </div>
         </div>
@@ -218,9 +218,9 @@
       dropPlaceholder.classList.add('hidden');
       filesList.classList.remove('hidden');
       
-      filesList.innerHTML = '<p class="text-sm font-medium text-slate-700 mb-2">' + files.length + ' arquivo(s) selecionado(s):</p>';
+  filesList.innerHTML = '<p class="text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">' + files.length + ' arquivo(s) selecionado(s):</p>';
       const ul = document.createElement('ul');
-      ul.className = 'list-disc list-inside text-sm text-slate-600 space-y-1';
+  ul.className = 'list-disc list-inside text-sm text-slate-600 dark:text-slate-300 space-y-1';
       files.forEach(file => {
         const li = document.createElement('li');
         li.innerHTML = `<i class="bi bi-file-pdf-fill text-red-600 mr-1"></i>${file.name}`;
@@ -238,15 +238,15 @@
 
     function setFeedback(msg, ok=true) {
       if (!feedback) return;
-      feedback.className = 'mt-4 text-sm ' + (ok ? 'text-green-600' : 'text-red-600');
+  feedback.className = 'mt-4 text-sm ' + (ok ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400');
       feedback.textContent = msg || '';
     }
 
     function renderSingleResult(item) {
       if (!results) return;
 
-      const card = document.createElement('div');
-      card.className = 'rounded-lg border p-4 ' + (item.ok ? 'border-green-300 bg-green-50/50' : 'border-red-300 bg-red-50/50');
+  const card = document.createElement('div');
+  card.className = 'rounded-lg border p-4 text-slate-900 dark:text-slate-100 ' + (item.ok ? 'border-green-300 bg-green-50/50 dark:border-green-500/50 dark:bg-green-500/10' : 'border-red-300 bg-red-50/50 dark:border-red-500/50 dark:bg-red-500/10');
       
       // Header
       const header = document.createElement('div');
@@ -268,8 +268,8 @@
       card.appendChild(header);
       
       // Status message
-      const statusMsg = document.createElement('div');
-      statusMsg.className = 'text-sm mb-3 ' + (item.ok ? 'text-green-700' : 'text-red-700');
+  const statusMsg = document.createElement('div');
+  statusMsg.className = 'text-sm mb-3 ' + (item.ok ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300');
       if (item.ok) {
         statusMsg.textContent = item.created ? '✓ Adesão criada com sucesso!' : '✓ Dados extraídos com sucesso (pré-visualização)';
       } else {
@@ -282,8 +282,8 @@
         const f = item.fields || {};
         const fmt = (v) => (v === null || v === undefined || v === '' ? '—' : String(v));
         
-        const detailsContainer = document.createElement('div');
-        detailsContainer.className = 'rounded-lg border bg-white p-4';
+  const detailsContainer = document.createElement('div');
+  detailsContainer.className = 'rounded-lg border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 p-4';
         
         const detailsTitle = document.createElement('h5');
         detailsTitle.className = 'font-semibold mb-3 text-sm';
@@ -313,7 +313,7 @@
         pairs.forEach(([label, value]) => {
           if (value !== undefined && value !== null) {
             const row = document.createElement('div');
-            row.className = 'flex justify-between py-1 border-b border-slate-200';
+            row.className = 'flex justify-between py-1 border-b border-slate-200 dark:border-slate-700';
             const l = document.createElement('span');
             l.className = 'text-muted-foreground';
             l.textContent = label + ':';
@@ -331,7 +331,7 @@
         // Show all available fields for debugging (optional - can be removed later)
         if (f.valor_original_credito_inicial || f.valor_do_credito || f.valor_total_origem) {
           const debugInfo = document.createElement('div');
-          debugInfo.className = 'mt-3 pt-3 border-t border-slate-200 text-xs text-slate-500';
+          debugInfo.className = 'mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400';
           const debugFields = [];
           if (f.valor_original_credito_inicial) debugFields.push(`Valor Original Crédito Inicial: ${f.valor_original_credito_inicial}`);
           if (f.valor_do_credito) debugFields.push(`Valor do Crédito: ${f.valor_do_credito}`);
@@ -355,7 +355,7 @@
           
           f.debitos.forEach((d, idx) => {
             const debItem = document.createElement('div');
-            debItem.className = 'text-xs border rounded-lg p-3 bg-muted/30';
+            debItem.className = 'text-xs border rounded-lg p-3 bg-muted/30 dark:bg-slate-900 border-slate-200 dark:border-slate-700';
             
             const linha1 = document.createElement('div');
             linha1.className = 'font-medium mb-1';
@@ -363,7 +363,7 @@
             debItem.appendChild(linha1);
             
             const linha2 = document.createElement('div');
-            linha2.className = 'text-slate-600';
+            linha2.className = 'text-slate-600 dark:text-slate-300';
             linha2.textContent = `Período: ${fmt(d.periodo_apuracao_debito)} | Valor: ${fmt(d.valor)}`;
             debItem.appendChild(linha2);
             
@@ -454,8 +454,15 @@
         // Show error state in overlay
         if (overlayCurrentFile) overlayCurrentFile.textContent = 'Erro!';
         if (overlaySuccessMessage && overlaySuccessText) {
-          overlaySuccessMessage.classList.remove('bg-green-50', 'border-green-200');
-          overlaySuccessMessage.classList.add('bg-red-50', 'border-red-200');
+          resetOverlaySuccessStyles();
+          overlaySuccessMessage.classList.remove('bg-green-50', 'border-green-200', 'dark:bg-green-500/15', 'dark:border-green-500/40');
+          overlaySuccessMessage.classList.add('bg-red-50', 'border-red-200', 'dark:bg-red-500/15', 'dark:border-red-500/40');
+          const successContent = overlaySuccessMessage.querySelector('.overlay-success-content');
+          successContent?.classList.remove('text-green-700', 'dark:text-green-400');
+          successContent?.classList.add('text-red-700', 'dark:text-red-300');
+          const successIcon = overlaySuccessMessage.querySelector('.overlay-success-icon');
+          successIcon?.classList.remove('bi-check-circle-fill');
+          successIcon?.classList.add('bi-x-circle-fill');
           overlaySuccessText.textContent = 'Erro inesperado ao processar';
           overlaySuccessMessage.classList.remove('hidden');
         }
@@ -553,6 +560,25 @@
       }
     }
 
+    function resetOverlaySuccessStyles() {
+      if (!overlaySuccessMessage) return;
+
+      overlaySuccessMessage.classList.remove('bg-red-50', 'border-red-200', 'dark:bg-red-500/15', 'dark:border-red-500/40');
+      overlaySuccessMessage.classList.add('bg-green-50', 'border-green-200', 'dark:bg-green-500/15', 'dark:border-green-500/40');
+
+      const successContent = overlaySuccessMessage.querySelector('.overlay-success-content');
+      if (successContent) {
+        successContent.classList.remove('text-red-700', 'dark:text-red-300');
+        successContent.classList.add('text-green-700', 'dark:text-green-400');
+      }
+
+      const successIcon = overlaySuccessMessage.querySelector('.overlay-success-icon');
+      if (successIcon) {
+        successIcon.classList.remove('bi-x-circle-fill');
+        successIcon.classList.add('bi-check-circle-fill');
+      }
+    }
+
     function showProcessingOverlay() {
       if (processingOverlay) {
         processingOverlay.classList.remove('hidden');
@@ -560,7 +586,10 @@
         
         // Hide close button and success message initially
         if (overlayCloseBtn) overlayCloseBtn.classList.add('hidden');
-        if (overlaySuccessMessage) overlaySuccessMessage.classList.add('hidden');
+        if (overlaySuccessMessage) {
+          overlaySuccessMessage.classList.add('hidden');
+          resetOverlaySuccessStyles();
+        }
       }
     }
 
@@ -583,6 +612,7 @@
 
       // Show success message with details
       if (overlaySuccessMessage && overlaySuccessText) {
+        resetOverlaySuccessStyles();
         let message = '';
         if (criar && createdCount > 0) {
           message = `${createdCount} adesão(ões) criada(s) com sucesso!`;
@@ -592,15 +622,17 @@
           if (errorCount > 0) message += ` (${errorCount} com erro)`;
         } else if (errorCount > 0) {
           message = `${errorCount} erro(s) ao processar arquivos`;
-          overlaySuccessMessage.classList.remove('bg-green-50', 'border-green-200');
-          overlaySuccessMessage.classList.add('bg-red-50', 'border-red-200');
-          overlaySuccessMessage.querySelector('.text-green-700')?.classList.remove('text-green-700');
-          overlaySuccessMessage.querySelector('div > div')?.classList.add('text-red-700');
-          overlaySuccessMessage.querySelector('.bi-check-circle-fill')?.classList.remove('bi-check-circle-fill');
-          overlaySuccessMessage.querySelector('i')?.classList.add('bi-x-circle-fill');
+          overlaySuccessMessage.classList.remove('bg-green-50', 'border-green-200', 'dark:bg-green-500/15', 'dark:border-green-500/40');
+          overlaySuccessMessage.classList.add('bg-red-50', 'border-red-200', 'dark:bg-red-500/15', 'dark:border-red-500/40');
+          const successContent = overlaySuccessMessage.querySelector('.overlay-success-content');
+          successContent?.classList.remove('text-green-700', 'dark:text-green-400');
+          successContent?.classList.add('text-red-700', 'dark:text-red-300');
+          const successIcon = overlaySuccessMessage.querySelector('.overlay-success-icon');
+          successIcon?.classList.remove('bi-check-circle-fill');
+          successIcon?.classList.add('bi-x-circle-fill');
         }
         
-        overlaySuccessText.textContent = message;
+        overlaySuccessText.textContent = message || 'Processamento concluído!';
         overlaySuccessMessage.classList.remove('hidden');
       }
 
