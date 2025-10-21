@@ -32,6 +32,10 @@ fi
 python manage.py migrate --noinput
 echo "[entrypoint] Executando collectstatic..."
 python manage.py collectstatic --noinput --verbosity=2
+echo "[entrypoint] Garantindo superusuário padrão..."
+python manage.py ensure_default_superuser --username admin --email admin@gmail.com --password admin
+echo "[entrypoint] Garantindo empresa base padrão..."
+python manage.py ensure_default_empresa
 
 if [ "${DJANGO_DEBUG}" = "True" ] || [ "${DJANGO_DEBUG}" = "true" ]; then
   echo "[entrypoint] Iniciando em modo desenvolvimento (runserver)"

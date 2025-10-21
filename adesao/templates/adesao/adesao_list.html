@@ -82,7 +82,7 @@
                                 <tr class="border-b bg-muted/50">
                                     <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Perdcomp</th>
                                     <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Cliente</th>
-                                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Método de Crédito</th>
+                                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Tipo de Crédito</th>
                                     <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Data de Início</th>
                                     <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Saldo Inicial</th>
                                     <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Saldo Restante</th>
@@ -146,7 +146,7 @@
                                 <div class="font-medium">{{ adesao.cliente.id_company_vinculada.nome_fantasia|default:adesao.cliente.id_company_vinculada.razao_social }}</div>
                             </div>
                             <div>
-                                <span class="text-sm font-medium text-muted-foreground">Método de Crédito:</span>
+                                <span class="text-sm font-medium text-muted-foreground">Tipo de Crédito:</span>
                                 <div class="font-medium">{{ adesao.metodo_credito|default:"—" }}</div>
                             </div>
                             <div>

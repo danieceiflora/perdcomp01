@@ -31,10 +31,6 @@ class UnifiedLoginView(LoginView):
     template_name = 'accounts/admin_login_tailwind.html'
 
     def get_success_url(self):
-        user = self.request.user
-        if user.is_staff or user.is_superuser:
-            # Pode redirecionar direto para /admin/ ou para dashboard unificado; opção: admin.
-            return '/admin/'
         return reverse_lazy('accounts:dashboard')
 
     def form_valid(self, form):

@@ -79,18 +79,24 @@
                             {{ form.sinal }}
                             {% if form.sinal.errors %}<div class="text-sm text-destructive mt-1">{{ form.sinal.errors }}</div>{% endif %}
                         </div>
+                        <div class="md:col-span-3">
+                            <label for="{{ form.codigo_guia.id_for_label }}" class="block text-sm font-medium mb-1">{{ form.codigo_guia.label }}</label>
+                            {{ form.codigo_guia }}
+                            <p class="text-xs text-muted-foreground mt-1">Informe o identificador da guia associado a este lançamento (opcional).</p>
+                            {% if form.codigo_guia.errors %}<div class="text-sm text-destructive mt-1">{{ form.codigo_guia.errors }}</div>{% endif %}
+                        </div>
                     </div>
                 </div>
 
-                <!-- Grupo 2: Método / Data / Detalhes / Observação -->
+                <!-- Grupo 2: Tipo de Crédito / Data / Detalhes / Observação -->
                 <div class="bg-muted/20 border rounded-md p-4">
-                    <h3 class="text-sm font-semibold mb-4 tracking-wide text-muted-foreground">Pedido e método</h3>
+                    <h3 class="text-sm font-semibold mb-4 tracking-wide text-muted-foreground">Pedido e tipo de crédito</h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label for="{{ form.metodo_escolhido.id_for_label }}" class="block text-sm font-medium mb-1">Método</label>
+                            <label for="{{ form.metodo_escolhido.id_for_label }}" class="block text-sm font-medium mb-1">Tipo de Crédito</label>
                             {{ form.metodo_escolhido }}
                             {% if form.metodo_escolhido.errors %}<div class="text-sm text-destructive mt-1">{{ form.metodo_escolhido.errors }}</div>{% endif %}
-                            <p class="text-xs text-muted-foreground mt-1">Selecione o método para exibir os campos específicos.</p>
+                            <p class="text-xs text-muted-foreground mt-1">Selecione o tipo de crédito para exibir os campos específicos.</p>
                         </div>
                         <div>
                             <label for="{{ form.data_lancamento.id_for_label }}" class="block text-sm font-medium mb-1">{{ form.data_lancamento.label }}</label>
@@ -100,7 +106,7 @@
                         </div>
                         <div class="md:col-span-3">
                             <div class="border rounded-md p-4">
-                                <h4 class="text-sm font-semibold mb-4 tracking-wide text-muted-foreground">Detalhes do método</h4>
+                                <h4 class="text-sm font-semibold mb-4 tracking-wide text-muted-foreground">Detalhes do tipo de crédito</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div id="lanc-group-total_credito_original_utilizado" class="hidden">
                                         <label for="{{ form.lanc_total_credito_original_utilizado.id_for_label }}" class="block text-sm font-medium mb-1">Total Crédito Original Utilizado</label>

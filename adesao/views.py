@@ -16,7 +16,7 @@ from django.contrib.auth.decorators import login_required
 from .forms import AdesaoForm
 from django.views.decorators.http import require_POST
 import re
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.core.files.uploadedfile import UploadedFile
 from django.utils import timezone
 from utils.pdf_parser import parse_ressarcimento_text
@@ -565,11 +565,15 @@ def importar_pdf_perdcomp(request):
 
 @login_required
 @require_POST
+@login_required
+@require_POST
 def importar_pdf_perdcomp_lote(request):
     """Importação em lote de PDFs PERDCOMP.
     Campo de arquivos: 'pdfs' (múltiplos). Se 'criar' for truthy, criará as Adesões automaticamente.
     Retorna JSON com a lista de resultados por arquivo (ok/error, mensagens e link quando criado).
     """
+    if not (request.user.is_superuser or request.user.is_staff or request.user.has_perm('adesao.add_adesao')):
+        return JsonResponse({'ok': False, 'error': 'Permissão negada para importar adesões.'}, status=403)
     files = request.FILES.getlist('pdfs') or request.FILES.getlist('pdf')
     criar = str(request.POST.get('criar', '0')).lower() in ('1', 'true', 'on', 'yes')
     if not files:
@@ -795,6 +799,7 @@ def importar_pdf_perdcomp_lote(request):
 
 # Páginas
 @login_required
+@ensure_csrf_cookie
 def importar_lote_page(request):
     # Permissão: staff/superuser ou permissão de adicionar adesão
     if not (request.user.is_superuser or request.user.is_staff or request.user.has_perm('adesao.add_adesao')):
