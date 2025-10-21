@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import Adesao
@@ -502,7 +502,7 @@ def importar_pdf_perdcomp(request):
                         'ok': True,
                         'created': True,
                         'id': ad.pk,
-                        'detail_url': reverse_lazy('adesao:detail', kwargs={'pk': ad.pk}),
+                        'detail_url': reverse('adesao:detail', kwargs={'pk': ad.pk}),
                     }
                 except Exception as e:
                     status_code = 400
@@ -535,7 +535,15 @@ def importar_pdf_perdcomp(request):
                         ],
                     }
                 }
+    except Exception as e:
+        status_code = 500
+        response_payload = {'ok': False, 'error': f'Erro ao processar PDF: {str(e)}'}
     finally:
+        # Attach result metadata for logging purposes
+        final_payload = response_payload or {'ok': False, 'error': 'Falha ao processar PDF.'}
+        log_data['result'] = final_payload
+        log_data['status_code'] = status_code
+        
         # Audit log simples por arquivo
         try:
             from django.conf import settings
@@ -544,9 +552,10 @@ def importar_pdf_perdcomp(request):
             os.makedirs(logs_dir, exist_ok=True)
             safe_name = os.path.basename(pdf_file.name).replace(' ', '_')
             log_path = os.path.join(logs_dir, f"import_{timezone.now().strftime('%Y%m%d_%H%M%S')}_{safe_name}.json")
+            import json
+            json_payload = json.dumps(log_data, ensure_ascii=False, indent=2)
             with open(log_path, 'w', encoding='utf-8') as f:
-                import json
-                json.dump(log_data, f, ensure_ascii=False, indent=2)
+                f.write(json_payload)
         except Exception:
             pass
         try:
@@ -555,16 +564,9 @@ def importar_pdf_perdcomp(request):
         except Exception:
             pass
 
-    # Attach result metadata for logging purposes
-    final_payload = response_payload or {'ok': False, 'error': 'Falha ao processar PDF.'}
-    log_data['result'] = final_payload
-    log_data['status_code'] = status_code
-
     return JsonResponse(final_payload, status=status_code)
 
 
-@login_required
-@require_POST
 @login_required
 @require_POST
 def importar_pdf_perdcomp_lote(request):
@@ -592,8 +594,9 @@ def importar_pdf_perdcomp_lote(request):
             safe_name = os.path.basename(base_filename).replace(' ', '_')
             path = os.path.join(logs_dir, f"batch_{ts}_{safe_name}.json")
             import json
+            json_payload = json.dumps(payload, ensure_ascii=False, indent=2)
             with open(path, 'w', encoding='utf-8') as f:
-                json.dump(payload, f, ensure_ascii=False, indent=2)
+                f.write(json_payload)
         except Exception:
             pass
 

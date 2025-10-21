@@ -22,9 +22,9 @@
             <div class="p-6">
                 {% if entries %}
                     <!-- Desktop Table View -->
-                    <div class="hidden md:block">
+                    <div class="hidden md:block overflow-x-auto">
                         <div class="rounded-md border">
-                            <table class="w-full text-sm">
+                            <table class="w-full min-w-max text-sm">
                                 <thead class="bg-muted">
                                     <tr class="border-b">
                                         <th class="text-left font-semibold text-muted-foreground px-4 py-3">Quando</th>
@@ -46,10 +46,17 @@
                                         <td class="px-4 py-3 text-card-foreground font-mono">{{ e.parsed.cnpj|default:"—" }}</td>
                                         <td class="px-4 py-3">
                                             {% if e.ok %}
-                                                <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
-                                                    <i class="bi bi-check-circle-fill"></i>
-                                                    OK{% if e.created %} (criado){% endif %}
-                                                </span>
+                                                {% if e.created == True %}
+                                                    <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
+                                                        <i class="bi bi-check-circle-fill"></i>
+                                                        Criado
+                                                    </span>
+                                                {% else %}
+                                                    <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">
+                                                        <i class="bi bi-eye"></i>
+                                                        Pré-visualizado
+                                                    </span>
+                                                {% endif %}
                                             {% else %}
                                                 <div class="flex flex-col gap-1">
                                                     <span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700 w-fit">
@@ -90,9 +97,15 @@
                                     </div>
                                 </div>
                                 {% if e.ok %}
-                                    <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700 flex-shrink-0">
-                                        <i class="bi bi-check-circle-fill"></i>
-                                    </span>
+                                    {% if e.created == True %}
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700 flex-shrink-0">
+                                            <i class="bi bi-check-circle-fill"></i>
+                                        </span>
+                                    {% else %}
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700 flex-shrink-0">
+                                            <i class="bi bi-eye"></i>
+                                        </span>
+                                    {% endif %}
                                 {% else %}
                                     <span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700 flex-shrink-0">
                                         <i class="bi bi-exclamation-circle-fill"></i>
@@ -115,7 +128,13 @@
                                 </div>
                                 <div>
                                     <span class="text-muted-foreground">Status:</span>
-                                    <p class="font-semibold text-card-foreground">{% if e.ok %}OK{% if e.created %} (criado){% endif %}{% else %}Erro{% endif %}</p>
+                                    <p class="font-semibold text-card-foreground">
+                                        {% if e.ok %}
+                                            {% if e.created == True %}Criado{% else %}Pré-visualizado{% endif %}
+                                        {% else %}
+                                            Erro
+                                        {% endif %}
+                                    </p>
                                 </div>
                             </div>
 
