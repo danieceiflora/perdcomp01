@@ -138,6 +138,16 @@
                                         {{ form.lanc_total_r }}
                                         {% if form.lanc_total_r.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_total_r.errors }}</div>{% endif %}
                                     </div>
+                                    <div id="lanc-group-data_credito" class="hidden">
+                                        <label for="{{ form.lanc_data_credito.id_for_label }}" class="block text-sm font-medium mb-1">Data do Crédito</label>
+                                        {{ form.lanc_data_credito }}
+                                        {% if form.lanc_data_credito.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_data_credito.errors }}</div>{% endif %}
+                                    </div>
+                                    <div id="lanc-group-valor_credito_em_conta" class="hidden">
+                                        <label for="{{ form.lanc_valor_credito_em_conta.id_for_label }}" class="block text-sm font-medium mb-1">Valor creditado em conta</label>
+                                        {{ form.lanc_valor_credito_em_conta }}
+                                        {% if form.lanc_valor_credito_em_conta.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_valor_credito_em_conta.errors }}</div>{% endif %}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -398,7 +408,8 @@
             'pedido de ressarcimento': ['lanc-group-debito_r','lanc-group-periodo_apuracao_r','lanc-group-total_r'],
             'pedido de restituição': ['lanc-group-total_credito_original_utilizado','lanc-group-debito','lanc-group-periodo_apuracao'],
             'pedido de restituiçao': ['lanc-group-total_credito_original_utilizado','lanc-group-debito','lanc-group-periodo_apuracao'],
-            'pedido de restituicao': ['lanc-group-total_credito_original_utilizado','lanc-group-debito','lanc-group-periodo_apuracao']
+            'pedido de restituicao': ['lanc-group-total_credito_original_utilizado','lanc-group-debito','lanc-group-periodo_apuracao'],
+            'credito em conta': ['lanc-group-data_credito','lanc-group-valor_credito_em_conta']
         };
         function norm(v){return (v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();}
         function hideAll(){document.querySelectorAll('[id^="lanc-group-"]').forEach(el=>el.classList.add('hidden'));}

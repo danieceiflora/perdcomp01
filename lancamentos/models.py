@@ -75,6 +75,20 @@ class Lancamentos(models.Model):
         blank=True
     )
 
+    data_credito = models.DateField(
+        verbose_name='Data do Crédito',
+        help_text='Data em que o crédito foi efetivado em conta',
+        null=True,
+        blank=True
+    )
+
+    valor_credito_em_conta = models.FloatField(
+        verbose_name='Valor do Crédito em Conta',
+        help_text='Valor creditado conforme notificação',
+        null=True,
+        blank=True
+    )
+
     # Campos de aprovação
     aprovado = models.BooleanField(
         default=False,

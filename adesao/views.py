@@ -16,13 +16,15 @@ from django.contrib.auth.decorators import login_required
 from .forms import AdesaoForm
 from django.views.decorators.http import require_POST
 import re
+from typing import Any
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.core.files.uploadedfile import UploadedFile
 from django.utils import timezone
-from utils.pdf_parser import parse_ressarcimento_text
+from utils.pdf_parser import parse_ressarcimento_text, parse_recibo_pedido_credito_text, parse_credito_em_conta_text
 from pdf import extract_text
 from clientes_parceiros.models import ClientesParceiros
 from .permissions import AdesaoPermissionMixin, AdesaoClienteViewOnlyMixin, AdminRequiredMixin
+from datetime import datetime
 
 # Adicionando imports do DRF
 from rest_framework.views import APIView
@@ -565,6 +567,261 @@ def importar_pdf_perdcomp(request):
             pass
 
     return JsonResponse(final_payload, status=status_code)
+
+
+@login_required
+@require_POST
+def importar_recibo_pedido_credito(request):
+    pdf_file: UploadedFile | None = request.FILES.get('pdf')
+    if not pdf_file:
+        return JsonResponse({'ok': False, 'error': 'Arquivo PDF não enviado (campo "pdf").'}, status=400)
+
+    import tempfile
+    import os
+    from django.conf import settings
+    status_code = 200
+    response_payload: dict[str, Any] | None = None
+    log_data: dict[str, Any] = {
+        'user': getattr(request.user, 'username', None),
+        'filename': pdf_file.name,
+        'ts': timezone.now().isoformat(),
+        'context': 'recibo_pedido_credito',
+    }
+
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp:
+            for chunk in pdf_file.chunks():
+                tmp.write(chunk)
+            tmp_path = tmp.name
+
+        txt = extract_text(tmp_path) or ''
+        parsed = parse_recibo_pedido_credito_text(txt)
+        log_data['parsed'] = parsed.as_dict()
+
+        numero_documento = (parsed.numero_documento or '').strip()
+        if not numero_documento:
+            status_code = 400
+            response_payload = {'ok': False, 'error': 'Número do Documento não identificado no PDF.'}
+        else:
+            try:
+                adesao = Adesao.objects.get(perdcomp=numero_documento)
+            except Adesao.DoesNotExist:
+                status_code = 404
+                response_payload = {'ok': False, 'error': f'Adesão com PERDCOMP {numero_documento} não encontrada.'}
+
+        if status_code == 200:
+            missing = []
+            numero_controle = (parsed.numero_controle or '').strip()
+            if not numero_controle:
+                missing.append('Número de Controle')
+            autenticacao_serpro = (parsed.autenticacao_serpro or '').strip()
+            if not autenticacao_serpro:
+                missing.append('Autenticação SERPRO')
+            if missing:
+                status_code = 400
+                response_payload = {'ok': False, 'error': f'Campo(s) não identificado(s) no PDF: {", ".join(missing)}.'}
+
+        if status_code == 200:
+            fields_to_update = []
+            if numero_controle:
+                adesao.numero_controle = numero_controle
+                fields_to_update.append('numero_controle')
+            if autenticacao_serpro:
+                adesao.chave_seguranca_serpro = autenticacao_serpro
+                fields_to_update.append('chave_seguranca_serpro')
+
+            adesao.status = 'protocolado'
+            fields_to_update.append('status')
+            adesao.save(update_fields=fields_to_update)
+
+            response_payload = {
+                'ok': True,
+                'id': adesao.pk,
+                'detail_url': reverse('adesao:detail', kwargs={'pk': adesao.pk}),
+                'numero_controle': adesao.numero_controle,
+                'chave_seguranca_serpro': adesao.chave_seguranca_serpro,
+                'status': adesao.get_status_display(),
+                'numero_documento': numero_documento,
+            }
+
+    except Exception as e:
+        status_code = 500
+        response_payload = {'ok': False, 'error': f'Erro ao processar PDF: {str(e)}'}
+    finally:
+        try:
+            log_data['status_code'] = status_code
+            log_data['result'] = response_payload
+            logs_dir = os.path.join(getattr(settings, 'MEDIA_ROOT', ''), 'import_logs')
+            os.makedirs(logs_dir, exist_ok=True)
+            safe_name = os.path.basename(pdf_file.name).replace(' ', '_')
+            log_path = os.path.join(
+                logs_dir,
+                f"recibo_{timezone.now().strftime('%Y%m%d_%H%M%S')}_{safe_name}.json"
+            )
+            import json
+            with open(log_path, 'w', encoding='utf-8') as fh:
+                fh.write(json.dumps(log_data, ensure_ascii=False, indent=2))
+        except Exception:
+            pass
+        try:
+            if 'tmp_path' in locals() and os.path.exists(tmp_path):
+                os.remove(tmp_path)
+        except Exception:
+            pass
+
+    return JsonResponse(response_payload or {'ok': False, 'error': 'Falha desconhecida.'}, status=status_code)
+
+
+@login_required
+@require_POST
+def importar_notificacao_credito_conta(request):
+    pdf_file: UploadedFile | None = request.FILES.get('pdf')
+    if not pdf_file:
+        return JsonResponse({'ok': False, 'error': 'Arquivo PDF não enviado (campo "pdf").'}, status=400)
+
+    import tempfile
+    import os
+    from django.conf import settings
+
+    status_code = 200
+    response_payload: dict[str, Any] | None = None
+    log_data: dict[str, Any] = {
+        'user': getattr(request.user, 'username', None),
+        'filename': pdf_file.name,
+        'ts': timezone.now().isoformat(),
+        'context': 'credito_em_conta',
+    }
+
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp:
+            for chunk in pdf_file.chunks():
+                tmp.write(chunk)
+            tmp_path = tmp.name
+
+        txt = extract_text(tmp_path) or ''
+        parsed = parse_credito_em_conta_text(txt)
+        log_data['parsed'] = parsed.as_dict()
+
+        perdcomp = (parsed.perdcomp or '').strip()
+        data_credito_str = (parsed.data_credito or '').strip()
+        valor_credito = parsed.valor_credito
+
+        if not perdcomp:
+            status_code = 400
+            response_payload = {'ok': False, 'error': 'PERDCOMP não identificado na notificação.'}
+        else:
+            try:
+                adesao = Adesao.objects.get(perdcomp=perdcomp)
+            except Adesao.DoesNotExist:
+                status_code = 404
+                response_payload = {'ok': False, 'error': f'Adesão com PERDCOMP {perdcomp} não encontrada.'}
+
+        if status_code == 200 and not data_credito_str:
+            status_code = 400
+            response_payload = {'ok': False, 'error': 'Data do crédito não identificada no PDF.'}
+
+        if status_code == 200 and valor_credito is None:
+            status_code = 400
+            response_payload = {'ok': False, 'error': 'Valor creditado não identificado no PDF.'}
+
+        if status_code == 200:
+            try:
+                data_credito = datetime.strptime(data_credito_str, '%d/%m/%Y').date()
+            except ValueError:
+                status_code = 400
+                response_payload = {'ok': False, 'error': f'Data do crédito inválida: {data_credito_str}'}
+            else:
+                try:
+                    valor_float = float(valor_credito)
+                except (TypeError, ValueError):
+                    status_code = 400
+                    response_payload = {'ok': False, 'error': 'Valor creditado inválido.'}
+                else:
+                    if valor_float <= 0:
+                        status_code = 400
+                        response_payload = {'ok': False, 'error': 'Valor creditado deve ser maior que zero.'}
+
+        if status_code == 200:
+            exists = Lancamentos.objects.filter(
+                id_adesao=adesao,
+                metodo='Crédito em conta',
+                data_credito=data_credito,
+                valor_credito_em_conta=valor_float
+            ).exists()
+            if exists:
+                status_code = 409
+                response_payload = {'ok': False, 'error': 'Notificação já importada anteriormente para esta adesão.'}
+
+        if status_code == 200:
+            credit_datetime = datetime.combine(data_credito, datetime.min.time().replace(hour=12, minute=0))
+            if timezone.is_naive(credit_datetime):
+                credit_datetime = timezone.make_aware(credit_datetime, timezone.get_current_timezone())
+
+            lancamento = Lancamentos.objects.create(
+                id_adesao=adesao,
+                data_lancamento=credit_datetime,
+                valor=valor_float,
+                sinal='+',
+                tipo='Gerado',
+                descricao='Crédito em conta importado automaticamente.',
+                metodo='Crédito em conta',
+                data_credito=data_credito,
+                valor_credito_em_conta=valor_float,
+                aprovado=True,
+                observacao_aprovacao='Importação automática via notificação de crédito em conta.'
+            )
+
+            adesao.refresh_from_db(fields=['saldo_atual'])
+
+            fields_to_update: list[str] = []
+            if adesao.data_credito_em_conta != data_credito:
+                adesao.data_credito_em_conta = data_credito
+                fields_to_update.append('data_credito_em_conta')
+            if adesao.valor_credito_em_conta != valor_float:
+                adesao.valor_credito_em_conta = valor_float
+                fields_to_update.append('valor_credito_em_conta')
+            if adesao.status != 'protocolado':
+                adesao.status = 'protocolado'
+                fields_to_update.append('status')
+            if fields_to_update:
+                adesao.save(update_fields=fields_to_update)
+
+            response_payload = {
+                'ok': True,
+                'perdcomp': adesao.perdcomp,
+                'lancamento_id': lancamento.pk,
+                'lancamento_detail_url': reverse('lancamentos:detail', kwargs={'pk': lancamento.pk}),
+                'saldo_atual': adesao.saldo_atual,
+                'valor_creditado': valor_float,
+                'data_credito': data_credito.strftime('%d/%m/%Y'),
+            }
+
+    except Exception as e:
+        status_code = 500
+        response_payload = {'ok': False, 'error': f'Erro ao processar PDF: {str(e)}'}
+    finally:
+        try:
+            log_data['status_code'] = status_code
+            log_data['result'] = response_payload
+            logs_dir = os.path.join(getattr(settings, 'MEDIA_ROOT', ''), 'import_logs')
+            os.makedirs(logs_dir, exist_ok=True)
+            safe_name = os.path.basename(pdf_file.name).replace(' ', '_')
+            log_path = os.path.join(
+                logs_dir,
+                f"credito_conta_{timezone.now().strftime('%Y%m%d_%H%M%S')}_{safe_name}.json"
+            )
+            import json
+            with open(log_path, 'w', encoding='utf-8') as fh:
+                fh.write(json.dumps(log_data, ensure_ascii=False, indent=2))
+        except Exception:
+            pass
+        try:
+            if 'tmp_path' in locals() and os.path.exists(tmp_path):
+                os.remove(tmp_path)
+        except Exception:
+            pass
+
+    return JsonResponse(response_payload or {'ok': False, 'error': 'Falha desconhecida.'}, status=status_code)
 
 
 @login_required

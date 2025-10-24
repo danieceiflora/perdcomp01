@@ -18,6 +18,12 @@ class Adesao(models.Model):
         ('Compensação vinculada a um pedido de ressarcimento', 'Compensação vinculada a um pedido de ressarcimento'),
         ('Compensação vinculada a um pedido de restituição', 'Compensação vinculada a um pedido de restituição'),
         ('Escritural', 'Escritural'),
+        ('Crédito em conta', 'Crédito em conta'),
+    ]
+
+    status_options = [
+        ('solicitado', 'Solicitado'),
+        ('protocolado', 'Protocolado'),
     ]
 
     metodo_credito = models.CharField(
@@ -36,6 +42,27 @@ class Adesao(models.Model):
     perdcomp = models.CharField(
         max_length=30,
         verbose_name='PERDCOMP'
+    )
+
+    numero_controle = models.CharField(
+        max_length=120,
+        verbose_name='Número de Controle',
+        blank=True,
+        null=True,
+    )
+
+    chave_seguranca_serpro = models.CharField(
+        max_length=200,
+        verbose_name='Chave de Segurança SERPRO',
+        blank=True,
+        null=True,
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=status_options,
+        verbose_name='Status',
+        default='solicitado'
     )
 
     saldo = models.FloatField(
@@ -146,6 +173,20 @@ class Adesao(models.Model):
     valor_total_corrigido = models.FloatField(
         verbose_name='Valor Total Corrigido',
         help_text='Valor principal + correção monetária - apenas informativo',
+        blank=True,
+        null=True
+    )
+
+    data_credito_em_conta = models.DateField(
+        verbose_name='Data do Crédito em Conta',
+        help_text='Data comunicada na notificação de crédito em conta',
+        blank=True,
+        null=True
+    )
+
+    valor_credito_em_conta = models.FloatField(
+        verbose_name='Valor do Crédito em Conta',
+        help_text='Valor creditado informado na notificação',
         blank=True,
         null=True
     )

@@ -10,6 +10,7 @@ class LancamentosForm(forms.ModelForm):
             ('', 'Selecione o método...'),
             ('Pedido de ressarcimento', 'Pedido de ressarcimento'),
             ('Pedido de restituição', 'Pedido de restituição'),
+            ('Crédito em conta', 'Crédito em conta'),
         ],
         widget=forms.Select(attrs={'class': 'input w-full'})
     )
@@ -17,6 +18,17 @@ class LancamentosForm(forms.ModelForm):
     lanc_total_credito_original_utilizado = forms.DecimalField(
         required=False, 
         max_digits=15, 
+        decimal_places=2,
+        widget=forms.NumberInput(attrs={'class': 'input w-full', 'step': '0.01', 'placeholder': '0,00'})
+    )
+    lanc_data_credito = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'class': 'input w-full', 'type': 'date'}),
+        input_formats=['%Y-%m-%d', '%d/%m/%Y']
+    )
+    lanc_valor_credito_em_conta = forms.DecimalField(
+        required=False,
+        max_digits=15,
         decimal_places=2,
         widget=forms.NumberInput(attrs={'class': 'input w-full', 'step': '0.01', 'placeholder': '0,00'})
     )
@@ -83,6 +95,10 @@ class LancamentosForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if self.instance.pk and self.instance.data_lancamento:
             self.initial['data_lancamento'] = self.instance.data_lancamento.strftime('%Y-%m-%d')
+        if self.instance.pk and self.instance.data_credito:
+            self.initial['lanc_data_credito'] = self.instance.data_credito
+        if self.instance.pk and self.instance.valor_credito_em_conta is not None:
+            self.initial['lanc_valor_credito_em_conta'] = self.instance.valor_credito_em_conta
         # Definir valor padrão para evitar validação de campo obrigatório
         if not self.instance.pk:
             self.initial['valor'] = 0
@@ -92,8 +108,10 @@ class LancamentosForm(forms.ModelForm):
         fields = ['id_adesao', 'metodo_escolhido', 'data_lancamento', 'valor', 'tipo', 'descricao', 'codigo_guia',
                   'lanc_total_credito_original_utilizado', 'lanc_debito', 'lanc_periodo_apuracao',
                   'lanc_debito_r', 'lanc_periodo_apuracao_r', 'lanc_total_r',
+                  'lanc_data_credito', 'lanc_valor_credito_em_conta',
                   'metodo', 'total', 'total_credito_original_utilizado', 'periodo_apuracao',
                   'periodo_apuracao_r', 'debito', 'debito_r',
+                  'data_credito', 'valor_credito_em_conta',
                   'aprovado', 'data_aprovacao', 'observacao_aprovacao']
         widgets = {
             'id_adesao': forms.Select(attrs={'class': 'input w-full'}),
@@ -105,6 +123,8 @@ class LancamentosForm(forms.ModelForm):
             'aprovado': forms.Select(choices=[(True, 'Sim'), (False, 'Não')], attrs={'class': 'input w-full'}),
             'data_aprovacao': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'input w-full'}),
             'observacao_aprovacao': forms.Textarea(attrs={'class': 'input w-full', 'rows': 3}),
+            'data_credito': forms.HiddenInput(),
+            'valor_credito_em_conta': forms.HiddenInput(),
         }
 
     def add_error_classes(self):
@@ -125,6 +145,10 @@ class LancamentosForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if self.instance.pk and self.instance.data_lancamento:
             self.initial['data_lancamento'] = self.instance.data_lancamento.strftime('%Y-%m-%d')
+        if self.instance.pk and self.instance.data_credito:
+            self.initial['lanc_data_credito'] = self.instance.data_credito
+        if self.instance.pk and self.instance.valor_credito_em_conta is not None:
+            self.initial['lanc_valor_credito_em_conta'] = self.instance.valor_credito_em_conta
         if not self.instance.pk:
             self.initial['valor'] = 0
         # Apply error classes after validation data present
@@ -139,6 +163,8 @@ class LancamentosForm(forms.ModelForm):
         
         # Reset valor/sinal para recalcular
         cleaned['valor'] = None
+        cleaned['data_credito'] = None
+        cleaned['valor_credito_em_conta'] = None
         
         # Restituição: débito usando total_credito_original_utilizado
         if 'restitu' in metodo:
@@ -165,6 +191,23 @@ class LancamentosForm(forms.ModelForm):
                 cleaned['total'] = float(total_r)
                 cleaned['debito_r'] = cleaned.get('lanc_debito_r') or 0
                 cleaned['periodo_apuracao_r'] = cleaned.get('lanc_periodo_apuracao_r') or ''
+
+        elif 'credito' in metodo and 'conta' in metodo:
+            data_credito = cleaned.get('lanc_data_credito')
+            valor_credito = cleaned.get('lanc_valor_credito_em_conta')
+            if not data_credito:
+                self.add_error('lanc_data_credito', 'Informe a data do crédito.')
+            else:
+                cleaned['data_credito'] = data_credito
+            if valor_credito in (None, ''):
+                self.add_error('lanc_valor_credito_em_conta', 'Informe o valor creditado.')
+            else:
+                try:
+                    cleaned['valor'] = float(valor_credito)
+                    cleaned['valor_credito_em_conta'] = float(valor_credito)
+                    cleaned['sinal'] = '+'
+                except (TypeError, ValueError):
+                    self.add_error('lanc_valor_credito_em_conta', 'Valor inválido informado.')
         
         if cleaned.get('valor') in (None, 0):
             self.add_error('valor', 'Valor inválido ou ausente.')

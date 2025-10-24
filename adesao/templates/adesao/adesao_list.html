@@ -6,6 +6,104 @@
 
 {% block content %}
 <div class="container mx-auto px-4 py-6">
+    {% if user.is_staff or user.is_superuser %}
+    <div class="bg-card border rounded-lg shadow-sm mb-6">
+        <div class="p-6">
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                        <h2 class="text-xl font-semibold text-card-foreground">Importar documentos PERDCOMP</h2>
+                        <p class="text-sm text-muted-foreground">Escolha o tipo de importação e carregue recibos de crédito ou notificações de crédito em conta referentes a PERDCOMPs já cadastrados.</p>
+                    </div>
+                    <button type="button" id="importToggleButton" aria-controls="importDropZoneContainer" aria-expanded="false"
+                            class="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-card-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                        <i class="bi bi-chevron-down mr-2" aria-hidden="true"></i>
+                        Expandir área
+                    </button>
+                </div>
+                <div id="importDropZoneContainer" class="transition-all duration-200 hidden" aria-hidden="true">
+                    <div class="flex flex-col gap-4">
+                        <div class="grid gap-3 sm:grid-cols-[280px_1fr]">
+                            <label class="flex flex-col gap-2 text-sm font-medium text-card-foreground">
+                                Tipo de importação
+                                <select id="importTypeSelect" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                                    <option value="" selected>Selecione...</option>
+                                    <option value="recibo">Recibo de pedido de crédito</option>
+                                    <option value="credito">Notificação de crédito em conta</option>
+                                </select>
+                            </label>
+                            <div id="importTypeDescription" class="text-sm text-muted-foreground self-center">
+                                Selecione um tipo para visualizar as instruções específicas.
+                            </div>
+                        </div>
+                        <div id="importDropZone" role="button" tabindex="0"
+                             data-recibo-url="{% url 'adesao:importar_recibo' %}"
+                             data-credito-url="{% url 'adesao:importar_credito_conta' %}"
+                             class="relative flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-border bg-muted/30 p-5 text-center transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                            <input type="file" id="importFileInput" accept="application/pdf" class="hidden" multiple />
+                            <i class="bi bi-cloud-arrow-up text-3xl text-muted-foreground"></i>
+                            <p id="importDropZoneText" class="text-sm text-muted-foreground max-w-lg">
+                                Selecione o tipo de importação para começar.
+                            </p>
+                            <button type="button" id="importBrowseButton"
+                                    class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-card-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                                Selecionar PDFs
+                            </button>
+                            <span id="importDropZoneHint" class="text-xs text-muted-foreground text-center">Importe arquivos PDF relacionados ao PERDCOMP selecionado.</span>
+                            <div id="importDropZoneOverlay" class="pointer-events-none absolute inset-0 hidden items-center justify-center rounded-lg bg-background/80 backdrop-blur-sm">
+                                <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <span class="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
+                                    <span id="importDropZoneOverlayText">Processando arquivos...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div id="processing-overlay" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="processingOverlayTitle">
+        <div class="flex w-full max-w-md flex-col rounded-lg border border-border bg-card text-card-foreground shadow-2xl p-6 sm:p-8" tabindex="-1">
+            <div class="mb-6 text-center">
+                    <h3 id="processingOverlayTitle" class="text-xl font-semibold mb-2">Processando arquivos</h3>
+                <p class="text-sm text-muted-foreground">Aguarde enquanto processamos os arquivos selecionados.</p>
+            </div>
+            <div class="flex justify-center mb-6">
+                <div class="relative">
+                    <div class="h-16 w-16 rounded-full border-4 border-primary/20"></div>
+                    <div class="absolute inset-0 h-16 w-16 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+                    <div class="absolute inset-0 flex items-center justify-center text-primary">
+                        <i class="bi bi-file-earmark-pdf text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-4">
+                <div class="mb-2 flex items-center justify-between text-sm text-muted-foreground">
+                    <span id="overlay-progress-text">0 de 0 processados</span>
+                    <span id="overlay-progress-percentage">0%</span>
+                </div>
+                <div class="h-3 w-full rounded-full bg-muted/60">
+                    <div id="overlay-progress-bar" class="relative h-3 w-0 rounded-full bg-primary transition-all duration-300"></div>
+                </div>
+            </div>
+            <div class="mb-4 rounded-lg bg-muted/40 px-4 py-3 text-center">
+                <p class="text-xs text-muted-foreground">Processando:</p>
+                <p id="overlay-current-file" class="truncate text-sm font-medium">—</p>
+            </div>
+            <div id="overlay-success-message" class="hidden rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 dark:border-green-500/40 dark:bg-green-500/15 dark:text-green-300">
+                <div class="overlay-success-content flex items-center justify-center gap-2">
+                    <i class="overlay-success-icon bi bi-check-circle-fill"></i>
+                    <span id="overlay-success-text" class="font-medium">Processamento concluído!</span>
+                </div>
+            </div>
+            <button id="overlay-close-btn" type="button" class="mt-6 hidden inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                <i class="bi bi-check-lg mr-2"></i>OK, Fechar
+            </button>
+        </div>
+    </div>
+
     <!-- Header Card -->
     <div class="bg-card border rounded-lg shadow-sm mb-6">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-6 border-b">
@@ -83,6 +181,9 @@
                                     <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Perdcomp</th>
                                     <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Cliente</th>
                                     <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Tipo de Crédito</th>
+                                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Número Controle</th>
+                                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Status</th>
+                                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground hidden xl:table-cell">Chave SERPRO</th>
                                     <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Data de Início</th>
                                     <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Saldo Inicial</th>
                                     <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Saldo Restante</th>
@@ -96,6 +197,23 @@
                                     <td class="p-4 align-middle font-medium">{{ adesao.perdcomp }}</td>
                                     <td class="p-4 align-middle">{{ adesao.cliente.id_company_vinculada.nome_fantasia|default:adesao.cliente.id_company_vinculada.razao_social }}</td>
                                     <td class="p-4 align-middle">{{ adesao.metodo_credito|default:"—" }}</td>
+                                    <td class="p-4 align-middle">{{ adesao.numero_controle|default:"—" }}</td>
+                                    <td class="p-4 align-middle">
+                                        {% if adesao.status %}
+                                            <span class="inline-flex items-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-0.5 text-xs font-medium">
+                                                {{ adesao.get_status_display }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted-foreground">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="p-4 align-middle hidden xl:table-cell">
+                                        {% if adesao.chave_seguranca_serpro %}
+                                            <span class="font-mono text-sm break-all" title="{{ adesao.chave_seguranca_serpro }}">{{ adesao.chave_seguranca_serpro|truncatechars:28 }}</span>
+                                        {% else %}
+                                            <span class="text-muted-foreground">—</span>
+                                        {% endif %}
+                                    </td>
                                     <td class="p-4 align-middle">{{ adesao.data_inicio|date:"d/m/Y" }}</td>
                                     <td class="p-4 align-middle font-semibold {% if adesao.saldo > 0 %}text-muted-foreground{% elif adesao.saldo < 0 %}text-destructive{% endif %}">
                                         {{ adesao.saldo|br_currency }}
@@ -148,6 +266,22 @@
                             <div>
                                 <span class="text-sm font-medium text-muted-foreground">Tipo de Crédito:</span>
                                 <div class="font-medium">{{ adesao.metodo_credito|default:"—" }}</div>
+                            </div>
+                            <div>
+                                <span class="text-sm font-medium text-muted-foreground">Número Controle:</span>
+                                <div class="font-medium">{{ adesao.numero_controle|default:"—" }}</div>
+                            </div>
+                            <div>
+                                <span class="text-sm font-medium text-muted-foreground">Status:</span>
+                                {% if adesao.status %}
+                                    <span class="inline-flex items-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-xs font-medium">{{ adesao.get_status_display }}</span>
+                                {% else %}
+                                    <div class="font-medium text-muted-foreground">—</div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <span class="text-sm font-medium text-muted-foreground">Chave SERPRO:</span>
+                                <div class="font-medium break-all text-xs">{{ adesao.chave_seguranca_serpro|default:"—" }}</div>
                             </div>
                             <div>
                                 <span class="text-sm font-medium text-muted-foreground">Data de Início:</span>
@@ -263,6 +397,506 @@
 </div>
 
 <script>
+function getCookie(name) {
+    const cookies = document.cookie ? document.cookie.split('; ') : [];
+    for (let i = 0; i < cookies.length; i++) {
+        const parts = cookies[i].split('=');
+        const cookieName = decodeURIComponent(parts[0]);
+        if (cookieName === name) {
+            parts.shift();
+            return decodeURIComponent(parts.join('='));
+        }
+    }
+    return null;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const overlayEls = {
+        root: document.getElementById('processing-overlay'),
+        progressBar: document.getElementById('overlay-progress-bar'),
+        progressText: document.getElementById('overlay-progress-text'),
+        progressPercentage: document.getElementById('overlay-progress-percentage'),
+        currentFile: document.getElementById('overlay-current-file'),
+        closeBtn: document.getElementById('overlay-close-btn'),
+        successMessage: document.getElementById('overlay-success-message'),
+        successText: document.getElementById('overlay-success-text'),
+        title: document.getElementById('processingOverlayTitle'),
+    };
+
+    const overlayState = { activeConfig: null };
+
+    const defaultSummaryFormatter = ({ total, success, errors, config }) => {
+        const singular = config.labelSingular || 'arquivo';
+        const plural = config.labelPlural || 'arquivos';
+        const successSingular = config.successLabelSingular || 'processado';
+        const successPlural = config.successLabelPlural || 'processados';
+        const totalLabel = total === 1 ? singular : plural;
+        const successLabel = success === 1 ? successSingular : successPlural;
+        let text = `${total} ${totalLabel} recebido${total === 1 ? '' : 's'}. ${success} ${successLabel}.`;
+        if (errors > 0) {
+            text += ` ${errors} erro${errors === 1 ? '' : 's'}.`;
+        }
+        return text.trim();
+    };
+
+    function resetOverlaySuccessStyles() {
+        if (!overlayEls.successMessage) return;
+        overlayEls.successMessage.classList.remove('border-red-200', 'bg-red-50', 'dark:border-red-500/40', 'dark:bg-red-500/15');
+        overlayEls.successMessage.classList.add('border-green-200', 'bg-green-50', 'dark:border-green-500/40', 'dark:bg-green-500/15');
+        const successContent = overlayEls.successMessage.querySelector('.overlay-success-content');
+        if (successContent) {
+            successContent.classList.remove('text-red-700', 'dark:text-red-300');
+            successContent.classList.add('text-green-700', 'dark:text-green-300');
+        }
+        const successIcon = overlayEls.successMessage.querySelector('.overlay-success-icon');
+        if (successIcon) {
+            successIcon.classList.remove('bi-x-circle-fill');
+            successIcon.classList.add('bi-check-circle-fill');
+        }
+    }
+
+    function resetProcessingOverlay() {
+        if (overlayEls.progressBar) overlayEls.progressBar.style.width = '0%';
+        if (overlayEls.progressText) overlayEls.progressText.textContent = '0 de 0 processados';
+        if (overlayEls.progressPercentage) overlayEls.progressPercentage.textContent = '0%';
+        if (overlayEls.currentFile) overlayEls.currentFile.textContent = '—';
+        if (overlayEls.successMessage) overlayEls.successMessage.classList.add('hidden');
+        if (overlayEls.closeBtn) overlayEls.closeBtn.classList.add('hidden');
+        resetOverlaySuccessStyles();
+    }
+
+    function updateOverlayProgress(current, total, currentFileName) {
+        const safeTotal = Math.max(total || 0, 0);
+        const safeCurrent = Math.min(Math.max(current || 0, 0), safeTotal);
+        const percentage = safeTotal > 0 ? Math.round((safeCurrent / safeTotal) * 100) : 0;
+        if (overlayEls.progressBar) overlayEls.progressBar.style.width = `${percentage}%`;
+        if (overlayEls.progressText) overlayEls.progressText.textContent = `${safeCurrent} de ${safeTotal} processados`;
+        if (overlayEls.progressPercentage) overlayEls.progressPercentage.textContent = `${percentage}%`;
+        if (overlayEls.currentFile) {
+            if (currentFileName) {
+                overlayEls.currentFile.textContent = currentFileName;
+            } else if (safeTotal > 0 && safeCurrent === safeTotal) {
+                overlayEls.currentFile.textContent = 'Concluído!';
+            }
+        }
+    }
+
+    function setProcessingOverlayTitle(title) {
+        if (overlayEls.title) {
+            overlayEls.title.textContent = title || 'Processando arquivos';
+        }
+    }
+
+    function showProcessingOverlay(total, config) {
+        if (!overlayEls.root) return;
+        overlayState.activeConfig = config;
+        setProcessingOverlayTitle((config && config.overlayTitle) || 'Processando arquivos');
+        resetProcessingOverlay();
+        overlayEls.root.classList.remove('hidden');
+        overlayEls.root.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        updateOverlayProgress(0, total || 0);
+    }
+
+    function showOverlaySummary(items, config, options = {}) {
+        if (!overlayEls.root) return;
+        const safeItems = Array.isArray(items) ? items : [];
+        const totalItems = safeItems.length;
+        const successCount = safeItems.filter((item) => item && item.ok).length;
+        const errorCount = totalItems - successCount;
+        const customMessage = options.customMessage;
+
+        if (overlayEls.successMessage) {
+            resetOverlaySuccessStyles();
+            if (errorCount > 0 || customMessage) {
+                overlayEls.successMessage.classList.remove('border-green-200', 'bg-green-50', 'dark:border-green-500/40', 'dark:bg-green-500/15');
+                overlayEls.successMessage.classList.add('border-red-200', 'bg-red-50', 'dark:border-red-500/40', 'dark:bg-red-500/15');
+                const successContent = overlayEls.successMessage.querySelector('.overlay-success-content');
+                if (successContent) {
+                    successContent.classList.remove('text-green-700', 'dark:text-green-300');
+                    successContent.classList.add('text-red-700', 'dark:text-red-300');
+                }
+                const successIcon = overlayEls.successMessage.querySelector('.overlay-success-icon');
+                if (successIcon) {
+                    successIcon.classList.remove('bi-check-circle-fill');
+                    successIcon.classList.add('bi-x-circle-fill');
+                }
+            }
+            if (overlayEls.successText) {
+                const formatter = (config && config.summaryFormatter) || defaultSummaryFormatter;
+                const summaryText = customMessage || formatter({ total: totalItems, success: successCount, errors: errorCount, config, items: safeItems });
+                overlayEls.successText.textContent = summaryText;
+            }
+            overlayEls.successMessage.classList.remove('hidden');
+        }
+
+        if (overlayEls.currentFile) overlayEls.currentFile.textContent = 'Concluído!';
+        if (overlayEls.closeBtn) {
+            overlayEls.closeBtn.classList.remove('hidden');
+            overlayEls.closeBtn.focus();
+        }
+    }
+
+    function closeProcessingOverlay() {
+        if (overlayEls.root) {
+            overlayEls.root.classList.add('hidden');
+            overlayEls.root.setAttribute('aria-hidden', 'true');
+        }
+        document.body.style.overflow = '';
+        const activeConfig = overlayState.activeConfig;
+        overlayState.activeConfig = null;
+        if (!activeConfig || activeConfig.reloadOnClose !== false) {
+            location.reload();
+        }
+    }
+
+    if (overlayEls.closeBtn) {
+        overlayEls.closeBtn.addEventListener('click', closeProcessingOverlay);
+    }
+    if (overlayEls.root) {
+        overlayEls.root.addEventListener('click', (event) => {
+            if (event.target === overlayEls.root && overlayEls.closeBtn && !overlayEls.closeBtn.classList.contains('hidden')) {
+                closeProcessingOverlay();
+            }
+        });
+    }
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && overlayEls.root && !overlayEls.root.classList.contains('hidden') && overlayEls.closeBtn && !overlayEls.closeBtn.classList.contains('hidden')) {
+            closeProcessingOverlay();
+        }
+    });
+
+    const importConfig = {
+        rootId: 'importDropZone',
+        containerId: 'importDropZoneContainer',
+        toggleId: 'importToggleButton',
+        fileInputId: 'importFileInput',
+        browseButtonId: 'importBrowseButton',
+        dropZoneTextId: 'importDropZoneText',
+        dropZoneHintId: 'importDropZoneHint',
+        overlayId: 'importDropZoneOverlay',
+        overlayTextId: 'importDropZoneOverlayText',
+        typeSelectorId: 'importTypeSelect',
+        typeDescriptionId: 'importTypeDescription',
+        importTypes: {
+            recibo: {
+                uploadUrlAttr: 'data-recibo-url',
+                overlayTitle: 'Processando recibos',
+                labelSingular: 'recibo',
+                labelPlural: 'recibos',
+                successLabelSingular: 'importado',
+                successLabelPlural: 'importados',
+                processingMessageBuilder: ({ index, total }) => `Processando recibo ${index} de ${total}...`,
+                successMessageBuilder: ({ data, file }) => {
+                    const label = data && (data.numero_documento || data.perdcomp)
+                        ? (data.numero_documento || data.perdcomp)
+                        : file.name;
+                    return `Recibo do PERDCOMP ${label} importado com sucesso.`;
+                },
+                description: 'Importe o recibo de pedido de crédito recebido ao protocolar o PERDCOMP. O arquivo atualizará número de controle, chave SERPRO e status.',
+                hint: 'Você pode importar vários recibos; cada arquivo deve corresponder a um PERDCOMP existente.',
+            },
+            credito: {
+                uploadUrlAttr: 'data-credito-url',
+                overlayTitle: 'Processando notificações',
+                labelSingular: 'notificação',
+                labelPlural: 'notificações',
+                successLabelSingular: 'importada',
+                successLabelPlural: 'importadas',
+                processingMessageBuilder: ({ index, total }) => `Processando notificação ${index} de ${total}...`,
+                successMessageBuilder: ({ data, file }) => {
+                    const label = data && data.perdcomp ? data.perdcomp : file.name;
+                    return `Notificação de crédito do PERDCOMP ${label} importada com sucesso.`;
+                },
+                description: 'Importe a notificação de crédito em conta emitida pela Receita Federal para registrar automaticamente o lançamento aprovado.',
+                hint: 'Cada notificação deve corresponder a um PERDCOMP já cadastrado e resultará em um crédito aprovado.',
+            },
+        },
+    };
+
+    initDynamicDropZone(importConfig);
+
+    function initDynamicDropZone(config) {
+        const dropZone = document.getElementById(config.rootId);
+        if (!dropZone) return;
+
+        const container = config.containerId ? document.getElementById(config.containerId) : null;
+        const toggleButton = config.toggleId ? document.getElementById(config.toggleId) : null;
+        const fileInput = config.fileInputId ? document.getElementById(config.fileInputId) : dropZone.querySelector('input[type="file"]');
+        const browseButton = config.browseButtonId ? document.getElementById(config.browseButtonId) : null;
+        const dropZoneText = config.dropZoneTextId ? document.getElementById(config.dropZoneTextId) : null;
+        const dropZoneHint = config.dropZoneHintId ? document.getElementById(config.dropZoneHintId) : null;
+        const zoneOverlay = config.overlayId ? document.getElementById(config.overlayId) : null;
+        const zoneOverlayText = config.overlayTextId ? document.getElementById(config.overlayTextId) : null;
+        const typeSelector = config.typeSelectorId ? document.getElementById(config.typeSelectorId) : null;
+        const typeDescription = config.typeDescriptionId ? document.getElementById(config.typeDescriptionId) : null;
+
+        const defaultText = dropZoneText ? dropZoneText.textContent.trim() : '';
+        const overlayDefaultText = zoneOverlayText ? zoneOverlayText.textContent.trim() : '';
+        let currentTypeKey = typeSelector ? typeSelector.value : '';
+
+        const syncTypeDescription = () => {
+            const typeConfig = config.importTypes[currentTypeKey];
+            if (typeDescription) {
+                typeDescription.textContent = typeConfig ? typeConfig.description : 'Selecione um tipo para visualizar as instruções específicas.';
+            }
+            if (dropZoneHint) {
+                dropZoneHint.textContent = typeConfig ? typeConfig.hint : 'Importe arquivos PDF relacionados ao PERDCOMP selecionado.';
+            }
+            if (dropZoneText) {
+                dropZoneText.textContent = typeConfig
+                    ? `Arraste e solte ${typeConfig.labelPlural} em PDF aqui ou utilize o botão para selecioná-los.`
+                    : 'Selecione o tipo de importação para começar.';
+            }
+        };
+
+        const setDropZoneExpanded = (expanded) => {
+            if (!container || !toggleButton) return;
+            if (expanded) {
+                container.classList.remove('hidden');
+                toggleButton.setAttribute('aria-expanded', 'true');
+                container.setAttribute('aria-hidden', 'false');
+                toggleButton.innerHTML = '<i class="bi bi-chevron-up mr-2" aria-hidden="true"></i>Recolher área';
+            } else {
+                container.classList.add('hidden');
+                toggleButton.setAttribute('aria-expanded', 'false');
+                container.setAttribute('aria-hidden', 'true');
+                toggleButton.innerHTML = '<i class="bi bi-chevron-down mr-2" aria-hidden="true"></i>Expandir área';
+            }
+        };
+
+        const ensureDropZoneVisible = () => {
+            if (container && container.classList.contains('hidden')) {
+                setDropZoneExpanded(true);
+            }
+        };
+
+        if (toggleButton) {
+            toggleButton.addEventListener('click', () => {
+                if (!container) return;
+                const isExpanded = !container.classList.contains('hidden');
+                setDropZoneExpanded(!isExpanded);
+            });
+        }
+
+        if (typeSelector) {
+            typeSelector.addEventListener('change', () => {
+                currentTypeKey = typeSelector.value;
+                syncTypeDescription();
+                overlayState.activeConfig = null; // reset overlay config when type changes
+            });
+            syncTypeDescription();
+        }
+
+        const toggleUploading = (isUploading, message) => {
+            if (isUploading) {
+                ensureDropZoneVisible();
+                dropZone.classList.add('border-primary', 'bg-muted/40');
+                if (zoneOverlay) zoneOverlay.classList.remove('hidden');
+                if (zoneOverlayText) zoneOverlayText.textContent = message || overlayDefaultText;
+                if (dropZoneText && message) dropZoneText.textContent = message;
+                if (browseButton) browseButton.disabled = true;
+                dropZone.setAttribute('aria-busy', 'true');
+            } else {
+                dropZone.classList.remove('border-primary', 'bg-muted/40');
+                if (zoneOverlay) zoneOverlay.classList.add('hidden');
+                if (zoneOverlayText) zoneOverlayText.textContent = overlayDefaultText;
+                if (dropZoneText) syncTypeDescription();
+                if (browseButton) browseButton.disabled = false;
+                dropZone.removeAttribute('aria-busy');
+            }
+        };
+
+        const resolveTypeConfig = () => {
+            const typeConfig = config.importTypes[currentTypeKey];
+            if (!typeConfig) return null;
+            const uploadUrl = dropZone.getAttribute(typeConfig.uploadUrlAttr);
+            if (!uploadUrl) return null;
+            return { ...typeConfig, uploadUrl };
+        };
+
+        const uploadFile = async (file, typeConfig) => {
+            try {
+                const formData = new FormData();
+                formData.append('pdf', file, file.name);
+                const csrfToken = getCookie('csrftoken');
+                const headers = csrfToken ? { 'X-CSRFToken': csrfToken } : {};
+                const response = await fetch(typeConfig.uploadUrl, {
+                    method: 'POST',
+                    headers,
+                    body: formData,
+                });
+                const data = await response.json().catch(() => null);
+                if (!response.ok || !data) {
+                    return {
+                        ok: false,
+                        message: `${file.name}: Falha ao importar arquivo.`,
+                    };
+                }
+                if (!data.ok) {
+                    const errorMsg = data.error || 'Não foi possível concluir a importação.';
+                    return {
+                        ok: false,
+                        message: `${file.name}: ${errorMsg}`,
+                    };
+                }
+                const successBuilder = typeConfig.successMessageBuilder;
+                const message = successBuilder ? successBuilder({ data, file }) : `Arquivo ${file.name} importado com sucesso.`;
+                return {
+                    ok: true,
+                    message,
+                    payload: data,
+                };
+            } catch (error) {
+                return {
+                    ok: false,
+                    message: `${file.name}: ${error && error.message ? error.message : 'Erro desconhecido.'}`,
+                };
+            }
+        };
+
+        const handleFiles = async (fileList) => {
+            if (!fileList || !fileList.length) {
+                return;
+            }
+
+            ensureDropZoneVisible();
+
+            const typeConfig = resolveTypeConfig();
+            if (!typeConfig) {
+                if (dropZoneText) {
+                    dropZoneText.textContent = 'Selecione o tipo de importação antes de enviar os arquivos.';
+                }
+                if (dropZoneHint) {
+                    dropZoneHint.textContent = 'Escolha um tipo acima para liberar o envio.';
+                }
+                return;
+            }
+
+            const filesArray = Array.from(fileList);
+            const pdfFiles = [];
+            const results = [];
+
+            filesArray.forEach((file) => {
+                const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+                if (isPdf) {
+                    pdfFiles.push(file);
+                } else {
+                    results.push({
+                        ok: false,
+                        message: `${file.name} não é um arquivo PDF.`,
+                    });
+                }
+            });
+
+            if (!pdfFiles.length) {
+                const message = results[0] && results[0].message ? results[0].message : 'Nenhum arquivo PDF válido selecionado.';
+                showProcessingOverlay(results.length || 0, config);
+                if (overlayEls.currentFile) overlayEls.currentFile.textContent = message;
+                updateOverlayProgress(0, results.length || 0);
+                showOverlaySummary(results, config, { customMessage: message });
+                if (fileInput) fileInput.value = '';
+                return;
+            }
+
+            if (!typeConfig.uploadUrl) {
+                const message = 'Endpoint de importação não configurado.';
+                results.push({ ok: false, message });
+                showProcessingOverlay(pdfFiles.length, { ...typeConfig });
+                if (overlayEls.currentFile) overlayEls.currentFile.textContent = message;
+                updateOverlayProgress(0, pdfFiles.length);
+                showOverlaySummary(results, { ...typeConfig }, { customMessage: message });
+                if (fileInput) fileInput.value = '';
+                return;
+            }
+
+            const total = pdfFiles.length;
+            showProcessingOverlay(total, typeConfig);
+            updateOverlayProgress(0, total);
+
+            try {
+                for (let index = 0; index < total; index += 1) {
+                    const file = pdfFiles[index];
+                    const humanIndex = index + 1;
+                    const messageBuilder = typeConfig.processingMessageBuilder;
+                    const statusMessage = messageBuilder ? messageBuilder({ index: humanIndex, total, file }) : `Processando arquivo ${humanIndex} de ${total}...`;
+                    toggleUploading(true, statusMessage);
+                    updateOverlayProgress(index, total, file.name);
+                    const result = await uploadFile(file, typeConfig);
+                    results.push(result);
+                    updateOverlayProgress(index + 1, total, humanIndex === total ? 'Concluído!' : undefined);
+                }
+            } finally {
+                toggleUploading(false);
+            }
+
+            showOverlaySummary(results, typeConfig);
+            if (fileInput) fileInput.value = '';
+        };
+
+        dropZone.addEventListener('click', () => {
+            if (fileInput && !dropZone.hasAttribute('aria-busy')) {
+                fileInput.click();
+            }
+        });
+
+        dropZone.addEventListener('keydown', (event) => {
+            if ((event.key === 'Enter' || event.key === ' ') && fileInput && !dropZone.hasAttribute('aria-busy')) {
+                event.preventDefault();
+                fileInput.click();
+            }
+        });
+
+        dropZone.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            dropZone.classList.add('border-primary', 'bg-muted/40');
+            if (!dropZone.hasAttribute('aria-busy') && dropZoneText) {
+                dropZoneText.textContent = 'Solte os arquivos para importar.';
+            }
+        });
+
+        dropZone.addEventListener('dragleave', (event) => {
+            event.preventDefault();
+            dropZone.classList.remove('border-primary', 'bg-muted/40');
+            if (!dropZone.hasAttribute('aria-busy') && dropZoneText) {
+                dropZoneText.textContent = defaultText;
+            }
+        });
+
+        dropZone.addEventListener('drop', (event) => {
+            event.preventDefault();
+            dropZone.classList.remove('border-primary', 'bg-muted/40');
+            if (dropZone.hasAttribute('aria-busy')) {
+                return;
+            }
+            const files = event.dataTransfer && event.dataTransfer.files;
+            if (files && files.length) {
+                handleFiles(files);
+            } else if (dropZoneText) {
+                dropZoneText.textContent = defaultText;
+            }
+        });
+
+        if (browseButton) {
+            browseButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                if (fileInput && !dropZone.hasAttribute('aria-busy')) {
+                    fileInput.click();
+                }
+            });
+        }
+
+        if (fileInput) {
+            fileInput.addEventListener('change', (event) => {
+                const target = event.target;
+                if (target && target.files && target.files.length) {
+                    handleFiles(target.files);
+                }
+            });
+        }
+    }
+});
+
 // Modal functionality
 const modal = document.getElementById('historyAdesaoModal');
 const closeButtons = document.querySelectorAll('#closeModalBtn, #closeModalFooterBtn');

@@ -13,12 +13,12 @@ class AdesaoForm(forms.ModelForm):
     class Meta:
         model = Adesao
         fields = [
-            'cliente', 'metodo_credito', 'data_inicio', 'perdcomp','ano','trimestre',
+            'cliente', 'metodo_credito', 'data_inicio', 'perdcomp', 'numero_controle', 'chave_seguranca_serpro', 'status', 'ano', 'trimestre',
             'periodo_apuracao_credito', 'periodo_apuracao_debito', 'tipo_credito',
             'codigo_receita', 'codigo_receita_denominacao', 'valor_do_principal',
             'credito_original_utilizado', 'total',
             'saldo', 'saldo_atual', 'selic_acumulada', 'valor_correcao', 'valor_total_corrigido',
-            'data_arrecadacao', 'origem', 'data_origem'
+            'data_arrecadacao', 'origem', 'data_origem', 'data_credito_em_conta', 'valor_credito_em_conta'
         ]
         widgets = {
             'cliente': forms.Select(attrs={
@@ -35,6 +35,17 @@ class AdesaoForm(forms.ModelForm):
             'perdcomp': forms.TextInput(attrs={
                 'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
                 'placeholder': 'Número do PERDCOMP'
+            }),
+            'numero_controle': forms.TextInput(attrs={
+                'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+                'placeholder': 'Número de Controle'
+            }),
+            'chave_seguranca_serpro': forms.TextInput(attrs={
+                'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+                'placeholder': 'Chave de Segurança SERPRO'
+            }),
+            'status': forms.Select(attrs={
+                'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
             }),
             'ano': forms.TextInput(attrs={
                 'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
@@ -117,6 +128,15 @@ class AdesaoForm(forms.ModelForm):
             'data_origem': forms.DateInput(attrs={
                 'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
                 'type': 'date'
+            }),
+            'data_credito_em_conta': forms.DateInput(attrs={
+                'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+                'type': 'date'
+            }),
+            'valor_credito_em_conta': forms.NumberInput(attrs={
+                'class': 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+                'placeholder': 'Valor creditado em conta',
+                'step': '0.01'
             })
         }
     
@@ -132,6 +152,7 @@ class AdesaoForm(forms.ModelForm):
                 ('Compensação vinculada a um pedido de ressarcimento', 'Compensação vinculada a um pedido de ressarcimento'),
                 ('Compensação vinculada a um pedido de restituição', 'Compensação vinculada a um pedido de restituição'),
                 ('Escritural', 'Escritural'),
+                ('Crédito em conta', 'Crédito em conta'),
             ]
             # Se edição (instance.pk), permitir eventualmente futura lógica diferente; por ora igual
             if self.instance.pk:
@@ -152,12 +173,18 @@ class AdesaoForm(forms.ModelForm):
         # Campo saldo sempre obrigatório
         if 'saldo' in self.fields:
             self.fields['saldo'].required = True
+
+        for fname in ['data_credito_em_conta', 'valor_credito_em_conta']:
+            if fname in self.fields:
+                self.fields[fname].required = False
         
     # Inicializações padrão
         if not self.instance.pk:
             self.fields['saldo_atual'].initial = self.initial.get('saldo', 0)
             if 'data_inicio' in self.fields and not self.fields['data_inicio'].initial:
                 self.fields['data_inicio'].initial = now().date()
+            if 'status' in self.fields and not self.fields['status'].initial:
+                self.fields['status'].initial = 'solicitado'
         else:
             self.fields['saldo_atual'].widget.attrs['readonly'] = True
             self.fields['saldo_atual'].help_text = 'Este campo é atualizado automaticamente pelos lançamentos'
@@ -225,6 +252,12 @@ class AdesaoForm(forms.ModelForm):
             if not cleaned.get('codigo_receita'):
                 self.add_error('codigo_receita', 'Informe o Código da Receita.')
             # ver observação sobre débito acima
+
+        elif metodo == 'Crédito em conta':
+            if not cleaned.get('data_credito_em_conta'):
+                self.add_error('data_credito_em_conta', 'Informe a Data do crédito em conta.')
+            if cleaned.get('valor_credito_em_conta') in (None, ''):
+                self.add_error('valor_credito_em_conta', 'Informe o valor creditado em conta.')
 
         return cleaned
 

@@ -20,6 +20,9 @@
           {% if adesao.ano %}
             <span class="inline-flex items-center rounded-full bg-secondary/10 text-secondary-foreground px-2.5 py-0.5 text-xs font-medium">{{ adesao.ano }}{% if adesao.get_trimestre_display %} / {{ adesao.get_trimestre_display }}{% endif %}</span>
           {% endif %}
+          {% if adesao.status %}
+            <span class="inline-flex items-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-0.5 text-xs font-medium">Status: {{ adesao.get_status_display }}</span>
+          {% endif %}
         </div>
       </div>
       <div class="md:ml-auto flex gap-2">
@@ -46,6 +49,13 @@
           <div class="text-xs uppercase tracking-wide text-muted-foreground mb-1">Total</div>
           <div class="text-base font-semibold">{{ adesao.total|br_currency }}</div>
         </div>
+        {% if adesao.valor_credito_em_conta %}
+        <div class="rounded-md border bg-muted/30 p-4">
+          <div class="text-xs uppercase tracking-wide text-muted-foreground mb-1">Crédito em Conta</div>
+          <div class="text-base font-semibold">{{ adesao.valor_credito_em_conta|br_currency }}</div>
+          <div class="text-xs text-muted-foreground mt-1">{% if adesao.data_credito_em_conta %}Recebido em {{ adesao.data_credito_em_conta|date:'d/m/Y' }}{% else %}Data não informada{% endif %}</div>
+        </div>
+        {% endif %}
       </div>
 
       <!-- Informações -->
@@ -62,6 +72,14 @@
               <div class="text-xs uppercase tracking-wide text-muted-foreground">Cliente</div>
               <div class="font-medium leading-relaxed">{{ adesao.cliente|default:'--' }}</div>
             </div>
+            <div class="space-y-1">
+              <div class="text-xs uppercase tracking-wide text-muted-foreground">Número de Controle</div>
+              <div class="font-medium leading-relaxed">{{ adesao.numero_controle|default:'--' }}</div>
+            </div>
+            <div class="space-y-1">
+              <div class="text-xs uppercase tracking-wide text-muted-foreground">Chave de Segurança SERPRO</div>
+              <div class="font-medium leading-relaxed break-all">{{ adesao.chave_seguranca_serpro|default:'--' }}</div>
+            </div>
             <!-- Campo 'tese_credito_id' removido do modelo -->
             <div class="space-y-1">
               <div class="text-xs uppercase tracking-wide text-muted-foreground">Tipo de Crédito</div>
@@ -74,6 +92,14 @@
             <div class="space-y-1">
               <div class="text-xs uppercase tracking-wide text-muted-foreground">Data Arrecadação</div>
               <div class="font-medium leading-relaxed">{% if adesao.data_arrecadacao %}{{ adesao.data_arrecadacao|date:'d/m/Y' }}{% else %}--{% endif %}</div>
+            </div>
+            <div class="space-y-1">
+              <div class="text-xs uppercase tracking-wide text-muted-foreground">Data Crédito em Conta</div>
+              <div class="font-medium leading-relaxed">{% if adesao.data_credito_em_conta %}{{ adesao.data_credito_em_conta|date:'d/m/Y' }}{% else %}--{% endif %}</div>
+            </div>
+            <div class="space-y-1">
+              <div class="text-xs uppercase tracking-wide text-muted-foreground">Valor Crédito em Conta</div>
+              <div class="font-medium leading-relaxed">{% if adesao.valor_credito_em_conta != None %}{{ adesao.valor_credito_em_conta|br_currency }}{% else %}--{% endif %}</div>
             </div>
             <div class="space-y-1">
               <div class="text-xs uppercase tracking-wide text-muted-foreground">Tipo de Crédito</div>

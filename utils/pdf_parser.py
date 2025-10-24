@@ -239,3 +239,104 @@ def parse_ressarcimento_text(txt: str) -> PDFParsed:
             p.valor_original_credito_inicial = _parse_ptbr_number(mg.group(1))
 
     return p
+
+
+@dataclass
+class PDFReceiptParsed:
+    numero_documento: Optional[str] = None
+    numero_controle: Optional[str] = None
+    autenticacao_serpro: Optional[str] = None
+    data_transmissao: Optional[str] = None
+    data_hora_recebimento: Optional[str] = None
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            'numero_documento': self.numero_documento,
+            'numero_controle': self.numero_controle,
+            'autenticacao_serpro': self.autenticacao_serpro,
+            'data_transmissao': self.data_transmissao,
+            'data_hora_recebimento': self.data_hora_recebimento,
+        }
+
+
+def parse_recibo_pedido_credito_text(txt: str) -> PDFReceiptParsed:
+    parsed = PDFReceiptParsed()
+    if not txt:
+        return parsed
+
+    norm = re.sub(r"[\t\u00A0]+", " ", txt)
+
+    m = re.search(r"N[úu]mero\s+do\s+Documento\s*[:\-]?\s*([0-9A-Za-z./\-]+)", norm, flags=re.IGNORECASE)
+    if m:
+        parsed.numero_documento = m.group(1).strip()
+
+    m = re.search(r"N[úu]mero\s+de\s+Controle\s*[:\-]?\s*([0-9A-Za-z./\-]+)", norm, flags=re.IGNORECASE)
+    if m:
+        parsed.numero_controle = m.group(1).strip()
+
+    m = re.search(r"Data\s+de\s+Transmiss[aã]o\s*[:\-]?\s*(\d{2}/\d{2}/\d{4})", norm, flags=re.IGNORECASE)
+    if m:
+        parsed.data_transmissao = m.group(1).strip()
+
+    # Captura data/hora do recebimento para arm zen
+    m = re.search(r"em\s+(\d{2}/\d{2}/\d{4})\s+às\s+(\d{2}:\d{2}:\d{2})\s+(\d+)", norm, flags=re.IGNORECASE)
+    if m:
+        parsed.data_hora_recebimento = f"{m.group(1)} {m.group(2)}"
+        parsed.autenticacao_serpro = m.group(3).strip()
+    else:
+        m_alt = re.search(r"às\s+(\d{2}:\d{2}:\d{2})\s+(\d+)", norm, flags=re.IGNORECASE)
+        if m_alt:
+            parsed.autenticacao_serpro = m_alt.group(2).strip()
+
+    return parsed
+
+
+@dataclass
+class PDFCreditoContaParsed:
+    perdcomp: Optional[str] = None
+    data_credito: Optional[str] = None
+    valor_credito: Optional[Decimal] = None
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            'perdcomp': self.perdcomp,
+            'data_credito': self.data_credito,
+            'valor_credito': str(self.valor_credito) if self.valor_credito is not None else None,
+        }
+
+
+def parse_credito_em_conta_text(txt: str) -> PDFCreditoContaParsed:
+    """
+    Extrai dados básicos de uma notificação de crédito em conta:
+    - PERDCOMP associado
+    - Data do crédito (dd/mm/aaaa)
+    - Valor creditado (Decimal)
+    """
+    parsed = PDFCreditoContaParsed()
+    if not txt:
+        return parsed
+
+    # Normaliza tabs e espaços não separáveis
+    norm = re.sub(r"[\t\u00A0]+", " ", txt)
+
+    # Data do crédito ("Informamos que, em 12/03/2024, ...")
+    m_data = re.search(r"Informamos que,\s*em\s*(\d{2}/\d{2}/\d{4})", norm, flags=re.IGNORECASE)
+    if m_data:
+        parsed.data_credito = m_data.group(1)
+
+    # Valor creditado ("no valor de R$ 1.234,56" ou "o valor de 1.234,56")
+    m_valor = re.search(r"valor\s+de\s*(?:R\$\s*)?([0-9.\s]+,\d{2})", norm, flags=re.IGNORECASE)
+    if not m_valor:
+        # Fallback buscando primeira ocorrência de valor após palavra crédito
+        credito_section = re.search(r"cr[eé]dito.*?(?:R\$\s*)?([0-9.\s]+,\d{2})", norm, flags=re.IGNORECASE | re.DOTALL)
+        if credito_section:
+            m_valor = credito_section
+    if m_valor:
+        parsed.valor_credito = _parse_ptbr_number(m_valor.group(1))
+
+    # PERDCOMP vinculado
+    m_perdcomp = re.search(r"Perdcomp\s*(?:n[ºo]\s*)?[:\-]?\s*([0-9A-Za-z./\-]+)", norm, flags=re.IGNORECASE)
+    if m_perdcomp:
+        parsed.perdcomp = m_perdcomp.group(1).strip()
+
+    return parsed

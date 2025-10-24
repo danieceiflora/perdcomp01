@@ -115,6 +115,15 @@
                                         <div class="text-xs uppercase tracking-wide text-muted-foreground">Período de Apuração</div>
                                         <div class="font-medium">{{ lancamento.periodo_apuracao_r|default:'--' }}</div>
                                     </div>
+                                {% elif 'credito' in ml and 'conta' in ml %}
+                                    <div>
+                                        <div class="text-xs uppercase tracking-wide text-muted-foreground">Data do Crédito</div>
+                                        <div class="font-medium">{% if lancamento.data_credito %}{{ lancamento.data_credito|date:"d/m/Y" }}{% else %}<span class="text-muted-foreground">--</span>{% endif %}</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs uppercase tracking-wide text-muted-foreground">Valor creditado</div>
+                                        <div class="font-medium">{% if lancamento.valor_credito_em_conta != None %}{{ lancamento.valor_credito_em_conta|br_currency }}{% else %}<span class="text-muted-foreground">--</span>{% endif %}</div>
+                                    </div>
                                 {% else %}
                                     <div class="text-muted-foreground text-sm">Nenhum detalhe adicional para este tipo de crédito.</div>
                                 {% endif %}
