@@ -5,6 +5,9 @@
 {% block title %}Lista de Adesões{% endblock %}
 
 {% block content %}
+<!-- Hidden CSRF token for JavaScript access -->
+{% csrf_token %}
+
 <div class="container mx-auto px-4 py-6">
     {% if user.is_staff or user.is_superuser %}
     <div class="bg-card border rounded-lg shadow-sm mb-6">
@@ -410,6 +413,28 @@ function getCookie(name) {
     return null;
 }
 
+function getCSRFToken() {
+    // Try to get from cookie first
+    let token = getCookie('csrftoken');
+    
+    // If not in cookie, try global variable
+    if (!token && window.CSRF_TOKEN) {
+        token = window.CSRF_TOKEN;
+        console.log('[DEBUG] CSRF token obtido da variável global');
+    }
+    
+    // If still no token, try hidden input (Django {% csrf_token %})
+    if (!token) {
+        const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (csrfInput) {
+            token = csrfInput.value;
+            console.log('[DEBUG] CSRF token obtido do input hidden');
+        }
+    }
+    
+    return token;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const overlayEls = {
         root: document.getElementById('processing-overlay'),
@@ -719,9 +744,10 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const formData = new FormData();
                 formData.append('pdf', file, file.name);
-                const csrfToken = getCookie('csrftoken');
+                const csrfToken = getCSRFToken();
                 console.log('[DEBUG] CSRF Token:', csrfToken ? 'Encontrado' : 'NÃO ENCONTRADO');
                 console.log('[DEBUG] Cookies disponíveis:', document.cookie);
+                console.log('[DEBUG] window.CSRF_TOKEN:', window.CSRF_TOKEN ? 'Definido' : 'Não definido');
                 if (!csrfToken) {
                     console.error('CSRF token não encontrado');
                     return {

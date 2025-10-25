@@ -21,6 +21,9 @@
 {% endblock %}
 
 {% block content %}
+<!-- Hidden CSRF token for JavaScript access -->
+{% csrf_token %}
+
 <div class="container mx-auto px-4 py-6">
   <div class="max-w-6xl mx-auto">
     <!-- Cabeçalho -->
@@ -234,6 +237,28 @@
       const value = `; ${document.cookie}`;
       const parts = value.split(`; ${name}=`);
       if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+
+    function getCSRFToken() {
+      // Try to get from cookie first
+      let token = getCookie('csrftoken');
+      
+      // If not in cookie, try global variable
+      if (!token && window.CSRF_TOKEN) {
+        token = window.CSRF_TOKEN;
+        console.log('[DEBUG LOTE] CSRF token obtido da variável global');
+      }
+      
+      // If still no token, try hidden input (Django {% csrf_token %})
+      if (!token) {
+        const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (csrfInput) {
+          token = csrfInput.value;
+          console.log('[DEBUG LOTE] CSRF token obtido do input hidden');
+        }
+      }
+      
+      return token;
     }
 
     function setFeedback(msg, ok=true) {
@@ -480,9 +505,10 @@
       formData.append('pdf', file);
       formData.append('criar', criar ? '1' : '0');
       
-      const csrfToken = getCookie('csrftoken');
+      const csrfToken = getCSRFToken();
       console.log('[DEBUG LOTE] CSRF Token:', csrfToken ? 'Encontrado' : 'NÃO ENCONTRADO');
       console.log('[DEBUG LOTE] Cookies disponíveis:', document.cookie);
+      console.log('[DEBUG LOTE] window.CSRF_TOKEN:', window.CSRF_TOKEN ? 'Definido' : 'Não definido');
       
       if (!csrfToken) {
         console.error('[DEBUG LOTE] CSRF token não encontrado - Upload bloqueado');
