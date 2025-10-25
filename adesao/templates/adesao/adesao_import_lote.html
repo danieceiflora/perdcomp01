@@ -480,12 +480,33 @@
       formData.append('pdf', file);
       formData.append('criar', criar ? '1' : '0');
       
+      const csrfToken = getCookie('csrftoken');
+      console.log('[DEBUG LOTE] CSRF Token:', csrfToken ? 'Encontrado' : 'NÃO ENCONTRADO');
+      console.log('[DEBUG LOTE] Cookies disponíveis:', document.cookie);
+      
+      if (!csrfToken) {
+        console.error('[DEBUG LOTE] CSRF token não encontrado - Upload bloqueado');
+        return {
+          ok: false,
+          file: file.name,
+          created: false,
+          detail_url: null,
+          fields: null,
+          error: 'Token de segurança não encontrado. Recarregue a página e tente novamente.'
+        };
+      }
+      
       try {
+        console.log('[DEBUG LOTE] Fazendo upload de:', file.name);
+        console.log('[DEBUG LOTE] URL:', "{% url 'adesao:importar_pdf' %}");
+        
         const resp = await fetch("{% url 'adesao:importar_pdf' %}", {
           method: 'POST',
-          headers: { 'X-CSRFToken': getCookie('csrftoken') || '' },
+          headers: { 'X-CSRFToken': csrfToken },
           body: formData
         });
+        
+        console.log('[DEBUG LOTE] Status da resposta:', resp.status);
         
         const data = await resp.json();
         

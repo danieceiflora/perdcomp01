@@ -17,7 +17,7 @@ from .forms import AdesaoForm
 from django.views.decorators.http import require_POST
 import re
 from typing import Any
-from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie, csrf_protect
 from django.core.files.uploadedfile import UploadedFile
 from django.utils import timezone
 from utils.pdf_parser import parse_ressarcimento_text, parse_recibo_pedido_credito_text, parse_credito_em_conta_text
@@ -37,6 +37,9 @@ class IsSuperAdmin(permissions.BasePermission):
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.is_superuser
 
+from django.utils.decorators import method_decorator
+
+@method_decorator(ensure_csrf_cookie, name='dispatch')
 class AdesaoListView(AdesaoClienteViewOnlyMixin, ListView):
     model = Adesao
     template_name = 'adesao/adesao_list.html'
@@ -375,6 +378,7 @@ class AdesaoDetailAPI(APIView):
 
 
 @login_required
+@csrf_protect
 @require_POST
 def importar_pdf_perdcomp(request):
     """Recebe um PDF, extrai texto, faz parsing e validações. Retorna JSON.
@@ -570,6 +574,7 @@ def importar_pdf_perdcomp(request):
 
 
 @login_required
+@csrf_protect
 @require_POST
 def importar_recibo_pedido_credito(request):
     pdf_file: UploadedFile | None = request.FILES.get('pdf')
@@ -673,6 +678,7 @@ def importar_recibo_pedido_credito(request):
 
 
 @login_required
+@csrf_protect
 @require_POST
 def importar_notificacao_credito_conta(request):
     pdf_file: UploadedFile | None = request.FILES.get('pdf')

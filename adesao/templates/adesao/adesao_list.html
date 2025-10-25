@@ -720,17 +720,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 const formData = new FormData();
                 formData.append('pdf', file, file.name);
                 const csrfToken = getCookie('csrftoken');
-                const headers = csrfToken ? { 'X-CSRFToken': csrfToken } : {};
+                console.log('[DEBUG] CSRF Token:', csrfToken ? 'Encontrado' : 'NÃO ENCONTRADO');
+                console.log('[DEBUG] Cookies disponíveis:', document.cookie);
+                if (!csrfToken) {
+                    console.error('CSRF token não encontrado');
+                    return {
+                        ok: false,
+                        message: `${file.name}: Token de segurança não encontrado. Recarregue a página e tente novamente.`,
+                    };
+                }
+                const headers = { 'X-CSRFToken': csrfToken };
+                console.log('[DEBUG] Fazendo upload para:', typeConfig.uploadUrl);
+                console.log('[DEBUG] Headers:', headers);
                 const response = await fetch(typeConfig.uploadUrl, {
                     method: 'POST',
                     headers,
                     body: formData,
                 });
+                console.log('[DEBUG] Status da resposta:', response.status);
                 const data = await response.json().catch(() => null);
                 if (!response.ok || !data) {
+                    let errorDetail = `Status ${response.status}`;
+                    if (response.status === 403) {
+                        errorDetail = 'Acesso negado (403). Verifique suas permissões ou recarregue a página.';
+                    } else if (response.status === 401) {
+                        errorDetail = 'Sessão expirada (401). Faça login novamente.';
+                    }
                     return {
                         ok: false,
-                        message: `${file.name}: Falha ao importar arquivo.`,
+                        message: `${file.name}: ${errorDetail}`,
                     };
                 }
                 if (!data.ok) {
