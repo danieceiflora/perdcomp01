@@ -680,6 +680,166 @@ def importar_recibo_pedido_credito(request):
 @login_required
 @csrf_protect
 @require_POST
+def importar_declaracao_compensacao(request):
+    pdf_file: UploadedFile | None = request.FILES.get('pdf')
+    if not pdf_file:
+        return JsonResponse({'ok': False, 'error': 'Arquivo PDF não enviado (campo "pdf").'}, status=400)
+
+    import tempfile
+    import os
+    from django.conf import settings
+
+    status_code = 200
+    response_payload: dict[str, Any] | None = None
+    log_data: dict[str, Any] = {
+        'user': getattr(request.user, 'username', None),
+        'filename': pdf_file.name,
+        'ts': timezone.now().isoformat(),
+        'context': 'declaracao_compensacao',
+    }
+
+    tmp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp:
+            for chunk in pdf_file.chunks():
+                tmp.write(chunk)
+            tmp_path = tmp.name
+
+        txt = extract_text(tmp_path) or ''
+        parsed = parse_ressarcimento_text(txt)
+        log_data['parsed'] = parsed.as_dict()
+
+        cnpj_idx = txt.upper().find('CNPJ')
+        if cnpj_idx != -1:
+            log_data['debug_cnpj_snippet'] = txt[cnpj_idx:cnpj_idx + 200]
+
+        doc_perdcomp = (parsed.perdcomp or '').strip()
+        perdcomp_inicial = (parsed.perdcomp_inicial or '').strip()
+
+        if not perdcomp_inicial:
+            status_code = 400
+            response_payload = {'ok': False, 'error': 'Nº do PER/DCOMP inicial não identificado no PDF.'}
+
+        if status_code == 200:
+            try:
+                adesao = Adesao.objects.get(perdcomp=perdcomp_inicial)
+            except Adesao.DoesNotExist:
+                status_code = 404
+                response_payload = {'ok': False, 'error': f'Adesão com PER/DCOMP {perdcomp_inicial} não encontrada.'}
+
+        debitos_extraidos = parsed.debitos or []
+        if status_code == 200 and not debitos_extraidos:
+            status_code = 400
+            response_payload = {'ok': False, 'error': 'Nenhum débito identificado na declaração de compensação.'}
+
+        if status_code == 200:
+            doc_reference = doc_perdcomp or perdcomp_inicial
+            log_data['perdcomp_declaracao'] = doc_perdcomp
+            log_data['perdcomp_inicial'] = perdcomp_inicial
+            from django.utils import timezone as dj_tz
+            from django.core.exceptions import ValidationError
+
+            created_items: list[dict[str, Any]] = []
+            skipped_items: list[dict[str, Any]] = []
+            error_items: list[dict[str, Any]] = []
+
+            with transaction.atomic():
+                for idx, debito in enumerate(debitos_extraidos, start=1):
+                    item_code = (debito.get('item') or '').strip()
+                    if not item_code:
+                        item_code = f"{idx:03d}"
+
+                    valor_decimal = debito.get('valor')
+                    if valor_decimal is None:
+                        skipped_items.append({'item': item_code, 'reason': 'Valor do débito não identificado no PDF.'})
+                        continue
+
+                    try:
+                        valor_float = float(valor_decimal)
+                    except (TypeError, ValueError):
+                        skipped_items.append({'item': item_code, 'reason': f'Valor inválido ({valor_decimal}).'})
+                        continue
+
+                    if Lancamentos.objects.filter(id_adesao=adesao, perdcomp=doc_reference, item=item_code).exists():
+                        skipped_items.append({'item': item_code, 'reason': 'Débito já importado anteriormente.'})
+                        continue
+
+                    try:
+                        lanc = Lancamentos.objects.create(
+                            id_adesao=adesao,
+                            data_lancamento=dj_tz.now(),
+                            valor=valor_float,
+                            sinal='-',
+                            tipo='Gerado',
+                            descricao=(
+                                f'Débito importado da Declaração de Compensação {doc_reference}'
+                                if doc_reference else 'Débito importado da Declaração de Compensação'
+                            ),
+                            metodo='Declaração de Compensação',
+                            codigo_receita_denominacao=debito.get('codigo_receita_denominacao') or None,
+                            periodo_apuracao_debito=debito.get('periodo_apuracao_debito') or None,
+                            aprovado=True,
+                            perdcomp=doc_reference,
+                            item=item_code,
+                        )
+                    except ValidationError as exc:
+                        error_items.append({'item': item_code, 'reason': '; '.join(exc.messages)})
+                        continue
+
+                    created_items.append({
+                        'item': item_code,
+                        'valor': format(valor_decimal, 'f'),
+                        'lancamento_id': lanc.pk,
+                    })
+
+            adesao.refresh_from_db(fields=['saldo_atual'])
+
+            response_payload = {
+                'ok': True,
+                'perdcomp_declaracao': doc_reference,
+                'perdcomp_inicial': adesao.perdcomp,
+                'created_count': len(created_items),
+                'skipped_count': len(skipped_items),
+                'error_count': len(error_items),
+                'created_items': created_items,
+                'skipped_items': skipped_items,
+                'error_items': error_items,
+                'detail_url': reverse('adesao:detail', kwargs={'pk': adesao.pk}),
+                'saldo_atual': adesao.saldo_atual,
+            }
+
+    except Exception as e:
+        status_code = 500
+        response_payload = {'ok': False, 'error': f'Erro ao processar PDF: {str(e)}'}
+    finally:
+        try:
+            log_data['status_code'] = status_code
+            log_data['result'] = response_payload
+            from django.conf import settings
+            import json
+            logs_dir = os.path.join(getattr(settings, 'MEDIA_ROOT', ''), 'import_logs')
+            os.makedirs(logs_dir, exist_ok=True)
+            safe_name = os.path.basename(pdf_file.name).replace(' ', '_')
+            log_path = os.path.join(
+                logs_dir,
+                f"compensacao_{timezone.now().strftime('%Y%m%d_%H%M%S')}_{safe_name}.json"
+            )
+            with open(log_path, 'w', encoding='utf-8') as fh:
+                fh.write(json.dumps(log_data, ensure_ascii=False, indent=2))
+        except Exception:
+            pass
+        try:
+            if tmp_path and os.path.exists(tmp_path):
+                os.remove(tmp_path)
+        except Exception:
+            pass
+
+    return JsonResponse(response_payload or {'ok': False, 'error': 'Falha desconhecida.'}, status=status_code)
+
+
+@login_required
+@csrf_protect
+@require_POST
 def importar_notificacao_credito_conta(request):
     pdf_file: UploadedFile | None = request.FILES.get('pdf')
     if not pdf_file:

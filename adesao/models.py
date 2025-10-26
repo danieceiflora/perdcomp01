@@ -19,6 +19,7 @@ class Adesao(models.Model):
         ('Compensação vinculada a um pedido de restituição', 'Compensação vinculada a um pedido de restituição'),
         ('Escritural', 'Escritural'),
         ('Crédito em conta', 'Crédito em conta'),
+        ('Declaração de Compensação', 'Declaração de Compensação'),
     ]
 
     status_options = [

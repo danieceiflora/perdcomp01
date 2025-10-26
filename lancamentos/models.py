@@ -13,6 +13,23 @@ class Lancamentos(models.Model):
         related_name='lancamentos',
         verbose_name='Adesão'
     )
+
+    perdcomp = models.CharField(
+        max_length=100,
+        verbose_name='PER/DCOMP da Declaração',
+        help_text='Identificador da declaração de compensação que originou este lançamento.',
+        blank=True,
+        null=True,
+        db_index=True,
+    )
+
+    item = models.CharField(
+        max_length=10,
+        verbose_name='Item da Declaração',
+        help_text='Código do item do débito dentro da declaração de compensação.',
+        blank=True,
+        null=True,
+    )
     
     data_lancamento = models.DateTimeField(
         verbose_name='Data do pedido',
@@ -167,8 +184,10 @@ class Lancamentos(models.Model):
     )
 
     def __str__(self):
-        return f"{self.id_adesao.perdcomp} - {self.sinal}{self.valor} - {self.data_lancamento}"
-    
+        ref = self.perdcomp or self.id_adesao.perdcomp
+        item_label = f"/{self.item}" if self.item else ''
+        return f"{ref}{item_label} - {self.sinal}{self.valor} - {self.data_lancamento}"
+        
     def clean(self):
         """
         Validação do modelo para garantir regras de negócio:
@@ -293,6 +312,9 @@ class Lancamentos(models.Model):
 
     # Audit trail
     historico = HistoricalRecords()
+
+    class Meta:
+        unique_together = (('perdcomp', 'item'),)
 
 class Anexos(models.Model):
     id_lancamento = models.ForeignKey(

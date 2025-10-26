@@ -16,7 +16,7 @@
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                         <h2 class="text-xl font-semibold text-card-foreground">Importar documentos PERDCOMP</h2>
-                        <p class="text-sm text-muted-foreground">Escolha o tipo de importação e carregue recibos de crédito ou notificações de crédito em conta referentes a PERDCOMPs já cadastrados.</p>
+                        <p class="text-sm text-muted-foreground">Carregue recibos de protocolo, notificações de crédito em conta ou declarações de compensação vinculadas a PERDCOMPs já cadastrados.</p>
                     </div>
                     <button type="button" id="importToggleButton" aria-controls="importDropZoneContainer" aria-expanded="false"
                             class="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-card-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
@@ -26,33 +26,31 @@
                 </div>
                 <div id="importDropZoneContainer" class="transition-all duration-200 hidden" aria-hidden="true">
                     <div class="flex flex-col gap-4">
-                        <div class="grid gap-3 sm:grid-cols-[280px_1fr]">
-                            <label class="flex flex-col gap-2 text-sm font-medium text-card-foreground">
-                                Tipo de importação
-                                <select id="importTypeSelect" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-                                    <option value="" selected>Selecione...</option>
-                                    <option value="recibo">Recibo de pedido de crédito</option>
-                                    <option value="credito">Notificação de crédito em conta</option>
-                                </select>
-                            </label>
-                            <div id="importTypeDescription" class="text-sm text-muted-foreground self-center">
-                                Selecione um tipo para visualizar as instruções específicas.
-                            </div>
+                        <div class="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-4 text-sm text-left text-muted-foreground">
+                            <p class="font-medium text-primary-700 dark:text-primary-300">Detecção automática de tipo</p>
+                            <p class="mt-2">Carregue recibos de protocolo, notificações de crédito em conta ou declarações de compensação em PDF. Identificaremos o tipo automaticamente antes de enviar.</p>
+                            <ul class="mt-3 list-disc list-inside space-y-1">
+                                <li><span class="font-medium text-card-foreground">Recibo:</span> reconhecido quando o PDF contém a expressão "Recibo d entrega" ou "Recibo de entrega".</li>
+                                <li><span class="font-medium text-card-foreground">Notificação de crédito:</span> reconhecida quando o PDF contém "Aviso de Pagamento de Ressarcimento".</li>
+                                <li><span class="font-medium text-card-foreground">Declaração de compensação:</span> identificada quando o PDF contém "Declaração de Compensação" ou o campo "PER/DCOMP inicial".</li>
+                            </ul>
+                            <p class="mt-2 text-xs text-muted-foreground">Não se preocupe se o texto não estiver exatamente igual: tentaremos ambos os formatos automaticamente caso a detecção inicial não seja conclusiva.</p>
                         </div>
                         <div id="importDropZone" role="button" tabindex="0"
                              data-recibo-url="{% url 'adesao:importar_recibo' %}"
                              data-credito-url="{% url 'adesao:importar_credito_conta' %}"
+                             data-compensacao-url="{% url 'adesao:importar_declaracao_compensacao' %}"
                              class="relative flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-border bg-muted/30 p-5 text-center transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                             <input type="file" id="importFileInput" accept="application/pdf" class="hidden" multiple />
                             <i class="bi bi-cloud-arrow-up text-3xl text-muted-foreground"></i>
                             <p id="importDropZoneText" class="text-sm text-muted-foreground max-w-lg">
-                                Selecione o tipo de importação para começar.
+                                Arraste PDFs de recibos, notificações ou declarações de compensação aqui ou utilize o botão abaixo. Detectaremos automaticamente o tipo de cada arquivo.
                             </p>
                             <button type="button" id="importBrowseButton"
                                     class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-card-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                                 Selecionar PDFs
                             </button>
-                            <span id="importDropZoneHint" class="text-xs text-muted-foreground text-center">Importe arquivos PDF relacionados ao PERDCOMP selecionado.</span>
+                            <span id="importDropZoneHint" class="text-xs text-muted-foreground text-center">Aceitamos vários PDFs por vez. Cada arquivo será identificado automaticamente como recibo, notificação ou declaração de compensação.</span>
                             <div id="importDropZoneOverlay" class="pointer-events-none absolute inset-0 hidden items-center justify-center rounded-lg bg-background/80 backdrop-blur-sm">
                                 <div class="flex items-center gap-2 text-sm text-muted-foreground">
                                     <span class="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
@@ -601,8 +599,6 @@ document.addEventListener('DOMContentLoaded', () => {
         dropZoneHintId: 'importDropZoneHint',
         overlayId: 'importDropZoneOverlay',
         overlayTextId: 'importDropZoneOverlayText',
-        typeSelectorId: 'importTypeSelect',
-        typeDescriptionId: 'importTypeDescription',
         importTypes: {
             recibo: {
                 uploadUrlAttr: 'data-recibo-url',
@@ -636,6 +632,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 description: 'Importe a notificação de crédito em conta emitida pela Receita Federal para registrar automaticamente o lançamento aprovado.',
                 hint: 'Cada notificação deve corresponder a um PERDCOMP já cadastrado e resultará em um crédito aprovado.',
             },
+            compensacao: {
+                uploadUrlAttr: 'data-compensacao-url',
+                overlayTitle: 'Processando declarações de compensação',
+                labelSingular: 'declaração',
+                labelPlural: 'declarações',
+                successLabelSingular: 'processada',
+                successLabelPlural: 'processadas',
+                processingMessageBuilder: ({ index, total }) => `Processando declaração ${index} de ${total}...`,
+                successMessageBuilder: ({ data, file }) => {
+                    const referencia = data && (data.perdcomp_declaracao || data.perdcomp_inicial) ? (data.perdcomp_declaracao || data.perdcomp_inicial) : file.name;
+                    const createdCount = data && typeof data.created_count === 'number' ? data.created_count : null;
+                    const skippedCount = data && typeof data.skipped_count === 'number' ? data.skipped_count : 0;
+                    const errorCount = data && typeof data.error_count === 'number' ? data.error_count : 0;
+                    const notes = [];
+                    if (skippedCount > 0) {
+                        notes.push(`${skippedCount} já existente${skippedCount === 1 ? '' : 's'}`);
+                    }
+                    if (errorCount > 0) {
+                        notes.push(`${errorCount} inválido${errorCount === 1 ? '' : 's'}`);
+                    }
+                    const suffix = notes.length ? ` (${notes.join(', ')})` : '';
+                    if (createdCount && createdCount > 0) {
+                        return `Declaração ${referencia} importada com ${createdCount} débito${createdCount === 1 ? '' : 's'}${suffix}.`;
+                    }
+                    if (notes.length) {
+                        return `Declaração ${referencia} analisada${suffix}.`;
+                    }
+                    return `Declaração ${referencia} analisada, nenhum débito novo encontrado.`;
+                },
+                description: 'Importe declarações de compensação para registrar automaticamente débitos e atualizar o saldo do PER/DCOMP inicial informado.',
+                hint: 'Cada declaração deve conter o campo "PER/DCOMP inicial" já cadastrado no sistema.',
+            },
+        },
+        summaryConfig: {
+            overlayTitle: 'Processando PDFs detectados automaticamente',
         },
     };
 
@@ -653,27 +684,54 @@ document.addEventListener('DOMContentLoaded', () => {
         const dropZoneHint = config.dropZoneHintId ? document.getElementById(config.dropZoneHintId) : null;
         const zoneOverlay = config.overlayId ? document.getElementById(config.overlayId) : null;
         const zoneOverlayText = config.overlayTextId ? document.getElementById(config.overlayTextId) : null;
-        const typeSelector = config.typeSelectorId ? document.getElementById(config.typeSelectorId) : null;
-        const typeDescription = config.typeDescriptionId ? document.getElementById(config.typeDescriptionId) : null;
 
         const defaultText = dropZoneText ? dropZoneText.textContent.trim() : '';
+        const defaultHint = dropZoneHint ? dropZoneHint.textContent.trim() : '';
         const overlayDefaultText = zoneOverlayText ? zoneOverlayText.textContent.trim() : '';
-        let currentTypeKey = typeSelector ? typeSelector.value : '';
 
-        const syncTypeDescription = () => {
-            const typeConfig = config.importTypes[currentTypeKey];
-            if (typeDescription) {
-                typeDescription.textContent = typeConfig ? typeConfig.description : 'Selecione um tipo para visualizar as instruções específicas.';
-            }
-            if (dropZoneHint) {
-                dropZoneHint.textContent = typeConfig ? typeConfig.hint : 'Importe arquivos PDF relacionados ao PERDCOMP selecionado.';
-            }
-            if (dropZoneText) {
-                dropZoneText.textContent = typeConfig
-                    ? `Arraste e solte ${typeConfig.labelPlural} em PDF aqui ou utilize o botão para selecioná-los.`
-                    : 'Selecione o tipo de importação para começar.';
-            }
+        const humanTypeLabels = {
+            recibo: 'recibo de protocolo',
+            credito: 'notificação de crédito em conta',
+            compensacao: 'declaração de compensação',
         };
+        const typePluralLabels = {
+            recibo: 'recibos de protocolo',
+            credito: 'notificações de crédito em conta',
+            compensacao: 'declarações de compensação',
+        };
+        const baseSummaryDefaults = {
+            overlayTitle: 'Processando arquivos',
+            labelSingular: 'arquivo',
+            labelPlural: 'arquivos',
+            successLabelSingular: 'processado',
+            successLabelPlural: 'processados',
+        };
+        const summaryConfig = { ...baseSummaryDefaults, ...(config.summaryConfig || {}) };
+        if (!summaryConfig.summaryFormatter) {
+            summaryConfig.summaryFormatter = ({ total, success, errors, items }) => {
+                const parts = [];
+                parts.push(`${total} arquivo${total === 1 ? '' : 's'} recebido${total === 1 ? '' : 's'}.`);
+                if (success > 0) {
+                    const successBreakdown = (items || []).filter((item) => item && item.ok && item.typeKey)
+                        .reduce((acc, item) => {
+                            acc[item.typeKey] = (acc[item.typeKey] || 0) + 1;
+                            return acc;
+                        }, {});
+                    const detailParts = Object.entries(successBreakdown).map(([key, count]) => {
+                        const label = count === 1 ? (humanTypeLabels[key] || key) : (typePluralLabels[key] || `${key}s`);
+                        return `${count} ${label}`;
+                    });
+                    const detailSuffix = detailParts.length ? ` (${detailParts.join(', ')})` : '';
+                    parts.push(`${success} concluído${success === 1 ? '' : 's'}${detailSuffix}.`);
+                }
+                if (errors > 0) {
+                    parts.push(`${errors} erro${errors === 1 ? '' : 's'}.`);
+                }
+                return parts.join(' ').trim();
+            };
+        }
+
+        const fatalStatusCodes = new Set([401, 403, 404, 500, 502, 503, 504]);
 
         const setDropZoneExpanded = (expanded) => {
             if (!container || !toggleButton) return;
@@ -704,15 +762,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        if (typeSelector) {
-            typeSelector.addEventListener('change', () => {
-                currentTypeKey = typeSelector.value;
-                syncTypeDescription();
-                overlayState.activeConfig = null; // reset overlay config when type changes
-            });
-            syncTypeDescription();
-        }
-
         const toggleUploading = (isUploading, message) => {
             if (isUploading) {
                 ensureDropZoneVisible();
@@ -720,83 +769,219 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (zoneOverlay) zoneOverlay.classList.remove('hidden');
                 if (zoneOverlayText) zoneOverlayText.textContent = message || overlayDefaultText;
                 if (dropZoneText && message) dropZoneText.textContent = message;
+                if (dropZoneHint) dropZoneHint.textContent = 'Processando arquivo...';
                 if (browseButton) browseButton.disabled = true;
                 dropZone.setAttribute('aria-busy', 'true');
             } else {
                 dropZone.classList.remove('border-primary', 'bg-muted/40');
                 if (zoneOverlay) zoneOverlay.classList.add('hidden');
                 if (zoneOverlayText) zoneOverlayText.textContent = overlayDefaultText;
-                if (dropZoneText) syncTypeDescription();
+                if (dropZoneText) dropZoneText.textContent = defaultText;
+                if (dropZoneHint) dropZoneHint.textContent = defaultHint;
                 if (browseButton) browseButton.disabled = false;
                 dropZone.removeAttribute('aria-busy');
             }
         };
 
-        const resolveTypeConfig = () => {
-            const typeConfig = config.importTypes[currentTypeKey];
+        const getTypeConfig = (typeKey) => {
+            const typeConfig = config.importTypes && config.importTypes[typeKey];
             if (!typeConfig) return null;
-            const uploadUrl = dropZone.getAttribute(typeConfig.uploadUrlAttr);
+            const uploadUrlAttr = typeConfig.uploadUrlAttr;
+            const uploadUrl = uploadUrlAttr ? dropZone.getAttribute(uploadUrlAttr) : null;
             if (!uploadUrl) return null;
-            return { ...typeConfig, uploadUrl };
+            return { ...typeConfig, uploadUrl, typeKey };
         };
 
-        const uploadFile = async (file, typeConfig) => {
+        const normalizeText = (value) => {
+            if (!value) return '';
+            let normalized = value;
+            if (typeof normalized.normalize === 'function') {
+                normalized = normalized.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            }
+            return normalized.toLowerCase();
+        };
+
+        const detectPdfType = (file) => new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const buffer = reader.result;
+                    let rawText = '';
+                    if (buffer instanceof ArrayBuffer) {
+                        if (typeof TextDecoder !== 'undefined') {
+                            const decoder = new TextDecoder('latin1', { fatal: false });
+                            rawText = decoder.decode(buffer);
+                        } else {
+                            rawText = Array.from(new Uint8Array(buffer)).map((byte) => String.fromCharCode(byte)).join('');
+                        }
+                    } else if (typeof buffer === 'string') {
+                        rawText = buffer;
+                    }
+                    const normalized = normalizeText(rawText);
+                    if (normalized.includes('recibo d entrega') || normalized.includes('recibo de entrega')) {
+                        resolve('recibo');
+                        return;
+                    }
+                    if (normalized.includes('aviso de pagamento de ressarcimento')) {
+                        resolve('credito');
+                        return;
+                    }
+                    if (normalized.includes('declaracao de compensacao') || normalized.includes('per/dcomp inicial')) {
+                        resolve('compensacao');
+                        return;
+                    }
+                } catch (error) {
+                    console.warn('Falha ao analisar PDF para detecção automática:', error);
+                }
+                resolve(null);
+            };
+            reader.onerror = () => {
+                console.warn('Falha ao ler PDF para detecção automática.');
+                resolve(null);
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        const uploadToEndpoint = async (file, typeKey, typeConfig) => {
             try {
-                const formData = new FormData();
-                formData.append('pdf', file, file.name);
                 const csrfToken = getCSRFToken();
-                console.log('[DEBUG] CSRF Token:', csrfToken ? 'Encontrado' : 'NÃO ENCONTRADO');
+                console.log(`[DEBUG] (${typeKey}) CSRF Token:`, csrfToken ? 'Encontrado' : 'NÃO ENCONTRADO');
                 console.log('[DEBUG] Cookies disponíveis:', document.cookie);
                 console.log('[DEBUG] window.CSRF_TOKEN:', window.CSRF_TOKEN ? 'Definido' : 'Não definido');
                 if (!csrfToken) {
-                    console.error('CSRF token não encontrado');
                     return {
                         ok: false,
                         message: `${file.name}: Token de segurança não encontrado. Recarregue a página e tente novamente.`,
+                        typeKey,
+                        fatal: true,
+                        status: 0,
+                        file: file.name,
                     };
                 }
-                const headers = { 'X-CSRFToken': csrfToken };
-                console.log('[DEBUG] Fazendo upload para:', typeConfig.uploadUrl);
-                console.log('[DEBUG] Headers:', headers);
+
+                const formData = new FormData();
+                formData.append('pdf', file, file.name);
+
+                console.log(`[DEBUG] (${typeKey}) Fazendo upload para:`, typeConfig.uploadUrl);
                 const response = await fetch(typeConfig.uploadUrl, {
                     method: 'POST',
-                    headers,
+                    headers: { 'X-CSRFToken': csrfToken },
                     body: formData,
                 });
-                console.log('[DEBUG] Status da resposta:', response.status);
+                console.log(`[DEBUG] (${typeKey}) Status da resposta:`, response.status);
                 const data = await response.json().catch(() => null);
+
                 if (!response.ok || !data) {
                     let errorDetail = `Status ${response.status}`;
                     if (response.status === 403) {
                         errorDetail = 'Acesso negado (403). Verifique suas permissões ou recarregue a página.';
                     } else if (response.status === 401) {
                         errorDetail = 'Sessão expirada (401). Faça login novamente.';
+                    } else if (response.status === 404) {
+                        errorDetail = 'Endpoint não encontrado (404).';
                     }
                     return {
                         ok: false,
                         message: `${file.name}: ${errorDetail}`,
+                        typeKey,
+                        status: response.status,
+                        fatal: fatalStatusCodes.has(response.status),
+                        file: file.name,
                     };
                 }
+
                 if (!data.ok) {
                     const errorMsg = data.error || 'Não foi possível concluir a importação.';
                     return {
                         ok: false,
                         message: `${file.name}: ${errorMsg}`,
+                        typeKey,
+                        status: response.status,
+                        fatal: fatalStatusCodes.has(response.status),
+                        data,
+                        file: file.name,
                     };
                 }
+
                 const successBuilder = typeConfig.successMessageBuilder;
                 const message = successBuilder ? successBuilder({ data, file }) : `Arquivo ${file.name} importado com sucesso.`;
+
                 return {
                     ok: true,
                     message,
-                    payload: data,
+                    typeKey,
+                    typeLabel: humanTypeLabels[typeKey] || typeKey,
+                    status: response.status,
+                    data,
+                    created: Boolean(data.created),
+                    detail_url: data.detail_url,
+                    fields: data.fields,
+                    file: file.name,
+                    fatal: false,
                 };
             } catch (error) {
                 return {
                     ok: false,
                     message: `${file.name}: ${error && error.message ? error.message : 'Erro desconhecido.'}`,
+                    typeKey,
+                    fatal: true,
+                    status: 0,
+                    file: file.name,
                 };
             }
+        };
+
+        const autoDetectAndUpload = async (file, context = {}) => {
+            const detectedType = await detectPdfType(file);
+            console.log(`[DEBUG] Detecção automática (${file.name}):`, detectedType || 'indefinida');
+
+            const baseOrder = ['recibo', 'credito', 'compensacao'];
+            const order = (detectedType && baseOrder.includes(detectedType))
+                ? [detectedType, ...baseOrder.filter((type) => type !== detectedType)]
+                : baseOrder;
+
+            let lastResult = {
+                ok: false,
+                message: `${file.name}: Não foi possível processar o arquivo.`,
+                typeKey: null,
+                file: file.name,
+                detectedFromText: detectedType,
+            };
+
+            for (const typeKey of order) {
+                const typeConfig = getTypeConfig(typeKey);
+                if (!typeConfig) {
+                    console.warn(`Configuração de upload ausente para o tipo ${typeKey}.`);
+                    continue;
+                }
+
+                const humanIndex = context.index ?? null;
+                const total = context.total ?? null;
+                const label = humanTypeLabels[typeKey] || typeKey;
+                const statusMessage = humanIndex && total
+                    ? `Enviando ${file.name} como ${label} (${humanIndex} de ${total})...`
+                    : `Enviando ${file.name} como ${label}...`;
+                toggleUploading(true, statusMessage);
+
+                const result = await uploadToEndpoint(file, typeKey, typeConfig);
+                result.detectedFromText = detectedType;
+                result.file = file.name;
+                result.typeKey = typeKey;
+                result.typeLabel = result.typeLabel || humanTypeLabels[typeKey] || typeKey;
+                result.autoDetected = detectedType === typeKey;
+
+                if (result.ok) {
+                    return result;
+                }
+
+                lastResult = result;
+
+                if (result.fatal) {
+                    return result;
+                }
+            }
+
+            return lastResult;
         };
 
         const handleFiles = async (fileList) => {
@@ -805,17 +990,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             ensureDropZoneVisible();
-
-            const typeConfig = resolveTypeConfig();
-            if (!typeConfig) {
-                if (dropZoneText) {
-                    dropZoneText.textContent = 'Selecione o tipo de importação antes de enviar os arquivos.';
-                }
-                if (dropZoneHint) {
-                    dropZoneHint.textContent = 'Escolha um tipo acima para liberar o envio.';
-                }
-                return;
-            }
 
             const filesArray = Array.from(fileList);
             const pdfFiles = [];
@@ -829,52 +1003,42 @@ document.addEventListener('DOMContentLoaded', () => {
                     results.push({
                         ok: false,
                         message: `${file.name} não é um arquivo PDF.`,
+                        typeKey: null,
+                        file: file.name,
+                        fatal: false,
                     });
                 }
             });
 
             if (!pdfFiles.length) {
-                const message = results[0] && results[0].message ? results[0].message : 'Nenhum arquivo PDF válido selecionado.';
-                showProcessingOverlay(results.length || 0, config);
+                const message = results.length ? results[0].message : 'Nenhum arquivo PDF válido selecionado.';
+                showProcessingOverlay(results.length || 0, summaryConfig);
                 if (overlayEls.currentFile) overlayEls.currentFile.textContent = message;
                 updateOverlayProgress(0, results.length || 0);
-                showOverlaySummary(results, config, { customMessage: message });
-                if (fileInput) fileInput.value = '';
-                return;
-            }
-
-            if (!typeConfig.uploadUrl) {
-                const message = 'Endpoint de importação não configurado.';
-                results.push({ ok: false, message });
-                showProcessingOverlay(pdfFiles.length, { ...typeConfig });
-                if (overlayEls.currentFile) overlayEls.currentFile.textContent = message;
-                updateOverlayProgress(0, pdfFiles.length);
-                showOverlaySummary(results, { ...typeConfig }, { customMessage: message });
+                showOverlaySummary(results, summaryConfig, { customMessage: message });
                 if (fileInput) fileInput.value = '';
                 return;
             }
 
             const total = pdfFiles.length;
-            showProcessingOverlay(total, typeConfig);
+            showProcessingOverlay(total, summaryConfig);
             updateOverlayProgress(0, total);
 
+            let index = 0;
             try {
-                for (let index = 0; index < total; index += 1) {
-                    const file = pdfFiles[index];
-                    const humanIndex = index + 1;
-                    const messageBuilder = typeConfig.processingMessageBuilder;
-                    const statusMessage = messageBuilder ? messageBuilder({ index: humanIndex, total, file }) : `Processando arquivo ${humanIndex} de ${total}...`;
-                    toggleUploading(true, statusMessage);
-                    updateOverlayProgress(index, total, file.name);
-                    const result = await uploadFile(file, typeConfig);
+                for (const file of pdfFiles) {
+                    index += 1;
+                    toggleUploading(true, `Analisando ${file.name} (${index} de ${total})...`);
+                    updateOverlayProgress(index - 1, total, file.name);
+                    const result = await autoDetectAndUpload(file, { index, total });
                     results.push(result);
-                    updateOverlayProgress(index + 1, total, humanIndex === total ? 'Concluído!' : undefined);
+                    updateOverlayProgress(index, total, index === total ? 'Concluído!' : undefined);
                 }
             } finally {
                 toggleUploading(false);
             }
 
-            showOverlaySummary(results, typeConfig);
+            showOverlaySummary(results, summaryConfig);
             if (fileInput) fileInput.value = '';
         };
 
@@ -894,16 +1058,18 @@ document.addEventListener('DOMContentLoaded', () => {
         dropZone.addEventListener('dragover', (event) => {
             event.preventDefault();
             dropZone.classList.add('border-primary', 'bg-muted/40');
-            if (!dropZone.hasAttribute('aria-busy') && dropZoneText) {
-                dropZoneText.textContent = 'Solte os arquivos para importar.';
+            if (!dropZone.hasAttribute('aria-busy')) {
+                if (dropZoneText) dropZoneText.textContent = 'Solte os arquivos para importar.';
+                if (dropZoneHint) dropZoneHint.textContent = 'Vamos identificar automaticamente cada PDF.';
             }
         });
 
         dropZone.addEventListener('dragleave', (event) => {
             event.preventDefault();
             dropZone.classList.remove('border-primary', 'bg-muted/40');
-            if (!dropZone.hasAttribute('aria-busy') && dropZoneText) {
-                dropZoneText.textContent = defaultText;
+            if (!dropZone.hasAttribute('aria-busy')) {
+                if (dropZoneText) dropZoneText.textContent = defaultText;
+                if (dropZoneHint) dropZoneHint.textContent = defaultHint;
             }
         });
 
@@ -916,8 +1082,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const files = event.dataTransfer && event.dataTransfer.files;
             if (files && files.length) {
                 handleFiles(files);
-            } else if (dropZoneText) {
-                dropZoneText.textContent = defaultText;
+            } else {
+                if (dropZoneText) dropZoneText.textContent = defaultText;
+                if (dropZoneHint) dropZoneHint.textContent = defaultHint;
             }
         });
 

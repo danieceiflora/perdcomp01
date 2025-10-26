@@ -21,10 +21,51 @@ def _clean_cnpj(s: str) -> str:
     return re.sub(r"[^0-9]", "", s)
 
 
+def _looks_like_perdcomp(value: str | None) -> bool:
+    if not value:
+        return False
+    candidate = value.strip()
+    if len(candidate) < 12:
+        return False
+    if '/' in candidate:
+        return False
+    if candidate.lower().startswith('perdcomp'):
+        return False
+    if re.fullmatch(r"\d+\.\d{1,2}", candidate):
+        return False
+    separator_count = sum(ch in '.-' for ch in candidate)
+    if separator_count < 2:
+        return False
+    return bool(re.search(r"\d", candidate)) and any(ch in candidate for ch in ('.', '-'))
+
+
+def _find_perdcomp_candidate(text: str) -> Optional[str]:
+    if not text:
+        return None
+    search_scope = text
+    patterns = (
+        r"\b\d{5,}\.\d{4,}\.\d{5,}\.\d\.\d\.\d{2}-\d{4}\b",
+        r"\b\d[\d.\-]{11,}\d\b",
+    )
+    for pattern in patterns:
+        m = re.search(pattern, search_scope)
+        if m:
+            candidate = m.group(0).strip()
+            if _looks_like_perdcomp(candidate):
+                return candidate
+    loose_match = re.search(r"\d[\d.\-\s]{11,}\d", search_scope)
+    if loose_match:
+        candidate = re.sub(r"\s+", "", loose_match.group(0)).strip(" .;,:")
+        if _looks_like_perdcomp(candidate):
+            return candidate
+    return None
+
+
 @dataclass
 class PDFParsed:
     cnpj: Optional[str] = None
     perdcomp: Optional[str] = None
+    perdcomp_inicial: Optional[str] = None
     metodo_credito: Optional[str] = None
     data_criacao: Optional[str] = None  # dd/mm/aaaa
     valor_pedido: Optional[Decimal] = None
@@ -37,6 +78,7 @@ class PDFParsed:
     codigo_receita: Optional[str] = None
     # Débitos extraídos de Declaração de Compensação / documentos vinculados
     # Cada item: {
+    #   'item': str | None,
     #   'codigo_receita_denominacao': str | None,
     #   'periodo_apuracao_debito': str | None,
     #   'valor': Decimal | None,
@@ -60,6 +102,7 @@ class PDFParsed:
             'data_arrecadacao': self.data_arrecadacao,
             'periodo_apuracao_credito': self.periodo_apuracao_credito,
             'codigo_receita': self.codigo_receita,
+            'perdcomp_inicial': self.perdcomp_inicial,
         }
 
 
@@ -76,20 +119,36 @@ def parse_ressarcimento_text(txt: str) -> PDFParsed:
     # Normalizar quebras e espaços múltiplos para facilitar regex com DOTALL minimalista
     norm = re.sub(r"[\t\u00A0]+", " ", txt)
 
-    # CNPJ e PERDCOMP (primeiro token após o CNPJ na mesma linha)
-    m = re.search(r"CNPJ\s*[:\-]?\s*([0-9./-]{14,20})\s+([0-9A-Za-z._\-]{8,})", norm, flags=re.IGNORECASE)
-    if m:
-        p.cnpj = _clean_cnpj(m.group(1))
-        p.perdcomp = m.group(2).strip()
-    else:
-        # CNPJ isolado (sem PERDCOMP na mesma linha)
-        m_cnpj = re.search(r"CNPJ\s*[:\-]?\s*([0-9./-]{14,20})", norm, flags=re.IGNORECASE)
-        if m_cnpj:
-            p.cnpj = _clean_cnpj(m_cnpj.group(1))
-        # Fallback arriscado: pode capturar a versão '8.3' do cabeçalho, portanto usamos apenas se tiver formato típico
-        m_per = re.search(r"PERDCOMP\s*[:\-]?\s*([0-9]{2,}\.[0-9A-Za-z.\-]+)", norm, flags=re.IGNORECASE)
+    m_cnpj = re.search(r"CNPJ\s*[:\-]?\s*([0-9./-]{14,20})", norm, flags=re.IGNORECASE)
+    if m_cnpj:
+        p.cnpj = _clean_cnpj(m_cnpj.group(1))
+        tail_segment = norm[m_cnpj.end(): m_cnpj.end() + 120]
+        m_after = re.match(r"\s*([0-9A-Za-z./\-]+)", tail_segment)
+        if m_after:
+            candidate = m_after.group(1).strip().strip(" .;,:")
+            if _looks_like_perdcomp(candidate):
+                p.perdcomp = candidate
+        if not p.perdcomp:
+            candidate = _find_perdcomp_candidate(tail_segment)
+            if candidate:
+                p.perdcomp = candidate
+        if not p.perdcomp:
+            head_segment = norm[max(0, m_cnpj.start() - 120): m_cnpj.start()]
+            candidate = _find_perdcomp_candidate(head_segment)
+            if candidate:
+                p.perdcomp = candidate
+
+    if not p.perdcomp:
+        m_per = re.search(r"PER/?DCOMP\s*(?:inicial)?\s*(?:n[ºo]\s*)?[:\-]?\s*([0-9A-Za-z.\-]+)", norm, flags=re.IGNORECASE)
         if m_per:
-            p.perdcomp = m_per.group(1).strip()
+            candidate = m_per.group(1).strip()
+            if _looks_like_perdcomp(candidate):
+                p.perdcomp = candidate
+
+    if not p.perdcomp:
+        candidate = _find_perdcomp_candidate(norm)
+        if candidate:
+            p.perdcomp = candidate
 
     # Tipo de Documento -> mapeia para metodo_credito conforme opções do sistema
     m = re.search(r"Tipo de Documento\s*[:\-]?\s*(.+)", norm, flags=re.IGNORECASE)
@@ -110,10 +169,25 @@ def parse_ressarcimento_text(txt: str) -> PDFParsed:
             elif 'vinculada a um pedido de ressarc' in whole_low:
                 p.metodo_credito = 'Compensação vinculada a um pedido de ressarcimento'
             else:
-                # Fallback genérico
-                p.metodo_credito = 'Compensação vinculada a um pedido de restituição'
+                # Documento genérico de Declaração de Compensação (sem vínculo direto)
+                p.metodo_credito = 'Declaração de Compensação'
         else:
             p.metodo_credito = raw
+
+    # Número do PER/DCOMP inicial (campo usado para encontrar adesão existente)
+    m = re.search(r"PER\s*/?\s*DCOMP\s+inicial\s*[:\-]?\s*([0-9A-Za-z./\-\s]+)", norm, flags=re.IGNORECASE)
+    if m:
+        raw_initial = m.group(1).strip()
+        candidate_initial = re.sub(r"\s+", "", raw_initial).strip(" .;,:")
+        if _looks_like_perdcomp(candidate_initial):
+            p.perdcomp_inicial = candidate_initial
+        else:
+            search_tail = (raw_initial + " " + norm[m.end(): m.end() + 200]).strip()
+            candidate_initial = _find_perdcomp_candidate(search_tail)
+            if not candidate_initial:
+                candidate_initial = _find_perdcomp_candidate(norm[m.end(): m.end() + 200])
+            if candidate_initial:
+                p.perdcomp_inicial = candidate_initial
 
     # Data de Criação dd/mm/aaaa
     m = re.search(r"Data de Cria[cç][aã]o\s*[:\-]?\s*(\d{2}/\d{2}/\d{4})", norm, flags=re.IGNORECASE)
@@ -173,8 +247,11 @@ def parse_ressarcimento_text(txt: str) -> PDFParsed:
     # Extração de múltiplos Débitos em 'Declaração de Compensação'
     # Busca blocos iniciando com número e a palavra Débito
     debitos: List[Dict[str, Any]] = []
-    for blk in re.finditer(r"(?ms)^\s*\d{1,3}\s*\.\s*D[eé]bito\s*(.*?)(?=^\s*\d{1,3}\s*\.\s*D[eé]bito|\Z)", norm):
+    for blk in re.finditer(r"(?ms)^\s*(\d{1,3})\s*\.\s*D[eé]bito\s*(.*?)(?=^\s*\d{1,3}\s*\.\s*D[eé]bito|\Z)", norm):
         block = blk.group(0)
+        item_number = blk.group(1).strip() if blk.group(1) else None
+        if item_number:
+            item_number = item_number.zfill(3)
         # Tenta obter um título do débito a partir da primeira linha
         titulo = None
         mtitle = re.search(r"^\s*\d{1,3}\s*\.\s*D[eé]bito\s*(.*?)\s*(?:\r?\n|$)", block)
@@ -208,6 +285,7 @@ def parse_ressarcimento_text(txt: str) -> PDFParsed:
             val = _parse_ptbr_number(mval.group(1))
         if cod or denom or per_d or val is not None:
             debitos.append({
+                'item': item_number,
                 'codigo_receita_denominacao': denom or (cod or None),
                 'periodo_apuracao_debito': per_d,
                 'valor': val,
@@ -337,6 +415,12 @@ def parse_credito_em_conta_text(txt: str) -> PDFCreditoContaParsed:
     # PERDCOMP vinculado
     m_perdcomp = re.search(r"Perdcomp\s*(?:n[ºo]\s*)?[:\-]?\s*([0-9A-Za-z./\-]+)", norm, flags=re.IGNORECASE)
     if m_perdcomp:
-        parsed.perdcomp = m_perdcomp.group(1).strip()
+        candidate = m_perdcomp.group(1).strip().strip(" .;,:")
+        if _looks_like_perdcomp(candidate):
+            parsed.perdcomp = candidate
+    if not parsed.perdcomp:
+        candidate = _find_perdcomp_candidate(norm)
+        if candidate:
+            parsed.perdcomp = candidate
 
     return parsed
