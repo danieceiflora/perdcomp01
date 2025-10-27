@@ -26,16 +26,7 @@
                 </div>
                 <div id="importDropZoneContainer" class="transition-all duration-200 hidden" aria-hidden="true">
                     <div class="flex flex-col gap-4">
-                        <div class="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-4 text-sm text-left text-muted-foreground">
-                            <p class="font-medium text-primary-700 dark:text-primary-300">Detecção automática de tipo</p>
-                            <p class="mt-2">Carregue recibos de protocolo, notificações de crédito em conta ou declarações de compensação em PDF. Identificaremos o tipo automaticamente antes de enviar.</p>
-                            <ul class="mt-3 list-disc list-inside space-y-1">
-                                <li><span class="font-medium text-card-foreground">Recibo:</span> reconhecido quando o PDF contém a expressão "Recibo d entrega" ou "Recibo de entrega".</li>
-                                <li><span class="font-medium text-card-foreground">Notificação de crédito:</span> reconhecida quando o PDF contém "Aviso de Pagamento de Ressarcimento".</li>
-                                <li><span class="font-medium text-card-foreground">Declaração de compensação:</span> identificada quando o PDF contém "Declaração de Compensação" ou o campo "PER/DCOMP inicial".</li>
-                            </ul>
-                            <p class="mt-2 text-xs text-muted-foreground">Não se preocupe se o texto não estiver exatamente igual: tentaremos ambos os formatos automaticamente caso a detecção inicial não seja conclusiva.</p>
-                        </div>
+                        
                         <div id="importDropZone" role="button" tabindex="0"
                              data-recibo-url="{% url 'adesao:importar_recibo' %}"
                              data-credito-url="{% url 'adesao:importar_credito_conta' %}"
@@ -43,14 +34,12 @@
                              class="relative flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-border bg-muted/30 p-5 text-center transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                             <input type="file" id="importFileInput" accept="application/pdf" class="hidden" multiple />
                             <i class="bi bi-cloud-arrow-up text-3xl text-muted-foreground"></i>
-                            <p id="importDropZoneText" class="text-sm text-muted-foreground max-w-lg">
-                                Arraste PDFs de recibos, notificações ou declarações de compensação aqui ou utilize o botão abaixo. Detectaremos automaticamente o tipo de cada arquivo.
-                            </p>
+                            
                             <button type="button" id="importBrowseButton"
                                     class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-card-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                                 Selecionar PDFs
                             </button>
-                            <span id="importDropZoneHint" class="text-xs text-muted-foreground text-center">Aceitamos vários PDFs por vez. Cada arquivo será identificado automaticamente como recibo, notificação ou declaração de compensação.</span>
+    
                             <div id="importDropZoneOverlay" class="pointer-events-none absolute inset-0 hidden items-center justify-center rounded-lg bg-background/80 backdrop-blur-sm">
                                 <div class="flex items-center gap-2 text-sm text-muted-foreground">
                                     <span class="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
@@ -97,6 +86,13 @@
                 <div class="overlay-success-content flex items-center justify-center gap-2">
                     <i class="overlay-success-icon bi bi-check-circle-fill"></i>
                     <span id="overlay-success-text" class="font-medium">Processamento concluído!</span>
+                </div>
+
+                <div class="overlay-success-content flex items-center justify-center gap-2">
+                    <a href="{% url 'adesao:importacao_logs_page' %}" target="_blank" class="inline-flex items-center gap-1 rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                        <i class="bi bi-clipboard-data"></i>
+                        Ver logs de importação
+                    </a><!-- Detalhes adicionais podem ser inseridos aqui -->
                 </div>
             </div>
             <button id="overlay-close-btn" type="button" class="mt-6 hidden inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
