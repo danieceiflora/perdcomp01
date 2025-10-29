@@ -8,7 +8,7 @@
 <!-- Hidden CSRF token for JavaScript access -->
 {% csrf_token %}
 
-<div class="container mx-auto px-4 py-6">
+<div class="w-full px-2 py-6 sm:px-4">
     {% if user.is_staff or user.is_superuser %}
     <div class="bg-card border rounded-lg shadow-sm mb-6">
         <div class="p-6">
@@ -171,8 +171,8 @@
             {% if adesoes %}
                 <!-- Desktop Table View -->
                 <div class="hidden md:block">
-                    <div class="rounded-md border">
-                        <table class="w-full">
+                    <div class="rounded-md border overflow-x-auto">
+                        <table class="min-w-full">
                             <thead>
                                 <tr class="border-b bg-muted/50">
                                     <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Perdcomp</th>
@@ -185,7 +185,6 @@
                                     <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Saldo Inicial</th>
                                     <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Saldo Restante</th>
                                     <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Ações</th>
-                                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Histórico</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -219,7 +218,7 @@
                                         {{ adesao.saldo_atual|br_currency }}
                                     </td>
                                     <td class="p-4 align-middle">
-                                        <div class="flex items-center gap-2">
+                                        <div class="flex flex-wrap items-center gap-2">
                                             <a href="{% url 'adesao:detail' adesao.pk %}" 
                                                class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 w-9"
                                                title="Visualizar">
@@ -230,14 +229,12 @@
                                                title="Lançamentos">
                                                 <i class="bi bi-card-list text-sm"></i>
                                             </a>
+                                            <button class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 w-9 btn-history-adesao" 
+                                                    data-id="{{ adesao.id }}" 
+                                                    title="Histórico">
+                                                <i class="bi bi-clock-history text-sm"></i>
+                                            </button>
                                         </div>
-                                    </td>
-                                    <td class="p-4 align-middle">
-                                        <button class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 w-9 btn-history-adesao" 
-                                                data-id="{{ adesao.id }}" 
-                                                title="Histórico">
-                                            <i class="bi bi-clock-history text-sm"></i>
-                                        </button>
                                     </td>
                                 </tr>
                                 {% endfor %}
