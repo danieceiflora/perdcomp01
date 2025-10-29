@@ -81,7 +81,17 @@ def exportar_lancamentos_xlsx(request):
 
     # Cabeçalho dos dados (linha 6)
     headers = [
-        'Perdcomp', 'Código da Guia', 'Cliente', 'Data', 'Valor do Lançamento', 'Sinal', 'Saldo Restante', 'Descrição', 'Qtd. Anexos'
+        'PER/DCOMP Adesão',
+        'Declaração PER/DCOMP',
+        'Item',
+        'Código da Guia',
+        'Cliente',
+        'Data',
+        'Valor do Lançamento',
+        'Sinal',
+        'Saldo Restante',
+        'Descrição',
+        'Qtd. Anexos',
     ]
     for col, header in enumerate(headers, 1):
         cell = ws.cell(row=6, column=col, value=header)
@@ -90,16 +100,18 @@ def exportar_lancamentos_xlsx(request):
     # Dados
     for idx, lanc in enumerate(queryset, start=7):
         ws.cell(row=idx, column=1, value=getattr(lanc.id_adesao, 'perdcomp', ''))
-        ws.cell(row=idx, column=2, value=lanc.codigo_guia or '')
+        ws.cell(row=idx, column=2, value=lanc.perdcomp_declaracao or '')
+        ws.cell(row=idx, column=3, value=lanc.item or '')
+        ws.cell(row=idx, column=4, value=lanc.codigo_guia or '')
         cliente = getattr(getattr(lanc.id_adesao, 'cliente', None), 'id_company_vinculada', None)
         cliente_nome = getattr(cliente, 'razao_social', str(cliente)) if cliente else ''
-        ws.cell(row=idx, column=3, value=cliente_nome)
-        ws.cell(row=idx, column=4, value=lanc.data_lancamento.strftime('%d/%m/%Y'))
-        ws.cell(row=idx, column=5, value=lanc.valor)
-        ws.cell(row=idx, column=6, value=lanc.sinal)
-        ws.cell(row=idx, column=7, value=lanc.saldo_restante)
-        ws.cell(row=idx, column=8, value=lanc.descricao if hasattr(lanc, 'descricao') else '')
-        ws.cell(row=idx, column=9, value=lanc.anexos.count())
+        ws.cell(row=idx, column=5, value=cliente_nome)
+        ws.cell(row=idx, column=6, value=lanc.data_lancamento.strftime('%d/%m/%Y'))
+        ws.cell(row=idx, column=7, value=lanc.valor)
+        ws.cell(row=idx, column=8, value=lanc.sinal)
+        ws.cell(row=idx, column=9, value=lanc.saldo_restante)
+        ws.cell(row=idx, column=10, value=lanc.descricao if hasattr(lanc, 'descricao') else '')
+        ws.cell(row=idx, column=11, value=lanc.anexos.count())
 
     # Ajuste de largura
     for col in range(1, len(headers)+1):

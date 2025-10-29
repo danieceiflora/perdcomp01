@@ -39,23 +39,26 @@ def _looks_like_perdcomp(value: str | None) -> bool:
     return bool(re.search(r"\d", candidate)) and any(ch in candidate for ch in ('.', '-'))
 
 
-def _find_perdcomp_candidate(text: str) -> Optional[str]:
+def _find_perdcomp_candidate(text: str, exclude: Optional[List[str]] = None) -> Optional[str]:
     if not text:
         return None
+    excluded = {val.strip() for val in (exclude or []) if val}
     search_scope = text
     patterns = (
         r"\b\d{5,}\.\d{4,}\.\d{5,}\.\d\.\d\.\d{2}-\d{4}\b",
         r"\b\d[\d.\-]{11,}\d\b",
     )
     for pattern in patterns:
-        m = re.search(pattern, search_scope)
-        if m:
-            candidate = m.group(0).strip()
+        for match in re.finditer(pattern, search_scope):
+            candidate = match.group(0).strip()
+            if excluded and candidate in excluded:
+                continue
             if _looks_like_perdcomp(candidate):
                 return candidate
-    loose_match = re.search(r"\d[\d.\-\s]{11,}\d", search_scope)
-    if loose_match:
+    for loose_match in re.finditer(r"\d[\d.\-\s]{11,}\d", search_scope):
         candidate = re.sub(r"\s+", "", loose_match.group(0)).strip(" .;,:")
+        if excluded and candidate in excluded:
+            continue
         if _looks_like_perdcomp(candidate):
             return candidate
     return None
@@ -119,36 +122,72 @@ def parse_ressarcimento_text(txt: str) -> PDFParsed:
     # Normalizar quebras e espaços múltiplos para facilitar regex com DOTALL minimalista
     norm = re.sub(r"[\t\u00A0]+", " ", txt)
 
+    # ETAPA 1: Número do PER/DCOMP inicial (seção "Nº do PER/DCOMP inicial")
+    # Este é o número que identifica a adesão original e deve ser capturado PRIMEIRO
+    m_initial = re.search(r"N[ºo°]\s*do\s+PER\s*/?\s*DCOMP\s+inicial\s*[:\-]?\s*([0-9A-Za-z./\-\s]+)", norm, flags=re.IGNORECASE)
+    if m_initial:
+        raw_initial = m_initial.group(1).strip()
+        # Remove letras e mantém apenas números, pontos, traços e barras
+        candidate_initial = re.sub(r"[^0-9.\-/]", "", raw_initial)
+        candidate_initial = candidate_initial.strip(" .;,:")
+        if _looks_like_perdcomp(candidate_initial):
+            p.perdcomp_inicial = candidate_initial
+        else:
+            # Procurar nas proximidades do label
+            search_tail = (raw_initial + " " + norm[m_initial.end(): m_initial.end() + 200]).strip()
+            candidate_initial = _find_perdcomp_candidate(search_tail)
+            if not candidate_initial:
+                candidate_initial = _find_perdcomp_candidate(norm[m_initial.end(): m_initial.end() + 200])
+            if candidate_initial:
+                p.perdcomp_inicial = candidate_initial
+
+    # ETAPA 2: Capturar CNPJ e o PERDCOMP do cabeçalho (número da declaração atual)
+    # Este número aparece no topo do documento, geralmente destacado, e é o número desta declaração
     m_cnpj = re.search(r"CNPJ\s*[:\-]?\s*([0-9./-]{14,20})", norm, flags=re.IGNORECASE)
     if m_cnpj:
         p.cnpj = _clean_cnpj(m_cnpj.group(1))
+        # O número que aparece após CNPJ (geralmente destacado) é o PERDCOMP da declaração
         tail_segment = norm[m_cnpj.end(): m_cnpj.end() + 120]
         m_after = re.match(r"\s*([0-9A-Za-z./\-]+)", tail_segment)
         if m_after:
             candidate = m_after.group(1).strip().strip(" .;,:")
-            if _looks_like_perdcomp(candidate):
+            # Este é o PERDCOMP da DECLARAÇÃO (diferente do inicial)
+            if _looks_like_perdcomp(candidate) and candidate != p.perdcomp_inicial:
                 p.perdcomp = candidate
         if not p.perdcomp:
-            candidate = _find_perdcomp_candidate(tail_segment)
+            candidate = _find_perdcomp_candidate(tail_segment, [p.perdcomp_inicial])
             if candidate:
                 p.perdcomp = candidate
         if not p.perdcomp:
             head_segment = norm[max(0, m_cnpj.start() - 120): m_cnpj.start()]
-            candidate = _find_perdcomp_candidate(head_segment)
+            candidate = _find_perdcomp_candidate(head_segment, [p.perdcomp_inicial])
             if candidate:
                 p.perdcomp = candidate
 
+    # ETAPA 3: Fallbacks adicionais para capturar número da declaração
     if not p.perdcomp:
-        m_per = re.search(r"PER/?DCOMP\s*(?:inicial)?\s*(?:n[ºo]\s*)?[:\-]?\s*([0-9A-Za-z.\-]+)", norm, flags=re.IGNORECASE)
+        m_per = re.search(r"PER\s*/?\s*DCOMP(?!\s*inicial)\s*(?:n[ºo]\s*)?[:\-]?\s*([0-9A-Za-z.\-]+)", norm, flags=re.IGNORECASE)
         if m_per:
             candidate = m_per.group(1).strip()
-            if _looks_like_perdcomp(candidate):
+            if _looks_like_perdcomp(candidate) and candidate != p.perdcomp_inicial:
                 p.perdcomp = candidate
 
     if not p.perdcomp:
-        candidate = _find_perdcomp_candidate(norm)
+        m_decl = re.search(r"Declara[cç][aã]o\s+de\s+Compensa[cç][aã]o\s*(?:n[ºo]\s*)?[:\-]?\s*([0-9A-Za-z.\-]+)", norm, flags=re.IGNORECASE)
+        if m_decl:
+            candidate = m_decl.group(1).strip()
+            if _looks_like_perdcomp(candidate) and candidate != p.perdcomp_inicial:
+                p.perdcomp = candidate
+
+    if not p.perdcomp:
+        candidate = _find_perdcomp_candidate(norm, [p.perdcomp_inicial])
         if candidate:
             p.perdcomp = candidate
+
+    # ETAPA 4: Último fallback - usar inicial apenas se realmente não encontrou nada
+    # (isso só deve acontecer em PDFs de adesão inicial, não em declarações)
+    if not p.perdcomp and p.perdcomp_inicial:
+        p.perdcomp = p.perdcomp_inicial
 
     # Tipo de Documento -> mapeia para metodo_credito conforme opções do sistema
     m = re.search(r"Tipo de Documento\s*[:\-]?\s*(.+)", norm, flags=re.IGNORECASE)
@@ -173,21 +212,6 @@ def parse_ressarcimento_text(txt: str) -> PDFParsed:
                 p.metodo_credito = 'Declaração de Compensação'
         else:
             p.metodo_credito = raw
-
-    # Número do PER/DCOMP inicial (campo usado para encontrar adesão existente)
-    m = re.search(r"PER\s*/?\s*DCOMP\s+inicial\s*[:\-]?\s*([0-9A-Za-z./\-\s]+)", norm, flags=re.IGNORECASE)
-    if m:
-        raw_initial = m.group(1).strip()
-        candidate_initial = re.sub(r"\s+", "", raw_initial).strip(" .;,:")
-        if _looks_like_perdcomp(candidate_initial):
-            p.perdcomp_inicial = candidate_initial
-        else:
-            search_tail = (raw_initial + " " + norm[m.end(): m.end() + 200]).strip()
-            candidate_initial = _find_perdcomp_candidate(search_tail)
-            if not candidate_initial:
-                candidate_initial = _find_perdcomp_candidate(norm[m.end(): m.end() + 200])
-            if candidate_initial:
-                p.perdcomp_inicial = candidate_initial
 
     # Data de Criação dd/mm/aaaa
     m = re.search(r"Data de Cria[cç][aã]o\s*[:\-]?\s*(\d{2}/\d{2}/\d{4})", norm, flags=re.IGNORECASE)
@@ -316,6 +340,193 @@ def parse_ressarcimento_text(txt: str) -> PDFParsed:
         if mg:
             p.valor_original_credito_inicial = _parse_ptbr_number(mg.group(1))
 
+    return p
+
+
+def parse_declaracao_compensacao_text(txt: str) -> PDFParsed:
+    """
+    Parser específico para DECLARAÇÃO DE COMPENSAÇÃO.
+    
+    Extrai:
+    - perdcomp: Número da declaração atual (aparece no cabeçalho, após CNPJ)
+    - perdcomp_inicial: Número do PER/DCOMP inicial (seção "Nº do PER/DCOMP inicial")
+    - debitos: Lista de débitos compensados
+    - metodo_credito: Sempre "Declaração de Compensação" ou variação vinculada
+    - valor_original_credito_inicial: Valor do crédito sendo utilizado
+    """
+    p = PDFParsed()
+    if not txt:
+        return p
+    
+    # Normalizar
+    norm = re.sub(r"[\t\u00A0]+", " ", txt)
+    
+    # 1. CNPJ (obrigatório)
+    m_cnpj = re.search(r"CNPJ\s*[:\-]?\s*([0-9./-]{14,20})", norm, flags=re.IGNORECASE)
+    if m_cnpj:
+        p.cnpj = _clean_cnpj(m_cnpj.group(1))
+    
+    # 2. Número do PER/DCOMP INICIAL (obrigatório para declaração)
+    # Busca explicitamente pela label "Nº do PER/DCOMP inicial"
+    m_inicial = re.search(
+        r"(?:N[ºo°]\.?\s*do\s+|Nº\s+do\s+|Numero\s+do\s+)?PER\s*/?\s*DCOMP\s+inicial\s*[:\-]?\s*([0-9A-Za-z./\-\s]{15,35})",
+        norm,
+        flags=re.IGNORECASE
+    )
+    if m_inicial:
+        raw = m_inicial.group(1).strip()
+        # Remove espaços e mantém apenas números, pontos, traços e barras
+        candidate = re.sub(r"[^0-9.\-/]", "", raw)
+        candidate = candidate.strip(" .;,:")
+        if _looks_like_perdcomp(candidate):
+            p.perdcomp_inicial = candidate
+    
+    # 3. Número do PERDCOMP da DECLARAÇÃO ATUAL
+    # Este número aparece no cabeçalho, geralmente destacado, próximo ao CNPJ
+    # É diferente do PER/DCOMP inicial - este identifica a declaração atual
+    
+    # 3a. Buscar no cabeçalho (linha com PERDCOMP destacado)
+    m_header = re.search(
+        r"(?:PERDCOMP|PER\s*/?\s*DCOMP)\s+(\d+[\d.\-]+)",
+        norm[:500],  # Primeiras linhas do documento
+        flags=re.IGNORECASE
+    )
+    if m_header:
+        candidate = m_header.group(1).strip()
+        if _looks_like_perdcomp(candidate) and candidate != p.perdcomp_inicial:
+            p.perdcomp = candidate
+    
+    # 3b. Buscar após CNPJ (número geralmente destacado)
+    if not p.perdcomp and m_cnpj:
+        tail = norm[m_cnpj.end():m_cnpj.end() + 100]
+        m_after = re.search(r"(\d{5}[\d.\-]+\d{4})", tail)
+        if m_after:
+            candidate = m_after.group(1).strip()
+            if _looks_like_perdcomp(candidate) and candidate != p.perdcomp_inicial:
+                p.perdcomp = candidate
+    
+    # 3c. Fallback: procurar qualquer PERDCOMP que não seja o inicial
+    if not p.perdcomp:
+        candidate = _find_perdcomp_candidate(norm, [p.perdcomp_inicial])
+        if candidate:
+            p.perdcomp = candidate
+    
+    # 4. Tipo de Documento - confirmar que é Declaração de Compensação
+    m_tipo = re.search(r"Tipo\s+de\s+Documento\s*[:\-]?\s*(.+?)(?:\n|$)", norm, flags=re.IGNORECASE)
+    if m_tipo:
+        tipo_raw = m_tipo.group(1).strip()
+        tipo_lower = tipo_raw.lower()
+        
+        # Detectar se é vinculada
+        whole_lower = norm.lower()
+        if 'vinculada a um pedido de restitui' in whole_lower or 'vinculad' in tipo_lower and 'restitui' in whole_lower:
+            p.metodo_credito = 'Compensação vinculada a um pedido de restituição'
+        elif 'vinculada a um pedido de ressarc' in whole_lower or 'vinculad' in tipo_lower and 'ressarc' in whole_lower:
+            p.metodo_credito = 'Compensação vinculada a um pedido de ressarcimento'
+        else:
+            p.metodo_credito = 'Declaração de Compensação'
+    else:
+        # Default se não encontrar o tipo
+        p.metodo_credito = 'Declaração de Compensação'
+    
+    # 5. Data de Criação
+    m_data = re.search(r"Data\s+de\s+Cria[cç][aã]o\s*[:\-]?\s*(\d{2}/\d{2}/\d{4})", norm, flags=re.IGNORECASE)
+    if m_data:
+        p.data_criacao = m_data.group(1)
+    
+    # 6. Valor Original do Crédito Inicial (seção CRÉDITO PAGAMENTO INDEVIDO OU A MAIOR)
+    m_credito_bloco = re.search(
+        r"CR[EÉ]DITO\s+PAGAMENTO\s+INDEVIDO\s+OU\s+A\s+MAIOR(.*?)(?=\n\s*[A-Z][A-Z ]{5,}|\Z)",
+        norm,
+        flags=re.IGNORECASE | re.DOTALL
+    )
+    if m_credito_bloco:
+        bloco = m_credito_bloco.group(1)
+        m_valor = re.search(r"Valor\s+Original\s+do\s+Cr[eé]dito\s+Inicial\s*[:\-]?\s*([0-9.]+,\d{2})", bloco, flags=re.IGNORECASE)
+        if m_valor:
+            p.valor_original_credito_inicial = _parse_ptbr_number(m_valor.group(1))
+    
+    # Fallback global
+    if p.valor_original_credito_inicial is None:
+        m_valor_global = re.search(
+            r"Valor\s+Original\s+do\s+Cr[eé]dito\s+Inicial\s*[:\-]?\s*([0-9.]+,\d{2})",
+            norm,
+            flags=re.IGNORECASE
+        )
+        if m_valor_global:
+            p.valor_original_credito_inicial = _parse_ptbr_number(m_valor_global.group(1))
+    
+    # 7. DÉBITOS - Extração de múltiplos débitos compensados
+    debitos: List[Dict[str, Any]] = []
+    
+    # Buscar blocos que começam com "N. Débito" onde N é um número
+    for match in re.finditer(
+        r"(?ms)^\s*(\d{1,3})\s*\.\s*D[eé]bito\s*(.*?)(?=^\s*\d{1,3}\s*\.\s*D[eé]bito|\Z)",
+        norm
+    ):
+        bloco = match.group(0)
+        item_num = match.group(1).strip()
+        if item_num:
+            item_num = item_num.zfill(3)  # 001, 002, etc
+        
+        # Código da Receita
+        codigo = None
+        m_cod = re.search(r"C[oó]digo\s*(?:da|de)\s*Receita\s*[:\-]?\s*([0-9.]+)", bloco, flags=re.IGNORECASE)
+        if m_cod:
+            codigo = m_cod.group(1).strip()
+        
+        # Denominação
+        denominacao = None
+        m_denom = re.search(r"Denomina[cç][aã]o\s*[:\-]?\s*(.+?)(?:\n|$)", bloco, flags=re.IGNORECASE)
+        if m_denom:
+            denominacao = m_denom.group(1).strip().splitlines()[0].strip()
+        
+        # Se temos código e denominação, juntar
+        if codigo and denominacao:
+            cod_receita_denom = f"{codigo} - {denominacao}"
+        elif codigo:
+            cod_receita_denom = codigo
+        elif denominacao:
+            cod_receita_denom = denominacao
+        else:
+            cod_receita_denom = None
+        
+        # Período de Apuração
+        periodo = None
+        m_per = re.search(
+            r"Per[ií]odo\s+de\s+Apura[cç][aã]o.*?(\d{2}/\d{2}/\d{4}|\d{2}/\d{4})",
+            bloco,
+            flags=re.IGNORECASE | re.DOTALL
+        )
+        if m_per:
+            periodo = m_per.group(1)
+        
+        # Valor do Débito
+        valor = None
+        m_val = re.search(
+            r"Valor\s*(?:do\s*D[eé]bito|Total)\s*[:\-]?\s*([0-9.]+,\d{2})",
+            bloco,
+            flags=re.IGNORECASE
+        )
+        if not m_val:
+            # Fallback: primeiro valor monetário
+            m_val = re.search(r"([0-9.]+,\d{2})", bloco)
+        
+        if m_val:
+            valor = _parse_ptbr_number(m_val.group(1))
+        
+        # Adicionar débito se tiver pelo menos valor
+        if valor is not None or cod_receita_denom or periodo:
+            debitos.append({
+                'item': item_num,
+                'codigo_receita_denominacao': cod_receita_denom,
+                'periodo_apuracao_debito': periodo,
+                'valor': valor,
+            })
+    
+    if debitos:
+        p.debitos = debitos
+    
     return p
 
 

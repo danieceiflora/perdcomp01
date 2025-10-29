@@ -51,8 +51,16 @@
                             <div class="font-medium">{% if lancamento.id_adesao.cliente.id_company_vinculada %}{{ lancamento.id_adesao.cliente.id_company_vinculada.razao_social }}{% else %}--{% endif %}</div>
                         </div>
                         <div>
-                            <div class="text-xs uppercase tracking-wide text-muted-foreground">Perdcomp</div>
+                            <div class="text-xs uppercase tracking-wide text-muted-foreground">PER/DCOMP Adesão</div>
                             <div class="font-medium">{{ lancamento.id_adesao.perdcomp|default:'--' }}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs uppercase tracking-wide text-muted-foreground">Declaração PER/DCOMP</div>
+                            <div class="font-medium">{{ lancamento.perdcomp_declaracao|default:'--' }}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs uppercase tracking-wide text-muted-foreground">Item da Declaração</div>
+                            <div class="font-medium">{{ lancamento.item|default:'--' }}</div>
                         </div>
                         <div>
                             <div class="text-xs uppercase tracking-wide text-muted-foreground">Código da Guia</div>

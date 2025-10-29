@@ -5,7 +5,100 @@
 {% block title %}Lista de Lançamentos{% endblock %}
 
 {% block content %}
+<!-- Hidden CSRF token for JavaScript access -->
+{% csrf_token %}
+
 <div class="max-w-7xl mx-auto px-4 py-6">
+    {% if user.is_staff or user.is_superuser %}
+    <div class="bg-card border rounded-lg shadow-sm mb-6">
+        <div class="p-6">
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                        <h2 class="text-xl font-semibold text-card-foreground">Importar Declarações de Compensação</h2>
+                        <p class="text-sm text-muted-foreground">Carregue declarações de compensação em PDF para criar lançamentos automaticamente vinculados ao PER/DCOMP inicial informado no documento.</p>
+                    </div>
+                    <button type="button" id="importToggleButton" aria-controls="importDropZoneContainer" aria-expanded="false"
+                            class="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-card-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                        <i class="bi bi-chevron-down mr-2" aria-hidden="true"></i>
+                        Expandir área
+                    </button>
+                </div>
+                <div id="importDropZoneContainer" class="transition-all duration-200 hidden" aria-hidden="true">
+                    <div class="flex flex-col gap-4">
+                        <div id="importDropZone" role="button" tabindex="0"
+                             data-compensacao-url="{% url 'adesao:importar_declaracao_compensacao' %}"
+                             class="relative flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-border bg-muted/30 p-5 text-center transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                            <input type="file" id="importFileInput" accept="application/pdf" class="hidden" multiple />
+                            <i class="bi bi-cloud-arrow-up text-3xl text-muted-foreground"></i>
+                            <div>
+                                <p class="text-sm font-medium text-card-foreground">Arraste declarações de compensação aqui</p>
+                                <p class="text-xs text-muted-foreground mt-1">ou clique para selecionar arquivos PDF</p>
+                            </div>
+                            <button type="button" id="importBrowseButton"
+                                    class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-card-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                                Selecionar PDFs
+                            </button>
+                            <div id="importDropZoneOverlay" class="pointer-events-none absolute inset-0 hidden items-center justify-center rounded-lg bg-background/80 backdrop-blur-sm">
+                                <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <span class="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
+                                    <span id="importDropZoneOverlayText">Processando arquivos...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div id="processing-overlay" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="processingOverlayTitle">
+        <div class="flex w-full max-w-md flex-col rounded-lg border border-border bg-card text-card-foreground shadow-2xl p-6 sm:p-8" tabindex="-1">
+            <div class="mb-6 text-center">
+                <h3 id="processingOverlayTitle" class="text-xl font-semibold mb-2">Processando declarações</h3>
+                <p class="text-sm text-muted-foreground">Aguarde enquanto processamos as declarações selecionadas.</p>
+            </div>
+            <div class="flex justify-center mb-6">
+                <div class="relative">
+                    <div class="h-16 w-16 rounded-full border-4 border-primary/20"></div>
+                    <div class="absolute inset-0 h-16 w-16 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+                    <div class="absolute inset-0 flex items-center justify-center text-primary">
+                        <i class="bi bi-file-earmark-pdf text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-4">
+                <div class="mb-2 flex items-center justify-between text-sm text-muted-foreground">
+                    <span id="overlay-progress-text">0 de 0 processados</span>
+                    <span id="overlay-progress-percentage">0%</span>
+                </div>
+                <div class="h-3 w-full rounded-full bg-muted/60">
+                    <div id="overlay-progress-bar" class="relative h-3 w-0 rounded-full bg-primary transition-all duration-300"></div>
+                </div>
+            </div>
+            <div class="mb-4 rounded-lg bg-muted/40 px-4 py-3 text-center">
+                <p class="text-xs text-muted-foreground">Processando:</p>
+                <p id="overlay-current-file" class="truncate text-sm font-medium">—</p>
+            </div>
+            <div id="overlay-success-message" class="hidden rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 dark:border-green-500/40 dark:bg-green-500/15 dark:text-green-300">
+                <div class="overlay-success-content flex items-center justify-center gap-2">
+                    <i class="overlay-success-icon bi bi-check-circle-fill"></i>
+                    <span id="overlay-success-text" class="font-medium">Processamento concluído!</span>
+                </div>
+                <div class="overlay-success-content flex items-center justify-center gap-2 mt-3">
+                    <a href="{% url 'adesao:importacao_logs_page' %}" target="_blank" class="inline-flex items-center gap-1 rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                        <i class="bi bi-clipboard-data"></i>
+                        Ver logs de importação
+                    </a>
+                </div>
+            </div>
+            <button id="overlay-close-btn" type="button" class="mt-6 hidden inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                <i class="bi bi-check-lg mr-2"></i>OK, Fechar
+            </button>
+        </div>
+    </div>
+
     <div class="bg-card border rounded-lg shadow-sm mb-6">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-6 border-b">
             <h1 class="text-2xl font-semibold text-card-foreground">Lançamentos</h1>
@@ -77,7 +170,9 @@
                     <table class="w-full text-sm">
                         <thead>
                             <tr class="border-b bg-muted/50 text-muted-foreground">
-                                <th class="h-10 px-4 text-left font-medium">Perdcomp</th>
+                                <th class="h-10 px-4 text-left font-medium">PER/DCOMP Adesão</th>
+                                <th class="h-10 px-4 text-left font-medium">Declaração PER/DCOMP</th>
+                                <th class="h-10 px-4 text-left font-medium">Item</th>
                                 <th class="h-10 px-4 text-left font-medium">Código da Guia</th>
                                 <th class="h-10 px-4 text-left font-medium">Cliente</th>
                                 <th class="h-10 px-4 text-left font-medium">Data de Criação</th>
@@ -93,6 +188,8 @@
                             {% for lancamento in lancamentos %}
                             <tr class="border-b last:border-0 hover:bg-muted/50 transition-colors">
                                 <td class="px-4 py-3 font-medium">{{ lancamento.id_adesao.perdcomp }}</td>
+                                <td class="px-4 py-3">{{ lancamento.perdcomp_declaracao|default:'--' }}</td>
+                                <td class="px-4 py-3">{{ lancamento.item|default:'--' }}</td>
                                 <td class="px-4 py-3">{{ lancamento.codigo_guia|default:'--' }}</td>
                                 <td class="px-4 py-3">{% if lancamento.id_adesao.cliente.id_company_vinculada %}{{ lancamento.id_adesao.cliente.id_company_vinculada.razao_social }}{% else %}{{ lancamento.id_adesao.cliente }}{% endif %}</td>
                                 <td class="px-4 py-3">{{ lancamento.data_criacao }}</td>
@@ -123,7 +220,10 @@
                 {% for lancamento in lancamentos %}
                 <div class="bg-card border rounded-lg shadow-sm transition hover:shadow-md">
                     <div class="p-4 border-b flex items-center justify-between">
-                        <h3 class="font-semibold">Perdcomp: {{ lancamento.id_adesao.perdcomp }}</h3>
+                        <div>
+                            <div class="font-semibold">PER/DCOMP Adesão: {{ lancamento.id_adesao.perdcomp }}</div>
+                            <div class="text-xs text-muted-foreground">Declaração: {{ lancamento.perdcomp_declaracao|default:'--' }} · Item: {{ lancamento.item|default:'--' }}</div>
+                        </div>
                         {% if lancamento.aprovado %}
                         <span class="inline-flex items-center rounded-md bg-green-500/10 px-2 py-1 text-xs font-medium text-green-700 dark:text-green-300"><i class="bi bi-check2-circle mr-1"></i>Aprovado</span>
                         {% else %}
@@ -132,6 +232,8 @@
                     </div>
                     <div class="p-4 space-y-2 text-sm">
                         <div><span class="text-muted-foreground">Cliente:</span> {% if lancamento.id_adesao.cliente.id_company_vinculada %}{{ lancamento.id_adesao.cliente.id_company_vinculada.razao_social }}{% else %}{{ lancamento.id_adesao.cliente }}{% endif %}</div>
+                        <div><span class="text-muted-foreground">Declaração PER/DCOMP:</span> {{ lancamento.perdcomp_declaracao|default:'--' }}</div>
+                        <div><span class="text-muted-foreground">Item:</span> {{ lancamento.item|default:'--' }}</div>
                         <div><span class="text-muted-foreground">Código da Guia:</span> {{ lancamento.codigo_guia|default:'--' }}</div>
                         <div><span class="text-muted-foreground">Data:</span> {{ lancamento.data_lancamento|date:"d/m/Y" }}</div>
                         <div><span class="text-muted-foreground">Valor:</span> <span class="font-semibold {% if lancamento.sinal == '+' %}text-green-600 dark:text-green-400{% else %}text-destructive{% endif %}">{{ lancamento.sinal }} {{ lancamento.valor|br_currency }}</span></div>
@@ -167,10 +269,8 @@
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
-<!-- Modal Histórico Lançamento (estrutura harmonizada com lista_clientes) -->
+<!-- Modal Histórico Lançamento -->
 <div id="historyLancModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 hidden z-50" role="dialog" aria-modal="true" aria-labelledby="historyLancTitle">
     <div class="bg-background rounded-lg shadow-xl w-full max-w-5xl border" style="height:80vh;display:flex;flex-direction:column;">
         <div class="flex items-center justify-between px-6 py-4 border-b" style="flex-shrink:0;">
@@ -205,9 +305,352 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
-// Auto-apply status filter on change
+// ====== DRAG AND DROP IMPORT FUNCTIONALITY ======
+function getCookie(name) {
+    const cookies = document.cookie ? document.cookie.split('; ') : [];
+    for (let i = 0; i < cookies.length; i++) {
+        const parts = cookies[i].split('=');
+        const cookieName = decodeURIComponent(parts[0]);
+        if (cookieName === name) {
+            parts.shift();
+            return decodeURIComponent(parts.join('='));
+        }
+    }
+    return null;
+}
+
+function getCSRFToken() {
+    let token = getCookie('csrftoken');
+    if (!token && window.CSRF_TOKEN) {
+        token = window.CSRF_TOKEN;
+    }
+    if (!token) {
+        const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (csrfInput) {
+            token = csrfInput.value;
+        }
+    }
+    return token;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const overlayEls = {
+        root: document.getElementById('processing-overlay'),
+        progressBar: document.getElementById('overlay-progress-bar'),
+        progressText: document.getElementById('overlay-progress-text'),
+        progressPercentage: document.getElementById('overlay-progress-percentage'),
+        currentFile: document.getElementById('overlay-current-file'),
+        closeBtn: document.getElementById('overlay-close-btn'),
+        successMessage: document.getElementById('overlay-success-message'),
+        successText: document.getElementById('overlay-success-text'),
+        title: document.getElementById('processingOverlayTitle'),
+    };
+
+    function resetProcessingOverlay() {
+        if (overlayEls.progressBar) overlayEls.progressBar.style.width = '0%';
+        if (overlayEls.progressText) overlayEls.progressText.textContent = '0 de 0 processados';
+        if (overlayEls.progressPercentage) overlayEls.progressPercentage.textContent = '0%';
+        if (overlayEls.currentFile) overlayEls.currentFile.textContent = '—';
+        if (overlayEls.successMessage) overlayEls.successMessage.classList.add('hidden');
+        if (overlayEls.closeBtn) overlayEls.closeBtn.classList.add('hidden');
+    }
+
+    function updateOverlayProgress(current, total, currentFileName) {
+        const safeTotal = Math.max(total || 0, 0);
+        const safeCurrent = Math.min(Math.max(current || 0, 0), safeTotal);
+        const percentage = safeTotal > 0 ? Math.round((safeCurrent / safeTotal) * 100) : 0;
+        if (overlayEls.progressBar) overlayEls.progressBar.style.width = `${percentage}%`;
+        if (overlayEls.progressText) overlayEls.progressText.textContent = `${safeCurrent} de ${safeTotal} processados`;
+        if (overlayEls.progressPercentage) overlayEls.progressPercentage.textContent = `${percentage}%`;
+        if (overlayEls.currentFile) {
+            if (currentFileName) {
+                overlayEls.currentFile.textContent = currentFileName;
+            } else if (safeTotal > 0 && safeCurrent === safeTotal) {
+                overlayEls.currentFile.textContent = 'Concluído!';
+            }
+        }
+    }
+
+    function showProcessingOverlay(total) {
+        if (!overlayEls.root) return;
+        resetProcessingOverlay();
+        overlayEls.root.classList.remove('hidden');
+        overlayEls.root.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        updateOverlayProgress(0, total || 0);
+    }
+
+    function showOverlaySummary(results) {
+        if (!overlayEls.root) return;
+        const safeResults = Array.isArray(results) ? results : [];
+        const totalItems = safeResults.length;
+        const successCount = safeResults.filter((item) => item && item.ok).length;
+        const errorCount = totalItems - successCount;
+
+        if (overlayEls.successMessage) {
+            if (errorCount > 0) {
+                overlayEls.successMessage.classList.remove('border-green-200', 'bg-green-50', 'dark:border-green-500/40', 'dark:bg-green-500/15');
+                overlayEls.successMessage.classList.add('border-red-200', 'bg-red-50', 'dark:border-red-500/40', 'dark:bg-red-500/15');
+                const successContent = overlayEls.successMessage.querySelector('.overlay-success-content');
+                if (successContent) {
+                    successContent.classList.remove('text-green-700', 'dark:text-green-300');
+                    successContent.classList.add('text-red-700', 'dark:text-red-300');
+                }
+                const successIcon = overlayEls.successMessage.querySelector('.overlay-success-icon');
+                if (successIcon) {
+                    successIcon.classList.remove('bi-check-circle-fill');
+                    successIcon.classList.add('bi-x-circle-fill');
+                }
+            }
+
+            if (overlayEls.successText) {
+                let summaryText = `${totalItems} declaração${totalItems === 1 ? '' : 'ões'} recebida${totalItems === 1 ? '' : 's'}. `;
+                summaryText += `${successCount} processada${successCount === 1 ? '' : 's'}.`;
+                if (errorCount > 0) {
+                    summaryText += ` ${errorCount} erro${errorCount === 1 ? '' : 's'}.`;
+                }
+                overlayEls.successText.textContent = summaryText.trim();
+            }
+            overlayEls.successMessage.classList.remove('hidden');
+        }
+
+        if (overlayEls.currentFile) overlayEls.currentFile.textContent = 'Concluído!';
+        if (overlayEls.closeBtn) {
+            overlayEls.closeBtn.classList.remove('hidden');
+            overlayEls.closeBtn.focus();
+        }
+    }
+
+    function closeProcessingOverlay() {
+        if (overlayEls.root) {
+            overlayEls.root.classList.add('hidden');
+            overlayEls.root.setAttribute('aria-hidden', 'true');
+        }
+        document.body.style.overflow = '';
+        location.reload();
+    }
+
+    if (overlayEls.closeBtn) {
+        overlayEls.closeBtn.addEventListener('click', closeProcessingOverlay);
+    }
+
+    if (overlayEls.root) {
+        overlayEls.root.addEventListener('click', (event) => {
+            if (event.target === overlayEls.root && overlayEls.closeBtn && !overlayEls.closeBtn.classList.contains('hidden')) {
+                closeProcessingOverlay();
+            }
+        });
+    }
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && overlayEls.root && !overlayEls.root.classList.contains('hidden') && overlayEls.closeBtn && !overlayEls.closeBtn.classList.contains('hidden')) {
+            closeProcessingOverlay();
+        }
+    });
+
+    // Toggle expand/collapse
+    const toggleButton = document.getElementById('importToggleButton');
+    const container = document.getElementById('importDropZoneContainer');
+
+    if (toggleButton && container) {
+        toggleButton.addEventListener('click', () => {
+            const isExpanded = !container.classList.contains('hidden');
+            if (isExpanded) {
+                container.classList.add('hidden');
+                toggleButton.setAttribute('aria-expanded', 'false');
+                container.setAttribute('aria-hidden', 'true');
+                toggleButton.innerHTML = '<i class="bi bi-chevron-down mr-2" aria-hidden="true"></i>Expandir área';
+            } else {
+                container.classList.remove('hidden');
+                toggleButton.setAttribute('aria-expanded', 'true');
+                container.setAttribute('aria-hidden', 'false');
+                toggleButton.innerHTML = '<i class="bi bi-chevron-up mr-2" aria-hidden="true"></i>Recolher área';
+            }
+        });
+    }
+
+    // Drag and drop logic
+    const dropZone = document.getElementById('importDropZone');
+    const fileInput = document.getElementById('importFileInput');
+    const browseButton = document.getElementById('importBrowseButton');
+    const zoneOverlay = document.getElementById('importDropZoneOverlay');
+
+    if (!dropZone || !fileInput) return;
+
+    const compensacaoUrl = dropZone.getAttribute('data-compensacao-url');
+
+    const toggleUploading = (isUploading, message) => {
+        if (isUploading) {
+            if (container) container.classList.remove('hidden');
+            dropZone.classList.add('border-primary', 'bg-muted/40');
+            if (zoneOverlay) zoneOverlay.classList.remove('hidden');
+            if (browseButton) browseButton.disabled = true;
+            dropZone.setAttribute('aria-busy', 'true');
+        } else {
+            dropZone.classList.remove('border-primary', 'bg-muted/40');
+            if (zoneOverlay) zoneOverlay.classList.add('hidden');
+            if (browseButton) browseButton.disabled = false;
+            dropZone.removeAttribute('aria-busy');
+        }
+    };
+
+    const uploadFile = async (file, index, total) => {
+        try {
+            const csrfToken = getCSRFToken();
+            if (!csrfToken) {
+                return {
+                    ok: false,
+                    message: `${file.name}: Token de segurança não encontrado. Recarregue a página.`,
+                    file: file.name,
+                };
+            }
+
+            const formData = new FormData();
+            formData.append('pdf', file, file.name);
+
+            const response = await fetch(compensacaoUrl, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken },
+                body: formData,
+            });
+
+            const data = await response.json().catch(() => null);
+
+            if (!response.ok || !data) {
+                let errorDetail = `Status ${response.status}`;
+                if (response.status === 403) errorDetail = 'Acesso negado (403)';
+                else if (response.status === 401) errorDetail = 'Sessão expirada (401)';
+                else if (response.status === 404) errorDetail = 'Endpoint não encontrado (404)';
+                
+                return {
+                    ok: false,
+                    message: `${file.name}: ${errorDetail}`,
+                    file: file.name,
+                };
+            }
+
+            if (!data.ok) {
+                return {
+                    ok: false,
+                    message: `${file.name}: ${data.error || 'Erro ao processar'}`,
+                    file: file.name,
+                };
+            }
+
+            const createdCount = data.created_count || 0;
+            const skippedCount = data.skipped_count || 0;
+            const errorCount = data.error_count || 0;
+
+            let message = `${file.name}: `;
+            if (createdCount > 0) {
+                message += `${createdCount} débito${createdCount === 1 ? '' : 's'} criado${createdCount === 1 ? '' : 's'}`;
+            }
+            if (skippedCount > 0) {
+                message += `${createdCount > 0 ? ', ' : ''}${skippedCount} já existente${skippedCount === 1 ? '' : 's'}`;
+            }
+            if (errorCount > 0) {
+                message += `${createdCount > 0 || skippedCount > 0 ? ', ' : ''}${errorCount} erro${errorCount === 1 ? '' : 's'}`;
+            }
+
+            return {
+                ok: true,
+                message: message,
+                file: file.name,
+                data,
+            };
+        } catch (error) {
+            return {
+                ok: false,
+                message: `${file.name}: ${error.message || 'Erro desconhecido'}`,
+                file: file.name,
+            };
+        }
+    };
+
+    const handleFiles = async (fileList) => {
+        if (!fileList || !fileList.length) return;
+
+        const filesArray = Array.from(fileList);
+        const pdfFiles = filesArray.filter(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
+
+        if (!pdfFiles.length) {
+            alert('Nenhum arquivo PDF válido selecionado.');
+            return;
+        }
+
+        const total = pdfFiles.length;
+        showProcessingOverlay(total);
+        updateOverlayProgress(0, total);
+
+        const results = [];
+        for (let i = 0; i < pdfFiles.length; i++) {
+            const file = pdfFiles[i];
+            toggleUploading(true, `Enviando ${file.name} (${i + 1} de ${total})...`);
+            updateOverlayProgress(i, total, file.name);
+            
+            const result = await uploadFile(file, i + 1, total);
+            results.push(result);
+            
+            updateOverlayProgress(i + 1, total, i + 1 === total ? 'Concluído!' : undefined);
+        }
+
+        toggleUploading(false);
+        showOverlaySummary(results);
+        fileInput.value = '';
+    };
+
+    // Click to browse
+    dropZone.addEventListener('click', () => {
+        if (!dropZone.hasAttribute('aria-busy')) {
+            fileInput.click();
+        }
+    });
+
+    // Drag events
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('border-primary', 'bg-muted/40');
+    });
+
+    dropZone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('border-primary', 'bg-muted/40');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('border-primary', 'bg-muted/40');
+        if (dropZone.hasAttribute('aria-busy')) return;
+        
+        const files = e.dataTransfer && e.dataTransfer.files;
+        if (files && files.length) {
+            handleFiles(files);
+        }
+    });
+
+    // Browse button
+    if (browseButton) {
+        browseButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!dropZone.hasAttribute('aria-busy')) {
+                fileInput.click();
+            }
+        });
+    }
+
+    // File input change
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files.length) {
+            handleFiles(e.target.files);
+        }
+    });
+});
+
+// ====== STATUS FILTER AUTO-SUBMIT ======
 document.addEventListener('DOMContentLoaded', function(){
     const form = document.getElementById('statusFilterForm');
     if(!form) return;
@@ -217,6 +660,8 @@ document.addEventListener('DOMContentLoaded', function(){
         form.submit();
     });
 });
+
+// ====== MODAL HISTÓRICO LANÇAMENTO ======
 const historyLancModal = document.getElementById('historyLancModal');
 const historyLancBody = document.getElementById('history-lanc-body');
 const historyLancLoading = document.getElementById('history-lanc-loading');
@@ -225,15 +670,23 @@ function openHistoryLanc() {
     historyLancModal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
 }
+
 function closeHistoryLanc() {
     historyLancModal.classList.add('hidden');
     document.body.style.overflow = '';
 }
 
-// Close on root backdrop click (like clientes modal)
-historyLancModal.addEventListener('click', e => { if (e.target === historyLancModal) closeHistoryLanc(); });
-historyLancModal.querySelectorAll('[data-close-history]').forEach(btn => btn.addEventListener('click', closeHistoryLanc));
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !historyLancModal.classList.contains('hidden')) closeHistoryLanc(); });
+historyLancModal.addEventListener('click', e => { 
+    if (e.target === historyLancModal) closeHistoryLanc(); 
+});
+
+historyLancModal.querySelectorAll('[data-close-history]').forEach(btn => 
+    btn.addEventListener('click', closeHistoryLanc)
+);
+
+document.addEventListener('keydown', e => { 
+    if (e.key === 'Escape' && !historyLancModal.classList.contains('hidden')) closeHistoryLanc(); 
+});
 
 document.addEventListener('click', async (e)=>{
     const btn = e.target.closest('.btn-history-lanc');
@@ -248,24 +701,28 @@ document.addEventListener('click', async (e)=>{
         if(!resp.ok) throw new Error('Falha ao carregar histórico');
         const data = await resp.json();
         const hist = data.history || [];
-            hist.forEach(entry => {
-                const tr = document.createElement('tr');
-                tr.className = 'border-b last:border-0 hover:bg-muted/50';
-                const tipoMap = { '+':'Criação','~':'Atualização','-':'Exclusão' };
-                const tipoClass = { '+':'bg-green-500/10 text-green-700 dark:text-green-300','~':'bg-blue-500/10 text-blue-700 dark:text-blue-300','-':'bg-red-500/10 text-red-700 dark:text-red-300' };
-                const alterations = (entry.changes || []).map(c => {
-                    const oldVal = c.old === null ? '<em class="text-muted-foreground">(vazio)</em>' : c.old;
-                    const newVal = c.new === null ? '<em class="text-muted-foreground">(vazio)</em>' : c.new;
-                    return `<div class="mb-2"><span class=\"inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground\">${c.field}</span> <span class=\"font-medium\">${oldVal}</span> → <span class=\"font-medium\">${newVal}</span></div>`;
-                }).join('');
-                const note = entry.note ? `<div class="text-xs text-muted-foreground">${entry.note}</div>` : '';
-                tr.innerHTML = `
-                    <td class='px-4 py-3 align-top'>${entry.history_date}</td>
-                    <td class='px-4 py-3 align-top'>${entry.history_user||'-'}</td>
-                    <td class='px-4 py-3 align-top'><span class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${tipoClass[entry.history_type]||'bg-muted text-muted-foreground'}">${tipoMap[entry.history_type]||entry.history_type}</span></td>
-                    <td class='px-4 py-3'>${alterations || note || '<span class="text-muted-foreground">Nenhuma alteração</span>'}</td>`;
-                historyLancBody.appendChild(tr);
-            });
+        hist.forEach(entry => {
+            const tr = document.createElement('tr');
+            tr.className = 'border-b last:border-0 hover:bg-muted/50';
+            const tipoMap = { '+':'Criação','~':'Atualização','-':'Exclusão' };
+            const tipoClass = { 
+                '+':'bg-green-500/10 text-green-700 dark:text-green-300',
+                '~':'bg-blue-500/10 text-blue-700 dark:text-blue-300',
+                '-':'bg-red-500/10 text-red-700 dark:text-red-300' 
+            };
+            const alterations = (entry.changes || []).map(c => {
+                const oldVal = c.old === null ? '<em class="text-muted-foreground">(vazio)</em>' : c.old;
+                const newVal = c.new === null ? '<em class="text-muted-foreground">(vazio)</em>' : c.new;
+                return `<div class="mb-2"><span class="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">${c.field}</span> <span class="font-medium">${oldVal}</span> → <span class="font-medium">${newVal}</span></div>`;
+            }).join('');
+            const note = entry.note ? `<div class="text-xs text-muted-foreground">${entry.note}</div>` : '';
+            tr.innerHTML = `
+                <td class='px-4 py-3 align-top'>${entry.history_date}</td>
+                <td class='px-4 py-3 align-top'>${entry.history_user||'-'}</td>
+                <td class='px-4 py-3 align-top'><span class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${tipoClass[entry.history_type]||'bg-muted text-muted-foreground'}">${tipoMap[entry.history_type]||entry.history_type}</span></td>
+                <td class='px-4 py-3'>${alterations || note || '<span class="text-muted-foreground">Nenhuma alteração</span>'}</td>`;
+            historyLancBody.appendChild(tr);
+        });
         if(hist.length===0){
             const tr = document.createElement('tr');
             tr.innerHTML = `<td colspan="4" class="px-4 py-8 text-center text-muted-foreground">Nenhum histórico encontrado</td>`;

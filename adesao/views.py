@@ -20,7 +20,12 @@ from typing import Any
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie, csrf_protect
 from django.core.files.uploadedfile import UploadedFile
 from django.utils import timezone
-from utils.pdf_parser import parse_ressarcimento_text, parse_recibo_pedido_credito_text, parse_credito_em_conta_text
+from utils.pdf_parser import (
+    parse_ressarcimento_text, 
+    parse_recibo_pedido_credito_text, 
+    parse_credito_em_conta_text,
+    parse_declaracao_compensacao_text
+)
 from pdf import extract_text
 from clientes_parceiros.models import ClientesParceiros
 from .permissions import AdesaoPermissionMixin, AdesaoClienteViewOnlyMixin, AdminRequiredMixin
@@ -706,9 +711,12 @@ def importar_declaracao_compensacao(request):
             tmp_path = tmp.name
 
         txt = extract_text(tmp_path) or ''
-        parsed = parse_ressarcimento_text(txt)
+        
+        # Usar parser específico para Declaração de Compensação
+        parsed = parse_declaracao_compensacao_text(txt)
         log_data['parsed'] = parsed.as_dict()
 
+        # Debug: capturar snippet do CNPJ para análise
         cnpj_idx = txt.upper().find('CNPJ')
         if cnpj_idx != -1:
             log_data['debug_cnpj_snippet'] = txt[cnpj_idx:cnpj_idx + 200]
@@ -716,24 +724,31 @@ def importar_declaracao_compensacao(request):
         doc_perdcomp = (parsed.perdcomp or '').strip()
         perdcomp_inicial = (parsed.perdcomp_inicial or '').strip()
 
+        # Validação 1: PER/DCOMP inicial deve estar presente
         if not perdcomp_inicial:
             status_code = 400
             response_payload = {'ok': False, 'error': 'Nº do PER/DCOMP inicial não identificado no PDF.'}
 
+        # Validação 2: PER/DCOMP da declaração deve estar presente
+        if status_code == 200 and not doc_perdcomp:
+            status_code = 400
+            response_payload = {'ok': False, 'error': 'Nº da Declaração PER/DCOMP não identificado no PDF.'}
+
+        # Validação 3: Buscar adesão pelo PER/DCOMP inicial
         if status_code == 200:
             try:
                 adesao = Adesao.objects.get(perdcomp=perdcomp_inicial)
             except Adesao.DoesNotExist:
                 status_code = 404
-                response_payload = {'ok': False, 'error': f'Adesão com PER/DCOMP {perdcomp_inicial} não encontrada.'}
+                response_payload = {'ok': False, 'error': f'Adesão com PER/DCOMP inicial {perdcomp_inicial} não encontrada.'}
 
+        # Validação 4: Deve ter débitos
         debitos_extraidos = parsed.debitos or []
         if status_code == 200 and not debitos_extraidos:
             status_code = 400
             response_payload = {'ok': False, 'error': 'Nenhum débito identificado na declaração de compensação.'}
 
         if status_code == 200:
-            doc_reference = doc_perdcomp or perdcomp_inicial
             log_data['perdcomp_declaracao'] = doc_perdcomp
             log_data['perdcomp_inicial'] = perdcomp_inicial
             from django.utils import timezone as dj_tz
@@ -760,8 +775,12 @@ def importar_declaracao_compensacao(request):
                         skipped_items.append({'item': item_code, 'reason': f'Valor inválido ({valor_decimal}).'})
                         continue
 
-                    if Lancamentos.objects.filter(id_adesao=adesao, perdcomp=doc_reference, item=item_code).exists():
-                        skipped_items.append({'item': item_code, 'reason': 'Débito já importado anteriormente.'})
+                    if Lancamentos.objects.filter(
+                        id_adesao=adesao,
+                        perdcomp_declaracao=doc_perdcomp,
+                        item=item_code,
+                    ).exists():
+                        skipped_items.append({'item': item_code, 'reason': 'Débito já importado anteriormente para esta declaração.'})
                         continue
 
                     try:
@@ -772,14 +791,15 @@ def importar_declaracao_compensacao(request):
                             sinal='-',
                             tipo='Gerado',
                             descricao=(
-                                f'Débito importado da Declaração de Compensação {doc_reference}'
-                                if doc_reference else 'Débito importado da Declaração de Compensação'
+                                f'Débito importado da Declaração de Compensação {doc_perdcomp}'
+                                if doc_perdcomp else 'Débito importado da Declaração de Compensação'
                             ),
                             metodo='Declaração de Compensação',
                             codigo_receita_denominacao=debito.get('codigo_receita_denominacao') or None,
                             periodo_apuracao_debito=debito.get('periodo_apuracao_debito') or None,
                             aprovado=True,
-                            perdcomp=doc_reference,
+                            perdcomp_inicial=perdcomp_inicial,
+                            perdcomp_declaracao=doc_perdcomp,
                             item=item_code,
                         )
                     except ValidationError as exc:
@@ -796,7 +816,7 @@ def importar_declaracao_compensacao(request):
 
             response_payload = {
                 'ok': True,
-                'perdcomp_declaracao': doc_reference,
+                'perdcomp_declaracao': doc_perdcomp,
                 'perdcomp_inicial': adesao.perdcomp,
                 'created_count': len(created_items),
                 'skipped_count': len(skipped_items),
