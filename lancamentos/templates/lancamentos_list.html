@@ -71,15 +71,15 @@
                         <div id="importReciboDropZone" role="button" tabindex="0"
                              data-recibo-url="{% url 'lancamentos:importar_recibo' %}"
                              class="relative flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-border bg-muted/30 p-5 text-center transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-                            <input type="file" id="importReciboFileInput" accept="application/pdf" class="hidden" />
+                            <input type="file" id="importReciboFileInput" accept="application/pdf" class="hidden" multiple />
                             <i class="bi bi-file-earmark-check text-3xl text-muted-foreground"></i>
                             <div>
-                                <p class="text-sm font-medium text-card-foreground">Arraste recibo de envio aqui</p>
-                                <p class="text-xs text-muted-foreground mt-1">ou clique para selecionar arquivo PDF</p>
+                                <p class="text-sm font-medium text-card-foreground">Arraste recibos de envio aqui</p>
+                                <p class="text-xs text-muted-foreground mt-1">ou clique para selecionar arquivos PDF</p>
                             </div>
                             <button type="button" id="importReciboBrowseButton"
                                     class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-card-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-                                Selecionar PDF
+                                Selecionar PDFs
                             </button>
                             <div id="importReciboStatus" class="hidden w-full mt-2"></div>
                         </div>
@@ -753,11 +753,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const csrfToken = getCSRFToken();
             if (!csrfToken) {
-                showReciboStatus('Token de segurança não encontrado. Recarregue a página.', 'error');
-                return;
+                return { ok: false, file: file.name, error: 'Token de segurança não encontrado' };
             }
-
-            showReciboStatus('Enviando recibo...', 'info');
 
             const formData = new FormData();
             formData.append('pdf', file, file.name);
@@ -771,54 +768,82 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json().catch(() => null);
 
             if (!response.ok || !data) {
-                let errorDetail = `Status ${response.status}`;
-                if (response.status === 403) errorDetail = 'Acesso negado (403)';
-                else if (response.status === 401) errorDetail = 'Sessão expirada (401)';
-                else if (response.status === 404) errorDetail = 'Lançamento não encontrado (404)';
+                let errorDetail = data?.error || `Erro ${response.status}`;
+                if (response.status === 403) errorDetail = 'Acesso negado';
+                else if (response.status === 401) errorDetail = 'Sessão expirada';
+                else if (response.status === 404) errorDetail = data?.error || 'Lançamento não encontrado';
+                else if (response.status === 400) errorDetail = data?.error || 'Erro na validação';
                 
-                showReciboStatus(`Erro: ${errorDetail}`, 'error');
-                return;
+                return { ok: false, file: file.name, error: errorDetail };
             }
 
             if (!data.ok) {
-                showReciboStatus(`Erro: ${data.error || 'Erro ao processar recibo'}`, 'error');
-                return;
+                return { ok: false, file: file.name, error: data.error || 'Erro ao processar' };
             }
 
-            const detailUrl = data.detail_url || '#';
-            const numeroControle = data.numero_controle || '--';
-            const chaveSeguranca = data.chave_seguranca_serpro || '--';
-            const statusLanc = data.status || 'protocolado';
-            const numeroDoc = data.numero_documento || '--';
-
-            let successMsg = `
-                <div><strong>Recibo importado com sucesso!</strong></div>
-                <div class="mt-2 text-xs space-y-1">
-                    <div><span class="font-medium">PER/DCOMP Declaração:</span> ${numeroDoc}</div>
-                    <div><span class="font-medium">Nº Controle:</span> ${numeroControle}</div>
-                    <div><span class="font-medium">Chave SERPRO:</span> ${chaveSeguranca}</div>
-                    <div><span class="font-medium">Status:</span> ${statusLanc}</div>
-                </div>
-                <div class="mt-2">
-                    <a href="${detailUrl}" class="inline-flex items-center gap-1 text-xs font-medium hover:underline">
-                        <i class="bi bi-eye"></i> Ver detalhes do lançamento
-                    </a>
-                </div>
-            `;
-
-            showReciboStatus(successMsg, 'success');
-
-            // Auto-hide after 10 seconds
-            setTimeout(() => {
-                if (reciboStatus) {
-                    reciboStatus.classList.add('hidden');
-                }
-            }, 10000);
+            return { 
+                ok: true, 
+                file: file.name,
+                data: data
+            };
 
         } catch (error) {
-            showReciboStatus(`Erro: ${error.message || 'Erro desconhecido'}`, 'error');
-        } finally {
-            reciboFileInput.value = '';
+            return { ok: false, file: file.name, error: error.message || 'Erro desconhecido' };
+        }
+    };
+
+    const handleReciboFiles = async (files) => {
+        if (!files || files.length === 0) return;
+
+        const filesArray = Array.from(files);
+        const pdfFiles = filesArray.filter(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
+
+        if (pdfFiles.length === 0) {
+            showReciboStatus('Nenhum arquivo PDF válido selecionado.', 'error');
+            return;
+        }
+
+        showReciboStatus(`Processando ${pdfFiles.length} arquivo(s)...`, 'info');
+
+        const results = [];
+        for (const file of pdfFiles) {
+            const result = await uploadRecibo(file);
+            results.push(result);
+        }
+
+        // Gerar resumo
+        const success = results.filter(r => r.ok);
+        const errors = results.filter(r => !r.ok);
+
+        let summary = '';
+        
+        if (success.length > 0) {
+            summary += `<div class="mb-3"><strong>${success.length} recibo(s) importado(s) com sucesso:</strong><ul class="mt-1 ml-4 list-disc text-xs">`;
+            success.forEach(s => {
+                const doc = s.data?.numero_documento || '--';
+                const ctrl = s.data?.numero_controle || '--';
+                summary += `<li><strong>${s.file}</strong><br/>PER/DCOMP: ${doc}, Controle: ${ctrl}</li>`;
+            });
+            summary += `</ul></div>`;
+        }
+
+        if (errors.length > 0) {
+            summary += `<div class="p-2 bg-red-100 dark:bg-red-900/20 rounded border border-red-300 dark:border-red-700"><strong>${errors.length} erro(s):</strong><ul class="mt-1 ml-4 list-disc text-xs">`;
+            errors.forEach(e => {
+                summary += `<li><strong>${e.file}</strong>: ${e.error}</li>`;
+            });
+            summary += `</ul></div>`;
+        }
+
+        const type = errors.length === 0 ? 'success' : (success.length > 0 ? 'success' : 'error');
+        showReciboStatus(summary, type);
+
+        // Limpar input
+        reciboFileInput.value = '';
+
+        // Reload após sucesso
+        if (success.length > 0) {
+            setTimeout(() => location.reload(), 5000);
         }
     };
 
@@ -844,12 +869,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const files = e.dataTransfer && e.dataTransfer.files;
         if (files && files.length > 0) {
-            const file = files[0];
-            if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-                uploadRecibo(file);
-            } else {
-                showReciboStatus('Por favor, selecione um arquivo PDF.', 'error');
-            }
+            handleReciboFiles(files);
         }
     });
 
@@ -864,12 +884,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // File input change
     reciboFileInput.addEventListener('change', (e) => {
         if (e.target.files && e.target.files.length > 0) {
-            const file = e.target.files[0];
-            if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-                uploadRecibo(file);
-            } else {
-                showReciboStatus('Por favor, selecione um arquivo PDF.', 'error');
-            }
+            handleReciboFiles(e.target.files);
         }
     });
 });
