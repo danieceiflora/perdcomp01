@@ -757,81 +757,82 @@ def importar_declaracao_compensacao(request):
             from django.utils import timezone as dj_tz
             from django.core.exceptions import ValidationError
 
-            created_items: list[dict[str, Any]] = []
-            skipped_items: list[dict[str, Any]] = []
-            error_items: list[dict[str, Any]] = []
-
             with transaction.atomic():
-                for idx, debito in enumerate(debitos_extraidos, start=1):
-                    item_code = (debito.get('item') or '').strip()
-                    if not item_code:
-                        item_code = f"{idx:03d}"
-
-                    valor_decimal = debito.get('valor')
-                    if valor_decimal is None:
-                        skipped_items.append({'item': item_code, 'reason': 'Valor do débito não identificado no PDF.'})
-                        continue
-
-                    try:
-                        valor_float = float(valor_decimal)
-                    except (TypeError, ValueError):
-                        skipped_items.append({'item': item_code, 'reason': f'Valor inválido ({valor_decimal}).'})
-                        continue
-
-                    if Lancamentos.objects.filter(
-                        id_adesao=adesao,
-                        perdcomp_declaracao=doc_perdcomp,
-                        item=item_code,
-                    ).exists():
-                        skipped_items.append({'item': item_code, 'reason': 'Débito já importado anteriormente para esta declaração.'})
-                        continue
-
+                # Verificar se já existe lançamento para esta declaração
+                if Lancamentos.objects.filter(
+                    id_adesao=adesao,
+                    perdcomp_declaracao=doc_perdcomp,
+                ).exists():
+                    status_code = 400
+                    response_payload = {
+                        'ok': False,
+                        'error': f'Declaração {doc_perdcomp} já foi importada anteriormente para esta adesão.'
+                    }
+                else:
+                    # Calcular o total dos débitos
+                    total_debitos = sum(float(d.get('valor', 0)) for d in debitos_extraidos if d.get('valor') is not None)
+                    
+                    # Montar descrição dos débitos
+                    descricao_items = []
+                    for idx, debito in enumerate(debitos_extraidos, start=1):
+                        item_code = (debito.get('item') or '').strip() or f"{idx:03d}"
+                        valor = debito.get('valor', 0)
+                        cod_receita = debito.get('codigo_receita_denominacao', '')
+                        periodo = debito.get('periodo_apuracao_debito', '')
+                        
+                        item_desc = f"Item {item_code}: R$ {valor:,.2f}"
+                        if cod_receita:
+                            item_desc += f" - {cod_receita}"
+                        if periodo:
+                            item_desc += f" (PA: {periodo})"
+                        descricao_items.append(item_desc)
+                    
+                    descricao_debitos = "\n".join(descricao_items)
+                    
+                    # Extrair período de apuração (usar do primeiro débito se disponível)
+                    periodo_apuracao = None
+                    if debitos_extraidos and debitos_extraidos[0].get('periodo_apuracao_debito'):
+                        periodo_apuracao = debitos_extraidos[0].get('periodo_apuracao_debito')
+                    
                     try:
                         lanc = Lancamentos.objects.create(
                             id_adesao=adesao,
                             data_lancamento=dj_tz.now(),
-                            valor=valor_float,
+                            valor=total_debitos,
                             sinal='-',
-                            tipo='Gerado',
                             descricao=(
-                                f'Débito importado da Declaração de Compensação {doc_perdcomp}'
-                                if doc_perdcomp else 'Débito importado da Declaração de Compensação'
+                                f'Declaração de Compensação {doc_perdcomp} importada com {len(debitos_extraidos)} débito(s)'
                             ),
                             metodo='Declaração de Compensação',
-                            codigo_receita_denominacao=debito.get('codigo_receita_denominacao') or None,
-                            periodo_apuracao_debito=debito.get('periodo_apuracao_debito') or None,
+                            total_debitos_documento=total_debitos,
+                            descricao_debitos=descricao_debitos,
+                            periodo_apuracao=periodo_apuracao,
                             aprovado=True,
                             perdcomp_inicial=perdcomp_inicial,
                             perdcomp_declaracao=doc_perdcomp,
-                            item=item_code,
+                            item=None,  # Não mais usamos item individual
                         )
+                        
+                        adesao.refresh_from_db(fields=['saldo_atual'])
+                        
+                        response_payload = {
+                            'ok': True,
+                            'created': False,
+                            'updated': True,
+                            'perdcomp_declaracao': doc_perdcomp,
+                            'perdcomp_inicial': adesao.perdcomp,
+                            'total_debitos': total_debitos,
+                            'num_debitos': len(debitos_extraidos),
+                            'lancamento_id': lanc.pk,
+                            'detail_url': reverse('adesao:detail', kwargs={'pk': adesao.pk}),
+                            'saldo_atual': adesao.saldo_atual,
+                        }
                     except ValidationError as exc:
-                        error_items.append({'item': item_code, 'reason': '; '.join(exc.messages)})
-                        continue
-
-                    created_items.append({
-                        'item': item_code,
-                        'valor': format(valor_decimal, 'f'),
-                        'lancamento_id': lanc.pk,
-                    })
-
-            adesao.refresh_from_db(fields=['saldo_atual'])
-
-            response_payload = {
-                'ok': True,
-                'created': False,
-                'updated': True,
-                'perdcomp_declaracao': doc_perdcomp,
-                'perdcomp_inicial': adesao.perdcomp,
-                'created_count': len(created_items),
-                'skipped_count': len(skipped_items),
-                'error_count': len(error_items),
-                'created_items': created_items,
-                'skipped_items': skipped_items,
-                'error_items': error_items,
-                'detail_url': reverse('adesao:detail', kwargs={'pk': adesao.pk}),
-                'saldo_atual': adesao.saldo_atual,
-            }
+                        status_code = 400
+                        response_payload = {
+                            'ok': False,
+                            'error': f'Erro ao criar lançamento: {"; ".join(exc.messages)}'
+                        }
 
     except Exception as e:
         status_code = 500

@@ -8,6 +8,8 @@ from django.db.models import Sum, Case, When, F, FloatField
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_protect
 from utils.access import get_empresas_ids_for_cliente, get_clientes_ids_for_parceiro
 from django.contrib.auth.mixins import LoginRequiredMixin
 from accounts.decorators import cliente_can_view_lancamento, admin_required
@@ -580,3 +582,117 @@ class AnexoDetailAPI(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@login_required
+@csrf_protect
+@require_POST
+def importar_recibo_lancamento(request):
+    """
+    Importa recibo de envio de declaração de compensação.
+    Atualiza lançamento com número de controle, chave SERPRO e status='protocolado'.
+    """
+    from django.core.files.uploadedfile import UploadedFile
+    from pdf import extract_text
+    from utils.pdf_parser import parse_recibo_pedido_credito_text
+    import tempfile
+    import os
+    import json
+    from typing import Any
+    
+    pdf_file: UploadedFile | None = request.FILES.get('pdf')
+    if not pdf_file:
+        return JsonResponse({'ok': False, 'error': 'Arquivo PDF não enviado (campo "pdf").'}, status=400)
+    
+    from django.conf import settings
+    status_code = 200
+    response_payload: dict[str, Any] | None = None
+    log_data: dict[str, Any] = {
+        'user': getattr(request.user, 'username', None),
+        'filename': pdf_file.name,
+        'ts': timezone.now().isoformat(),
+        'context': 'recibo_lancamento',
+    }
+    tmp_path = None
+
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp:
+            for chunk in pdf_file.chunks():
+                tmp.write(chunk)
+            tmp_path = tmp.name
+
+        txt = extract_text(tmp_path) or ''
+        parsed = parse_recibo_pedido_credito_text(txt)
+        log_data['parsed'] = parsed.as_dict()
+
+        numero_documento = (parsed.numero_documento or '').strip()
+        if not numero_documento:
+            status_code = 400
+            response_payload = {'ok': False, 'error': 'Número do Documento não identificado no PDF.'}
+        else:
+            try:
+                lancamento = Lancamentos.objects.get(perdcomp_declaracao=numero_documento)
+            except Lancamentos.DoesNotExist:
+                status_code = 404
+                response_payload = {'ok': False, 'error': f'Lançamento com PER/DCOMP Declaração {numero_documento} não encontrado.'}
+
+        if status_code == 200:
+            missing = []
+            numero_controle = (parsed.numero_controle or '').strip()
+            if not numero_controle:
+                missing.append('Número de Controle')
+            autenticacao_serpro = (parsed.autenticacao_serpro or '').strip()
+            if not autenticacao_serpro:
+                missing.append('Autenticação SERPRO')
+            if missing:
+                status_code = 400
+                response_payload = {'ok': False, 'error': f'Campo(s) não identificado(s) no PDF: {", ".join(missing)}.'}
+
+        if status_code == 200:
+            fields_to_update = []
+            if numero_controle:
+                lancamento.numero_controle = numero_controle
+                fields_to_update.append('numero_controle')
+            if autenticacao_serpro:
+                lancamento.chave_seguranca_serpro = autenticacao_serpro
+                fields_to_update.append('chave_seguranca_serpro')
+
+            lancamento.status = 'protocolado'
+            fields_to_update.append('status')
+            lancamento.save(update_fields=fields_to_update)
+
+            response_payload = {
+                'ok': True,
+                'created': False,
+                'updated': True,
+                'id': lancamento.pk,
+                'detail_url': reverse('lancamentos:detail', kwargs={'pk': lancamento.pk}),
+                'numero_controle': lancamento.numero_controle,
+                'chave_seguranca_serpro': lancamento.chave_seguranca_serpro,
+                'status': lancamento.get_status_display(),
+                'numero_documento': numero_documento,
+            }
+
+    except Exception as e:
+        status_code = 500
+        response_payload = {'ok': False, 'error': f'Erro ao processar PDF: {str(e)}'}
+    finally:
+        try:
+            log_data['status_code'] = status_code
+            log_data['result'] = response_payload
+            logs_dir = os.path.join(getattr(settings, 'MEDIA_ROOT', ''), 'import_logs')
+            os.makedirs(logs_dir, exist_ok=True)
+            safe_name = os.path.basename(pdf_file.name).replace(' ', '_')
+            log_path = os.path.join(
+                logs_dir,
+                f"recibo_lanc_{timezone.now().strftime('%Y%m%d_%H%M%S')}_{safe_name}.json"
+            )
+            with open(log_path, 'w', encoding='utf-8') as fh:
+                fh.write(json.dumps(log_data, ensure_ascii=False, indent=2))
+        except Exception:
+            pass
+        try:
+            if tmp_path and os.path.exists(tmp_path):
+                os.remove(tmp_path)
+        except Exception:
+            pass
+
+    return JsonResponse(response_payload or {'ok': False, 'error': 'Falha desconhecida.'}, status=status_code)

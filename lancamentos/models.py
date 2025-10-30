@@ -64,18 +64,6 @@ class Lancamentos(models.Model):
         help_text='Indica se o lançamento é um crédito ou débito'
     )
     
-    tipo = models.CharField(
-        max_length=20,
-        choices=[
-            ('Gerado', 'GERADO'),
-            ('Correção', 'CORREÇÃO'),
-            ('Originado no Ecac', 'ORIGINADO NO ECAC'),
-        ],
-        verbose_name='Tipo de Lançamento',
-        blank=True, 
-        null=True
-    )
-    
     data_criacao = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Data de Criação'
@@ -132,6 +120,33 @@ class Lancamentos(models.Model):
         verbose_name='Observação da Aprovação'
     )
 
+    # Campos para controle de recibo de envio
+    numero_controle = models.CharField(
+        max_length=50,
+        verbose_name='Número de Controle',
+        blank=True,
+        null=True,
+        help_text='Número de controle do recibo de envio da declaração'
+    )
+    chave_seguranca_serpro = models.CharField(
+        max_length=100,
+        verbose_name='Chave de Segurança SERPRO',
+        blank=True,
+        null=True,
+        help_text='Chave de autenticação SERPRO do recibo'
+    )
+    STATUS_CHOICES = [
+        ('solicitado', 'Solicitado'),
+        ('protocolado', 'Protocolado'),
+    ]
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='solicitado',
+        verbose_name='Status',
+        help_text='Status do lançamento'
+    )
+
     # Campos adicionais para rastrear origem dos valores conforme método
     metodo = models.CharField(
         max_length=60,
@@ -162,15 +177,20 @@ class Lancamentos(models.Model):
         blank=True,
         null=True
     )
-    debito = models.FloatField(
-        verbose_name='Débito (Restituição)',
+
+    # Novos campos para Declaração de Compensação
+    total_debitos_documento = models.FloatField(
+        verbose_name='Total dos Débitos deste Documento',
         blank=True,
-        null=True
+        null=True,
+        help_text='Valor total dos débitos conforme declaração de compensação'
     )
-    debito_r = models.FloatField(
-        verbose_name='Débito (Ressarcimento)',
+    
+    descricao_debitos = models.TextField(
+        verbose_name='Descrição dos Débitos',
         blank=True,
-        null=True
+        null=True,
+        help_text='Detalhamento dos itens de débito da declaração de compensação'
     )
 
     # Novos campos para débitos informados junto ao crédito (multi-itens)

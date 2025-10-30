@@ -51,6 +51,43 @@
             </div>
         </div>
     </div>
+
+    <div class="bg-card border rounded-lg shadow-sm mb-6">
+        <div class="p-6">
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                        <h2 class="text-xl font-semibold text-card-foreground">Importar Recibos de Envio</h2>
+                        <p class="text-sm text-muted-foreground">Carregue recibos de envio em PDF para atualizar lançamentos com informações de protocolo e status.</p>
+                    </div>
+                    <button type="button" id="importReciboToggleButton" aria-controls="importReciboDropZoneContainer" aria-expanded="false"
+                            class="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-card-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                        <i class="bi bi-chevron-down mr-2" aria-hidden="true"></i>
+                        Expandir área
+                    </button>
+                </div>
+                <div id="importReciboDropZoneContainer" class="transition-all duration-200 hidden" aria-hidden="true">
+                    <div class="flex flex-col gap-4">
+                        <div id="importReciboDropZone" role="button" tabindex="0"
+                             data-recibo-url="{% url 'lancamentos:importar_recibo' %}"
+                             class="relative flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-border bg-muted/30 p-5 text-center transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                            <input type="file" id="importReciboFileInput" accept="application/pdf" class="hidden" />
+                            <i class="bi bi-file-earmark-check text-3xl text-muted-foreground"></i>
+                            <div>
+                                <p class="text-sm font-medium text-card-foreground">Arraste recibo de envio aqui</p>
+                                <p class="text-xs text-muted-foreground mt-1">ou clique para selecionar arquivo PDF</p>
+                            </div>
+                            <button type="button" id="importReciboBrowseButton"
+                                    class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-card-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                                Selecionar PDF
+                            </button>
+                            <div id="importReciboStatus" class="hidden w-full mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     {% endif %}
 
     <div id="processing-overlay" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="processingOverlayTitle">
@@ -172,14 +209,13 @@
                             <tr class="border-b bg-muted/50 text-muted-foreground">
                                 <th class="h-10 px-4 text-left font-medium">PER/DCOMP Adesão</th>
                                 <th class="h-10 px-4 text-left font-medium">Declaração PER/DCOMP</th>
-                                <th class="h-10 px-4 text-left font-medium">Item</th>
-                                <th class="h-10 px-4 text-left font-medium">Código da Guia</th>
                                 <th class="h-10 px-4 text-left font-medium">Cliente</th>
                                 <th class="h-10 px-4 text-left font-medium">Data de Criação</th>
                                 <th class="h-10 px-4 text-left font-medium">Valor</th>
                                 <th class="h-10 px-4 text-left font-medium">Saldo Restante</th>
                                 <th class="h-10 px-4 text-left font-medium">Anexos</th>
-                                <th class="h-10 px-4 text-left font-medium">Status</th>
+                                <th class="h-10 px-4 text-left font-medium">Aprovação</th>
+                                <th class="h-10 px-4 text-left font-medium">Status Protocolo</th>
                                 <th class="h-10 px-4 text-left font-medium">Ações</th>
                                 <th class="h-10 px-4 text-left font-medium">Histórico</th>
                             </tr>
@@ -189,8 +225,6 @@
                             <tr class="border-b last:border-0 hover:bg-muted/50 transition-colors">
                                 <td class="px-4 py-3 font-medium">{{ lancamento.id_adesao.perdcomp }}</td>
                                 <td class="px-4 py-3">{{ lancamento.perdcomp_declaracao|default:'--' }}</td>
-                                <td class="px-4 py-3">{{ lancamento.item|default:'--' }}</td>
-                                <td class="px-4 py-3">{{ lancamento.codigo_guia|default:'--' }}</td>
                                 <td class="px-4 py-3">{% if lancamento.id_adesao.cliente.id_company_vinculada %}{{ lancamento.id_adesao.cliente.id_company_vinculada.razao_social }}{% else %}{{ lancamento.id_adesao.cliente }}{% endif %}</td>
                                 <td class="px-4 py-3">{{ lancamento.data_criacao }}</td>
                                 <td class="px-4 py-3 font-semibold {% if lancamento.sinal == '+' %}text-green-600 dark:text-green-400{% else %}text-destructive{% endif %}">{{ lancamento.sinal }} {{ lancamento.valor|br_currency }}</td>
@@ -200,7 +234,16 @@
                                     {% if lancamento.aprovado %}
                                     <span class="inline-flex items-center rounded-md bg-green-500/10 px-2 py-1 text-xs font-medium text-green-700 dark:text-green-300"><i class="bi bi-check2-circle mr-1"></i>Aprovado</span>
                                     {% else %}
-                                    <span class="inline-flex items-center rounded-md bg-red-500/10 px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300"><i class="bi bi-x-circle mr-1"></i>Não Aprovado pelo cliente</span>
+                                    <span class="inline-flex items-center rounded-md bg-red-500/10 px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300"><i class="bi bi-x-circle mr-1"></i>Não Aprovado</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-4 py-3">
+                                    {% if lancamento.status == 'protocolado' %}
+                                    <span class="inline-flex items-center rounded-md bg-blue-500/10 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-300"><i class="bi bi-check-circle-fill mr-1"></i>Protocolado</span>
+                                    {% elif lancamento.status == 'solicitado' %}
+                                    <span class="inline-flex items-center rounded-md bg-gray-500/10 px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300"><i class="bi bi-clock-history mr-1"></i>Solicitado</span>
+                                    {% else %}
+                                    <span class="text-muted-foreground text-xs">--</span>
                                     {% endif %}
                                 </td>
                                 <td class="px-4 py-3">
@@ -222,7 +265,7 @@
                     <div class="p-4 border-b flex items-center justify-between">
                         <div>
                             <div class="font-semibold">PER/DCOMP Adesão: {{ lancamento.id_adesao.perdcomp }}</div>
-                            <div class="text-xs text-muted-foreground">Declaração: {{ lancamento.perdcomp_declaracao|default:'--' }} · Item: {{ lancamento.item|default:'--' }}</div>
+                            <div class="text-xs text-muted-foreground">Declaração: {{ lancamento.perdcomp_declaracao|default:'--' }}</div>
                         </div>
                         {% if lancamento.aprovado %}
                         <span class="inline-flex items-center rounded-md bg-green-500/10 px-2 py-1 text-xs font-medium text-green-700 dark:text-green-300"><i class="bi bi-check2-circle mr-1"></i>Aprovado</span>
@@ -233,12 +276,20 @@
                     <div class="p-4 space-y-2 text-sm">
                         <div><span class="text-muted-foreground">Cliente:</span> {% if lancamento.id_adesao.cliente.id_company_vinculada %}{{ lancamento.id_adesao.cliente.id_company_vinculada.razao_social }}{% else %}{{ lancamento.id_adesao.cliente }}{% endif %}</div>
                         <div><span class="text-muted-foreground">Declaração PER/DCOMP:</span> {{ lancamento.perdcomp_declaracao|default:'--' }}</div>
-                        <div><span class="text-muted-foreground">Item:</span> {{ lancamento.item|default:'--' }}</div>
-                        <div><span class="text-muted-foreground">Código da Guia:</span> {{ lancamento.codigo_guia|default:'--' }}</div>
                         <div><span class="text-muted-foreground">Data:</span> {{ lancamento.data_lancamento|date:"d/m/Y" }}</div>
                         <div><span class="text-muted-foreground">Valor:</span> <span class="font-semibold {% if lancamento.sinal == '+' %}text-green-600 dark:text-green-400{% else %}text-destructive{% endif %}">{{ lancamento.sinal }} {{ lancamento.valor|br_currency }}</span></div>
                         <div><span class="text-muted-foreground">Saldo Restante:</span> <span class="font-semibold {% if lancamento.saldo_restante > 0 %}text-green-600 dark:text-green-400{% elif lancamento.saldo_restante < 0 %}text-destructive{% endif %}">{% if lancamento.saldo_restante != None %}{{ lancamento.saldo_restante|br_currency }}{% else %}<span class="text-muted-foreground">--</span>{% endif %}</span></div>
                         <div><span class="text-muted-foreground">Anexos:</span> <span class="inline-flex items-center rounded-md bg-blue-500/10 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-300">{{ lancamento.anexos.count }} anexo(s)</span></div>
+                        <div>
+                            <span class="text-muted-foreground">Status Protocolo:</span> 
+                            {% if lancamento.status == 'protocolado' %}
+                            <span class="inline-flex items-center rounded-md bg-blue-500/10 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-300"><i class="bi bi-check-circle-fill mr-1"></i>Protocolado</span>
+                            {% elif lancamento.status == 'solicitado' %}
+                            <span class="inline-flex items-center rounded-md bg-gray-500/10 px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300"><i class="bi bi-clock-history mr-1"></i>Solicitado</span>
+                            {% else %}
+                            <span class="text-muted-foreground">--</span>
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="p-4 bg-muted/30 border-t flex flex-col gap-2">
                         <a href="{% url 'lancamentos:detail' lancamento.pk %}" class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"><i class="bi bi-eye mr-2"></i>Detalhes</a>
@@ -646,6 +697,179 @@ document.addEventListener('DOMContentLoaded', () => {
     fileInput.addEventListener('change', (e) => {
         if (e.target.files && e.target.files.length) {
             handleFiles(e.target.files);
+        }
+    });
+});
+
+// ====== RECIBO IMPORT FUNCTIONALITY ======
+document.addEventListener('DOMContentLoaded', () => {
+    const reciboToggleButton = document.getElementById('importReciboToggleButton');
+    const reciboContainer = document.getElementById('importReciboDropZoneContainer');
+    const reciboDropZone = document.getElementById('importReciboDropZone');
+    const reciboFileInput = document.getElementById('importReciboFileInput');
+    const reciboBrowseButton = document.getElementById('importReciboBrowseButton');
+    const reciboStatus = document.getElementById('importReciboStatus');
+
+    if (!reciboDropZone || !reciboFileInput) return;
+
+    const reciboUrl = reciboDropZone.getAttribute('data-recibo-url');
+
+    // Toggle expand/collapse
+    if (reciboToggleButton && reciboContainer) {
+        reciboToggleButton.addEventListener('click', () => {
+            const isExpanded = !reciboContainer.classList.contains('hidden');
+            if (isExpanded) {
+                reciboContainer.classList.add('hidden');
+                reciboToggleButton.setAttribute('aria-expanded', 'false');
+                reciboContainer.setAttribute('aria-hidden', 'true');
+                reciboToggleButton.innerHTML = '<i class="bi bi-chevron-down mr-2" aria-hidden="true"></i>Expandir área';
+            } else {
+                reciboContainer.classList.remove('hidden');
+                reciboToggleButton.setAttribute('aria-expanded', 'true');
+                reciboContainer.setAttribute('aria-hidden', 'false');
+                reciboToggleButton.innerHTML = '<i class="bi bi-chevron-up mr-2" aria-hidden="true"></i>Recolher área';
+            }
+        });
+    }
+
+    const showReciboStatus = (message, type) => {
+        if (!reciboStatus) return;
+        reciboStatus.classList.remove('hidden');
+        reciboStatus.className = 'w-full mt-2 p-3 rounded-md text-sm';
+        
+        if (type === 'success') {
+            reciboStatus.classList.add('bg-green-50', 'dark:bg-green-500/15', 'border', 'border-green-200', 'dark:border-green-500/40', 'text-green-700', 'dark:text-green-300');
+            reciboStatus.innerHTML = `<div class="flex items-start gap-2"><i class="bi bi-check-circle-fill mt-0.5"></i><div>${message}</div></div>`;
+        } else if (type === 'error') {
+            reciboStatus.classList.add('bg-red-50', 'dark:bg-red-500/15', 'border', 'border-red-200', 'dark:border-red-500/40', 'text-red-700', 'dark:text-red-300');
+            reciboStatus.innerHTML = `<div class="flex items-start gap-2"><i class="bi bi-x-circle-fill mt-0.5"></i><div>${message}</div></div>`;
+        } else {
+            reciboStatus.classList.add('bg-blue-50', 'dark:bg-blue-500/15', 'border', 'border-blue-200', 'dark:border-blue-500/40', 'text-blue-700', 'dark:text-blue-300');
+            reciboStatus.innerHTML = `<div class="flex items-start gap-2"><i class="bi bi-info-circle-fill mt-0.5"></i><div>${message}</div></div>`;
+        }
+    };
+
+    const uploadRecibo = async (file) => {
+        try {
+            const csrfToken = getCSRFToken();
+            if (!csrfToken) {
+                showReciboStatus('Token de segurança não encontrado. Recarregue a página.', 'error');
+                return;
+            }
+
+            showReciboStatus('Enviando recibo...', 'info');
+
+            const formData = new FormData();
+            formData.append('pdf', file, file.name);
+
+            const response = await fetch(reciboUrl, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken },
+                body: formData,
+            });
+
+            const data = await response.json().catch(() => null);
+
+            if (!response.ok || !data) {
+                let errorDetail = `Status ${response.status}`;
+                if (response.status === 403) errorDetail = 'Acesso negado (403)';
+                else if (response.status === 401) errorDetail = 'Sessão expirada (401)';
+                else if (response.status === 404) errorDetail = 'Lançamento não encontrado (404)';
+                
+                showReciboStatus(`Erro: ${errorDetail}`, 'error');
+                return;
+            }
+
+            if (!data.ok) {
+                showReciboStatus(`Erro: ${data.error || 'Erro ao processar recibo'}`, 'error');
+                return;
+            }
+
+            const detailUrl = data.detail_url || '#';
+            const numeroControle = data.numero_controle || '--';
+            const chaveSeguranca = data.chave_seguranca_serpro || '--';
+            const statusLanc = data.status || 'protocolado';
+            const numeroDoc = data.numero_documento || '--';
+
+            let successMsg = `
+                <div><strong>Recibo importado com sucesso!</strong></div>
+                <div class="mt-2 text-xs space-y-1">
+                    <div><span class="font-medium">PER/DCOMP Declaração:</span> ${numeroDoc}</div>
+                    <div><span class="font-medium">Nº Controle:</span> ${numeroControle}</div>
+                    <div><span class="font-medium">Chave SERPRO:</span> ${chaveSeguranca}</div>
+                    <div><span class="font-medium">Status:</span> ${statusLanc}</div>
+                </div>
+                <div class="mt-2">
+                    <a href="${detailUrl}" class="inline-flex items-center gap-1 text-xs font-medium hover:underline">
+                        <i class="bi bi-eye"></i> Ver detalhes do lançamento
+                    </a>
+                </div>
+            `;
+
+            showReciboStatus(successMsg, 'success');
+
+            // Auto-hide after 10 seconds
+            setTimeout(() => {
+                if (reciboStatus) {
+                    reciboStatus.classList.add('hidden');
+                }
+            }, 10000);
+
+        } catch (error) {
+            showReciboStatus(`Erro: ${error.message || 'Erro desconhecido'}`, 'error');
+        } finally {
+            reciboFileInput.value = '';
+        }
+    };
+
+    // Click to browse
+    reciboDropZone.addEventListener('click', () => {
+        reciboFileInput.click();
+    });
+
+    // Drag events
+    reciboDropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        reciboDropZone.classList.add('border-primary', 'bg-muted/40');
+    });
+
+    reciboDropZone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        reciboDropZone.classList.remove('border-primary', 'bg-muted/40');
+    });
+
+    reciboDropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        reciboDropZone.classList.remove('border-primary', 'bg-muted/40');
+        
+        const files = e.dataTransfer && e.dataTransfer.files;
+        if (files && files.length > 0) {
+            const file = files[0];
+            if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+                uploadRecibo(file);
+            } else {
+                showReciboStatus('Por favor, selecione um arquivo PDF.', 'error');
+            }
+        }
+    });
+
+    // Browse button
+    if (reciboBrowseButton) {
+        reciboBrowseButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            reciboFileInput.click();
+        });
+    }
+
+    // File input change
+    reciboFileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const file = e.target.files[0];
+            if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+                uploadRecibo(file);
+            } else {
+                showReciboStatus('Por favor, selecione um arquivo PDF.', 'error');
+            }
         }
     });
 });

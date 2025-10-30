@@ -37,6 +37,33 @@
                 <i class="bi bi-arrow-left mr-2"></i> Voltar
             </a>
         </div>
+
+        {% if user.is_staff or user.is_superuser %}
+        <!-- Área de importação de declaração de compensação -->
+        <div class="p-6 border-b bg-muted/10">
+            <div class="flex flex-col gap-3">
+                <div class="flex items-start gap-2">
+                    <i class="bi bi-file-earmark-arrow-up text-primary text-lg"></i>
+                    <div>
+                        <h3 class="text-sm font-semibold">Importar Declaração de Compensação</h3>
+                        <p class="text-xs text-muted-foreground">Arraste um PDF de declaração de compensação ou clique para selecionar</p>
+                    </div>
+                </div>
+                <div id="import-declaracao-dropzone" 
+                     class="border-2 border-dashed rounded-md p-6 text-center cursor-pointer transition-colors hover:border-primary hover:bg-muted/30"
+                     data-url="{% url 'adesao:importar_declaracao_compensacao' %}">
+                    <div class="flex flex-col items-center gap-2 text-sm text-muted-foreground">
+                        <i class="bi bi-cloud-upload text-2xl"></i>
+                        <span>Arraste o PDF aqui ou <span class="text-primary font-medium">clique para selecionar</span></span>
+                        <span class="text-xs">Apenas arquivos PDF de Declaração de Compensação</span>
+                    </div>
+                    <input id="declaracao-file-input" type="file" accept=".pdf" class="hidden">
+                </div>
+                <div id="import-declaracao-status" class="hidden rounded-md border p-3 text-sm"></div>
+            </div>
+        </div>
+        {% endif %}
+
         <form id="lancamento-form" method="post" enctype="multipart/form-data" novalidate class="p-6 space-y-8">
                 {% csrf_token %}
                 
@@ -55,7 +82,7 @@
                     {{ form.valor }}
                 </div>
 
-                <!-- Grupo 1: Adesão / Saldo / Tipo (e Sinal) -->
+                <!-- Grupo 1: Adesão / Saldo / Sinal -->
                 <div class="bg-muted/20 border rounded-md p-4">
                     <h3 class="text-sm font-semibold mb-4 tracking-wide text-muted-foreground">Dados do lançamento</h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -69,17 +96,12 @@
                             {{ form.saldo_atual_adesao }}
                             <p class="text-xs text-muted-foreground mt-1">Saldo disponível na adesão selecionada.</p>
                         </div>
-                        <div class="md:col-span-2">
-                            <label for="{{ form.tipo.id_for_label }}" class="block text-sm font-medium mb-1">{{ form.tipo.label }}</label>
-                            {{ form.tipo }}
-                            {% if form.tipo.errors %}<div class="text-sm text-destructive mt-1">{{ form.tipo.errors }}</div>{% endif %}
-                        </div>
                         <div>
                             <label for="{{ form.sinal.id_for_label }}" class="block text-sm font-medium mb-1">{{ form.sinal.label }}</label>
                             {{ form.sinal }}
                             {% if form.sinal.errors %}<div class="text-sm text-destructive mt-1">{{ form.sinal.errors }}</div>{% endif %}
                         </div>
-                        <div class="md:col-span-3">
+                        <div class="md:col-span-2">
                             <label for="{{ form.codigo_guia.id_for_label }}" class="block text-sm font-medium mb-1">{{ form.codigo_guia.label }}</label>
                             {{ form.codigo_guia }}
                             <p class="text-xs text-muted-foreground mt-1">Informe o identificador da guia associado a este lançamento (opcional).</p>
@@ -108,36 +130,31 @@
                             <div class="border rounded-md p-4">
                                 <h4 class="text-sm font-semibold mb-4 tracking-wide text-muted-foreground">Detalhes do tipo de crédito</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <!-- Declaração de Compensação -->
+                                    <div id="lanc-group-total_debitos_documento" class="hidden md:col-span-3">
+                                        <label for="{{ form.lanc_total_debitos_documento.id_for_label }}" class="block text-sm font-medium mb-1">Total dos Débitos deste Documento</label>
+                                        {{ form.lanc_total_debitos_documento }}
+                                        <p class="text-xs text-muted-foreground mt-1">Valor total dos débitos conforme declaração de compensação</p>
+                                        {% if form.lanc_total_debitos_documento.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_total_debitos_documento.errors }}</div>{% endif %}
+                                    </div>
+                                    <div id="lanc-group-descricao_debitos" class="hidden md:col-span-3">
+                                        <label for="{{ form.lanc_descricao_debitos.id_for_label }}" class="block text-sm font-medium mb-1">Descrição dos Débitos</label>
+                                        {{ form.lanc_descricao_debitos }}
+                                        <p class="text-xs text-muted-foreground mt-1">Detalhamento dos itens de débito da declaração</p>
+                                        {% if form.lanc_descricao_debitos.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_descricao_debitos.errors }}</div>{% endif %}
+                                    </div>
                                     <div id="lanc-group-total_credito_original_utilizado" class="hidden">
                                         <label for="{{ form.lanc_total_credito_original_utilizado.id_for_label }}" class="block text-sm font-medium mb-1">Total Crédito Original Utilizado</label>
                                         {{ form.lanc_total_credito_original_utilizado }}
                                         {% if form.lanc_total_credito_original_utilizado.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_total_credito_original_utilizado.errors }}</div>{% endif %}
-                                    </div>
-                                    <div id="lanc-group-debito" class="hidden">
-                                        <label for="{{ form.lanc_debito.id_for_label }}" class="block text-sm font-medium mb-1">Débito</label>
-                                        {{ form.lanc_debito }}
-                                        {% if form.lanc_debito.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_debito.errors }}</div>{% endif %}
                                     </div>
                                     <div id="lanc-group-periodo_apuracao" class="hidden">
                                         <label for="{{ form.lanc_periodo_apuracao.id_for_label }}" class="block text-sm font-medium mb-1">Período de Apuração</label>
                                         {{ form.lanc_periodo_apuracao }}
                                         {% if form.lanc_periodo_apuracao.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_periodo_apuracao.errors }}</div>{% endif %}
                                     </div>
-                                    <div id="lanc-group-debito_r" class="hidden">
-                                        <label for="{{ form.lanc_debito_r.id_for_label }}" class="block text-sm font-medium mb-1">Débito</label>
-                                        {{ form.lanc_debito_r }}
-                                        {% if form.lanc_debito_r.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_debito_r.errors }}</div>{% endif %}
-                                    </div>
-                                    <div id="lanc-group-periodo_apuracao_r" class="hidden">
-                                        <label for="{{ form.lanc_periodo_apuracao_r.id_for_label }}" class="block text-sm font-medium mb-1">Período de Apuração</label>
-                                        {{ form.lanc_periodo_apuracao_r }}
-                                        {% if form.lanc_periodo_apuracao_r.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_periodo_apuracao_r.errors }}</div>{% endif %}
-                                    </div>
-                                    <div id="lanc-group-total_r" class="hidden">
-                                        <label for="{{ form.lanc_total_r.id_for_label }}" class="block text-sm font-medium mb-1">Total</label>
-                                        {{ form.lanc_total_r }}
-                                        {% if form.lanc_total_r.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_total_r.errors }}</div>{% endif %}
-                                    </div>
+                                    
+                                    <!-- Crédito em Conta -->
                                     <div id="lanc-group-data_credito" class="hidden">
                                         <label for="{{ form.lanc_data_credito.id_for_label }}" class="block text-sm font-medium mb-1">Data do Crédito</label>
                                         {{ form.lanc_data_credito }}
@@ -405,10 +422,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const metodoField = document.getElementById('{{ form.metodo_escolhido.id_for_label }}') || document.querySelector('select[name="metodo_escolhido"]');
         const mapGroups = {
-            'pedido de ressarcimento': ['lanc-group-debito_r','lanc-group-periodo_apuracao_r','lanc-group-total_r'],
-            'pedido de restituição': ['lanc-group-total_credito_original_utilizado','lanc-group-debito','lanc-group-periodo_apuracao'],
-            'pedido de restituiçao': ['lanc-group-total_credito_original_utilizado','lanc-group-debito','lanc-group-periodo_apuracao'],
-            'pedido de restituicao': ['lanc-group-total_credito_original_utilizado','lanc-group-debito','lanc-group-periodo_apuracao'],
+            'declaração de compensação': ['lanc-group-total_debitos_documento','lanc-group-descricao_debitos','lanc-group-total_credito_original_utilizado','lanc-group-periodo_apuracao'],
             'credito em conta': ['lanc-group-data_credito','lanc-group-valor_credito_em_conta']
         };
         function norm(v){return (v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();}
@@ -765,5 +779,139 @@
                 if(modal){modal.classList.add('hidden'); document.body.style.overflow='';}
         }
         function escHandler(e){ if(e.key==='Escape'){ closeErrorModal(); } }
+
+// ====== DRAG AND DROP PARA DECLARAÇÃO DE COMPENSAÇÃO ======
+document.addEventListener('DOMContentLoaded', () => {
+    const dropzone = document.getElementById('import-declaracao-dropzone');
+    const fileInput = document.getElementById('declaracao-file-input');
+    const statusDiv = document.getElementById('import-declaracao-status');
+    
+    if (!dropzone || !fileInput) return;
+    
+    const uploadUrl = dropzone.getAttribute('data-url');
+    
+    function getCookie(name) {
+        const cookies = document.cookie ? document.cookie.split('; ') : [];
+        for (let i = 0; i < cookies.length; i++) {
+            const parts = cookies[i].split('=');
+            if (decodeURIComponent(parts[0]) === name) {
+                parts.shift();
+                return decodeURIComponent(parts.join('='));
+            }
+        }
+        return null;
+    }
+    
+    function showStatus(message, type = 'info') {
+        statusDiv.classList.remove('hidden', 'border-blue-200', 'bg-blue-50', 'text-blue-700',
+                                   'border-green-200', 'bg-green-50', 'text-green-700',
+                                   'border-red-200', 'bg-red-50', 'text-red-700');
+        
+        if (type === 'success') {
+            statusDiv.classList.add('border-green-200', 'bg-green-50', 'text-green-700');
+        } else if (type === 'error') {
+            statusDiv.classList.add('border-red-200', 'bg-red-50', 'text-red-700');
+        } else {
+            statusDiv.classList.add('border-blue-200', 'bg-blue-50', 'text-blue-700');
+        }
+        
+        statusDiv.innerHTML = message;
+    }
+    
+    async function uploadFile(file) {
+        const csrfToken = getCookie('csrftoken');
+        if (!csrfToken) {
+            showStatus('Erro: Token CSRF não encontrado', 'error');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('pdf', file);
+        
+        showStatus('<i class="bi bi-hourglass-split mr-2"></i>Processando arquivo...', 'info');
+        
+        try {
+            const response = await fetch(uploadUrl, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken },
+                body: formData,
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok || !data.ok) {
+                const errorMsg = data.error || `Erro ${response.status}`;
+                showStatus(`<i class="bi bi-x-circle mr-2"></i>${errorMsg}`, 'error');
+                return;
+            }
+            
+            const numDebitos = data.num_debitos || 0;
+            const totalDebitos = data.total_debitos || 0;
+            const perdcomp = data.perdcomp_declaracao || '';
+            
+            showStatus(`
+                <div class="flex items-start gap-2">
+                    <i class="bi bi-check-circle-fill text-lg"></i>
+                    <div>
+                        <div class="font-medium mb-1">Declaração importada com sucesso!</div>
+                        <div class="text-xs space-y-1">
+                            <div>PER/DCOMP: <strong>${perdcomp}</strong></div>
+                            <div>Total de débitos: <strong>R$ ${totalDebitos.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong></div>
+                            <div>Quantidade de itens: <strong>${numDebitos}</strong></div>
+                        </div>
+                        <div class="mt-2">
+                            <a href="${data.detail_url || ''}" class="text-xs underline">Ver detalhes da adesão</a>
+                        </div>
+                    </div>
+                </div>
+            `, 'success');
+            
+        } catch (error) {
+            showStatus(`<i class="bi bi-x-circle mr-2"></i>Erro ao processar: ${error.message}`, 'error');
+        }
+    }
+    
+    // Click to browse
+    dropzone.addEventListener('click', () => fileInput.click());
+    
+    // Drag events
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.classList.add('border-primary', 'bg-muted/40');
+    });
+    
+    dropzone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('border-primary', 'bg-muted/40');
+    });
+    
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('border-primary', 'bg-muted/40');
+        
+        const files = e.dataTransfer?.files;
+        if (files && files.length > 0) {
+            const file = files[0];
+            if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+                uploadFile(file);
+            } else {
+                showStatus('<i class="bi bi-x-circle mr-2"></i>Apenas arquivos PDF são aceitos', 'error');
+            }
+        }
+    });
+    
+    // File input change
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const file = e.target.files[0];
+            if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+                uploadFile(file);
+            } else {
+                showStatus('<i class="bi bi-x-circle mr-2"></i>Apenas arquivos PDF são aceitos', 'error');
+            }
+            fileInput.value = '';
+        }
+    });
+});
 </script>
 {% endblock %}

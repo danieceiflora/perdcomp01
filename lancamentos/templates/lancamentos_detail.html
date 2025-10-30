@@ -97,32 +97,27 @@
                                 <div class="font-medium">{{ metodo_raw }}</div>
                             </div>
                             <div class="space-y-3">
-                                {% if 'restitu' in ml %}
+                                {% if 'compensacao' in ml or 'compensação' in ml %}
+                                    <div>
+                                        <div class="text-xs uppercase tracking-wide text-muted-foreground">Total dos Débitos deste Documento</div>
+                                        <div class="font-medium">{% if lancamento.total_debitos_documento != None %}{{ lancamento.total_debitos_documento|br_currency }}{% else %}<span class="text-muted-foreground">--</span>{% endif %}</div>
+                                    </div>
+                                    {% if lancamento.total_credito_original_utilizado != None %}
                                     <div>
                                         <div class="text-xs uppercase tracking-wide text-muted-foreground">Total Crédito Original Utilizado</div>
-                                        <div class="font-medium">{% if lancamento.total_credito_original_utilizado != None %}{{ lancamento.total_credito_original_utilizado|br_currency }}{% else %}<span class="text-muted-foreground">--</span>{% endif %}</div>
+                                        <div class="font-medium">{{ lancamento.total_credito_original_utilizado|br_currency }}</div>
                                     </div>
-                                    <div>
-                                        <div class="text-xs uppercase tracking-wide text-muted-foreground">Débito</div>
-                                        <div class="font-medium">{% if lancamento.debito != None %}{{ lancamento.debito|br_currency }}{% else %}<span class="text-muted-foreground">--</span>{% endif %}</div>
-                                    </div>
+                                    {% endif %}
                                     <div>
                                         <div class="text-xs uppercase tracking-wide text-muted-foreground">Período de Apuração</div>
                                         <div class="font-medium">{{ lancamento.periodo_apuracao|default:'--' }}</div>
                                     </div>
-                                {% elif 'ressarc' in ml %}
-                                    <div>
-                                        <div class="text-xs uppercase tracking-wide text-muted-foreground">Total</div>
-                                        <div class="font-medium">{% if lancamento.total != None %}{{ lancamento.total|br_currency }}{% else %}<span class="text-muted-foreground">--</span>{% endif %}</div>
+                                    {% if lancamento.descricao_debitos %}
+                                    <div class="md:col-span-2">
+                                        <div class="text-xs uppercase tracking-wide text-muted-foreground mb-1">Descrição dos Débitos</div>
+                                        <div class="rounded-md border bg-muted/30 p-3 text-sm leading-relaxed max-h-60 overflow-y-auto">{{ lancamento.descricao_debitos|linebreaks }}</div>
                                     </div>
-                                    <div>
-                                        <div class="text-xs uppercase tracking-wide text-muted-foreground">Débito</div>
-                                        <div class="font-medium">{% if lancamento.debito_r != None %}{{ lancamento.debito_r|br_currency }}{% else %}<span class="text-muted-foreground">--</span>{% endif %}</div>
-                                    </div>
-                                    <div>
-                                        <div class="text-xs uppercase tracking-wide text-muted-foreground">Período de Apuração</div>
-                                        <div class="font-medium">{{ lancamento.periodo_apuracao_r|default:'--' }}</div>
-                                    </div>
+                                    {% endif %}
                                 {% elif 'credito' in ml and 'conta' in ml %}
                                     <div>
                                         <div class="text-xs uppercase tracking-wide text-muted-foreground">Data do Crédito</div>
@@ -140,6 +135,44 @@
                         {% endwith %}
                     </div>
                 </div>
+            </section>
+
+            <section>
+                <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><i class="bi bi-file-earmark-check"></i> Informações de Protocolo</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <div class="text-xs uppercase tracking-wide text-muted-foreground">Status do Lançamento</div>
+                        <div class="font-medium mt-1">
+                            {% if lancamento.status == 'protocolado' %}
+                                <span class="inline-flex items-center rounded-md bg-blue-500/10 px-2.5 py-1 text-sm font-medium text-blue-700 dark:text-blue-300">
+                                    <i class="bi bi-check-circle-fill mr-1.5"></i>
+                                    Protocolado
+                                </span>
+                            {% elif lancamento.status == 'solicitado' %}
+                                <span class="inline-flex items-center rounded-md bg-gray-500/10 px-2.5 py-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    <i class="bi bi-clock-history mr-1.5"></i>
+                                    Solicitado
+                                </span>
+                            {% else %}
+                                <span class="text-muted-foreground">{{ lancamento.get_status_display|default:'--' }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-xs uppercase tracking-wide text-muted-foreground">Número de Controle</div>
+                        <div class="font-medium font-mono text-sm mt-1">{{ lancamento.numero_controle|default:'--' }}</div>
+                    </div>
+                    <div>
+                        <div class="text-xs uppercase tracking-wide text-muted-foreground">Chave de Segurança SERPRO</div>
+                        <div class="font-medium font-mono text-sm mt-1 break-all">{{ lancamento.chave_seguranca_serpro|default:'--' }}</div>
+                    </div>
+                </div>
+                {% if not lancamento.numero_controle and not lancamento.chave_seguranca_serpro %}
+                <div class="mt-4 flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 dark:bg-blue-500/15 dark:border-blue-500/40 px-4 py-3 text-sm text-blue-700 dark:text-blue-300">
+                    <i class="bi bi-info-circle-fill"></i>
+                    <span>Para atualizar as informações de protocolo, importe o recibo de envio na <a href="{% url 'lancamentos:list' %}" class="underline hover:no-underline font-medium">página de listagem</a>.</span>
+                </div>
+                {% endif %}
             </section>
 
             <section>

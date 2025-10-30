@@ -8,8 +8,7 @@ class LancamentosForm(forms.ModelForm):
         required=True,
         choices=[
             ('', 'Selecione o método...'),
-            ('Pedido de ressarcimento', 'Pedido de ressarcimento'),
-            ('Pedido de restituição', 'Pedido de restituição'),
+            ('Declaração de compensação', 'Declaração de compensação'),
             ('Crédito em conta', 'Crédito em conta'),
         ],
         widget=forms.Select(attrs={'class': 'input w-full'})
@@ -19,46 +18,38 @@ class LancamentosForm(forms.ModelForm):
         required=False, 
         max_digits=15, 
         decimal_places=2,
-        widget=forms.NumberInput(attrs={'class': 'input w-full', 'step': '0.01', 'placeholder': '0,00'})
+        widget=forms.NumberInput(attrs={'class': 'input w-full', 'step': '0.01', 'placeholder': '0,00'}),
+        label='Total Crédito Original Utilizado'
     )
+    
+    lanc_total_debitos_documento = forms.DecimalField(
+        required=False,
+        max_digits=15,
+        decimal_places=2,
+        widget=forms.NumberInput(attrs={'class': 'input w-full', 'step': '0.01', 'placeholder': '0,00'}),
+        label='Total dos Débitos deste Documento'
+    )
+    
+    lanc_periodo_apuracao = forms.CharField(
+        required=False, 
+        max_length=20,
+        widget=forms.TextInput(attrs={'class': 'input w-full', 'placeholder': 'Ex: 01/2025'}),
+        label='Período de Apuração'
+    )
+    
     lanc_data_credito = forms.DateField(
         required=False,
         widget=forms.DateInput(attrs={'class': 'input w-full', 'type': 'date'}),
-        input_formats=['%Y-%m-%d', '%d/%m/%Y']
+        input_formats=['%Y-%m-%d', '%d/%m/%Y'],
+        label='Data do Crédito'
     )
+    
     lanc_valor_credito_em_conta = forms.DecimalField(
         required=False,
         max_digits=15,
         decimal_places=2,
-        widget=forms.NumberInput(attrs={'class': 'input w-full', 'step': '0.01', 'placeholder': '0,00'})
-    )
-    lanc_debito = forms.DecimalField(
-        required=False, 
-        max_digits=15, 
-        decimal_places=2,
-        widget=forms.NumberInput(attrs={'class': 'input w-full', 'step': '0.01', 'placeholder': '0,00'})
-    )
-    lanc_periodo_apuracao = forms.CharField(
-        required=False, 
-        max_length=20,
-        widget=forms.TextInput(attrs={'class': 'input w-full', 'placeholder': 'Ex: 01/2025'})
-    )
-    lanc_debito_r = forms.DecimalField(
-        required=False, 
-        max_digits=15, 
-        decimal_places=2,
-        widget=forms.NumberInput(attrs={'class': 'input w-full', 'step': '0.01', 'placeholder': '0,00'})
-    )
-    lanc_periodo_apuracao_r = forms.CharField(
-        required=False, 
-        max_length=20,
-        widget=forms.TextInput(attrs={'class': 'input w-full', 'placeholder': 'Ex: 01/2025'})
-    )
-    lanc_total_r = forms.DecimalField(
-        required=False, 
-        max_digits=15, 
-        decimal_places=2,
-        widget=forms.NumberInput(attrs={'class': 'input w-full', 'step': '0.01', 'placeholder': '0,00'})
+        widget=forms.NumberInput(attrs={'class': 'input w-full', 'step': '0.01', 'placeholder': '0,00'}),
+        label='Valor do Crédito em Conta'
     )
     
     # Campo para exibir o saldo atual da adesão selecionada (somente leitura)
@@ -105,19 +96,16 @@ class LancamentosForm(forms.ModelForm):
 
     class Meta:
         model = Lancamentos
-        fields = ['id_adesao', 'metodo_escolhido', 'data_lancamento', 'valor', 'tipo', 'descricao', 'codigo_guia',
-                  'lanc_total_credito_original_utilizado', 'lanc_debito', 'lanc_periodo_apuracao',
-                  'lanc_debito_r', 'lanc_periodo_apuracao_r', 'lanc_total_r',
+        fields = ['id_adesao', 'metodo_escolhido', 'data_lancamento', 'valor', 'descricao', 'codigo_guia',
+                  'lanc_total_credito_original_utilizado', 'lanc_total_debitos_documento', 'lanc_periodo_apuracao',
                   'lanc_data_credito', 'lanc_valor_credito_em_conta',
-                  'metodo', 'total', 'total_credito_original_utilizado', 'periodo_apuracao',
-                  'periodo_apuracao_r', 'debito', 'debito_r',
-                  'data_credito', 'valor_credito_em_conta',
+                  'metodo', 'total', 'total_credito_original_utilizado', 'total_debitos_documento', 'descricao_debitos',
+                  'periodo_apuracao', 'data_credito', 'valor_credito_em_conta',
                   'aprovado', 'data_aprovacao', 'observacao_aprovacao']
         widgets = {
             'id_adesao': forms.Select(attrs={'class': 'input w-full'}),
             'data_lancamento': forms.DateInput(attrs={'class': 'input w-full','type': 'date'}),
             'valor': forms.HiddenInput(),
-            'tipo': forms.Select(attrs={'class': 'input w-full'}),
             'descricao': forms.Textarea(attrs={'class': 'input w-full','placeholder': 'Observações adicionais','rows': 3}),
             'codigo_guia': forms.TextInput(attrs={'class': 'input w-full', 'placeholder': 'Informe o código da guia'}),
             'aprovado': forms.Select(choices=[(True, 'Sim'), (False, 'Não')], attrs={'class': 'input w-full'}),
@@ -125,6 +113,8 @@ class LancamentosForm(forms.ModelForm):
             'observacao_aprovacao': forms.Textarea(attrs={'class': 'input w-full', 'rows': 3}),
             'data_credito': forms.HiddenInput(),
             'valor_credito_em_conta': forms.HiddenInput(),
+            'total_debitos_documento': forms.HiddenInput(),
+            'descricao_debitos': forms.HiddenInput(),
         }
 
     def add_error_classes(self):
@@ -165,33 +155,32 @@ class LancamentosForm(forms.ModelForm):
         cleaned['valor'] = None
         cleaned['data_credito'] = None
         cleaned['valor_credito_em_conta'] = None
+        cleaned['total_debitos_documento'] = None
+        cleaned['descricao_debitos'] = None
         
-        # Restituição: débito usando total_credito_original_utilizado
-        if 'restitu' in metodo:
-            total_cr = cleaned.get('lanc_total_credito_original_utilizado')
-            if total_cr is None:
-                self.add_error('lanc_total_credito_original_utilizado', 'Informe o valor.')
-            else:
-                cleaned['valor'] = float(total_cr)
-                cleaned['sinal'] = '-'  # sempre débito
-                # Persistir dados originais
-                cleaned['total_credito_original_utilizado'] = float(total_cr)
-                cleaned['debito'] = cleaned.get('lanc_debito') or 0
-                cleaned['periodo_apuracao'] = cleaned.get('lanc_periodo_apuracao') or ''
-                
-        # Ressarcimento: débito usando total_r (diminui o saldo disponível)
-        elif 'ressarc' in metodo:
-            total_r = cleaned.get('lanc_total_r')
-            if total_r is None:
-                self.add_error('lanc_total_r', 'Informe o total.')
-            else:
-                cleaned['valor'] = float(total_r)
-                cleaned['sinal'] = '-'  # sempre débito
-                # Persistir dados originais
-                cleaned['total'] = float(total_r)
-                cleaned['debito_r'] = cleaned.get('lanc_debito_r') or 0
-                cleaned['periodo_apuracao_r'] = cleaned.get('lanc_periodo_apuracao_r') or ''
+        # Declaração de Compensação: usar total_debitos_documento
+        if 'compensacao' in metodo or 'compensação' in metodo:
+            total_cred = cleaned.get('lanc_total_credito_original_utilizado')
+            total_deb = cleaned.get('lanc_total_debitos_documento')
+            periodo = cleaned.get('lanc_periodo_apuracao')
+            
+            if not total_deb:
+                self.add_error('lanc_total_debitos_documento', 'Total dos débitos é obrigatório para Declaração de Compensação.')
+            if not periodo:
+                self.add_error('lanc_periodo_apuracao', 'Período de apuração é obrigatório para Declaração de Compensação.')
+            
+            if total_deb:
+                cleaned['total_debitos_documento'] = float(total_deb)
+                cleaned['valor'] = float(total_deb)
+                cleaned['sinal'] = '-'
+            
+            if total_cred:
+                cleaned['total_credito_original_utilizado'] = float(total_cred)
+            
+            if periodo:
+                cleaned['periodo_apuracao'] = periodo
 
+        # Crédito em conta
         elif 'credito' in metodo and 'conta' in metodo:
             data_credito = cleaned.get('lanc_data_credito')
             valor_credito = cleaned.get('lanc_valor_credito_em_conta')

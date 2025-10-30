@@ -12,6 +12,7 @@ urlpatterns = [
     path('exportar-xlsx/', views.exportar_lancamentos_xlsx, name='exportar_xlsx'),
     path('historico/<int:pk>/', views.lancamento_history_json, name='history_json'),
     path('historico-anexo/<int:pk>/', views.anexo_history_json, name='anexo_history_json'),
+    path('importar-recibo/', views.importar_recibo_lancamento, name='importar_recibo'),
     ##path('editar-anexos/<int:pk>/', views.AnexosUpdateView.as_view(), name='editar_anexos')
     # API DRF padronizada
     path('api/v1/listar-lancamento/', views.LancamentoListAPI.as_view(), name='api-lancamento-list'),
