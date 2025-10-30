@@ -635,3 +635,127 @@ def parse_credito_em_conta_text(txt: str) -> PDFCreditoContaParsed:
             parsed.perdcomp = candidate
 
     return parsed
+
+
+def parse_pedido_credito_text(txt: str) -> PDFParsed:
+    """
+    Parser específico para PEDIDO DE CRÉDITO (PER).
+    
+    Tipos suportados:
+    - Pedido de Restituição
+    - Pedido de Ressarcimento (Compensação)
+    
+    Extrai:
+    - cnpj: CNPJ do contribuinte
+    - perdcomp: Número do pedido (PER/DCOMP)
+    - metodo_credito: Tipo do documento
+    - data_criacao: Data de criação do pedido
+    - valor_pedido: Valor solicitado
+    - ano: Ano de referência (para ressarcimento)
+    - trimestre: Trimestre (para ressarcimento)
+    - tipo_credito: Tipo de crédito (para ressarcimento)
+    - periodo_apuracao_credito: Período de apuração (para restituição)
+    - codigo_receita: Código da receita (para restituição)
+    - data_arrecadacao: Data de arrecadação (para restituição)
+    """
+    p = PDFParsed()
+    if not txt:
+        return p
+    
+    # Normalizar
+    norm = re.sub(r"[\t\u00A0]+", " ", txt)
+    
+    # 1. CNPJ (obrigatório)
+    m_cnpj = re.search(r"CNPJ\s*[:\-]?\s*([0-9./-]{14,20})", norm, flags=re.IGNORECASE)
+    if m_cnpj:
+        p.cnpj = _clean_cnpj(m_cnpj.group(1))
+    
+    # 2. Número do PERDCOMP (PER/DCOMP)
+    # Buscar no cabeçalho ou após CNPJ
+    if m_cnpj:
+        tail = norm[m_cnpj.end():m_cnpj.end() + 100]
+        m_per = re.search(r"(\d{5}[\d.\-]+\d{4})", tail)
+        if m_per:
+            candidate = m_per.group(1).strip()
+            if _looks_like_perdcomp(candidate):
+                p.perdcomp = candidate
+    
+    if not p.perdcomp:
+        m_per = re.search(r"(?:PERDCOMP|PER\s*/?\s*DCOMP)\s*(?:n[ºo]\s*)?[:\-]?\s*(\d+[\d.\-]+)", norm, flags=re.IGNORECASE)
+        if m_per:
+            candidate = m_per.group(1).strip()
+            if _looks_like_perdcomp(candidate):
+                p.perdcomp = candidate
+    
+    if not p.perdcomp:
+        candidate = _find_perdcomp_candidate(norm)
+        if candidate:
+            p.perdcomp = candidate
+    
+    # 3. Tipo de Documento - determina se é Restituição ou Ressarcimento
+    m_tipo = re.search(r"Tipo\s+de\s+Documento\s*[:\-]?\s*(.+?)(?:\n|$)", norm, flags=re.IGNORECASE)
+    if m_tipo:
+        raw = m_tipo.group(1).strip()
+        low = raw.lower()
+        
+        if 'ressarc' in low:
+            p.metodo_credito = 'Pedido de ressarcimento'
+        elif 'restitui' in low:
+            p.metodo_credito = 'Pedido de restituição'
+        else:
+            p.metodo_credito = raw
+    else:
+        # Tentar detectar pelo conteúdo
+        whole_lower = norm.lower()
+        if 'pedido de ressarcimento' in whole_lower:
+            p.metodo_credito = 'Pedido de ressarcimento'
+        elif 'pedido de restituição' in whole_lower or 'pedido de restituicao' in whole_lower:
+            p.metodo_credito = 'Pedido de restituição'
+    
+    # 4. Data de Criação
+    m_data = re.search(r"Data\s+de\s+Cria[cç][aã]o\s*[:\-]?\s*(\d{2}/\d{2}/\d{4})", norm, flags=re.IGNORECASE)
+    if m_data:
+        p.data_criacao = m_data.group(1)
+    
+    # 5. Valor do Pedido
+    m_valor = re.search(r"Valor\s+do\s+Pedido.*?([0-9.]+,\d{2})", norm, flags=re.IGNORECASE | re.DOTALL)
+    if m_valor:
+        p.valor_pedido = _parse_ptbr_number(m_valor.group(1))
+    
+    # 6. Campos específicos de RESSARCIMENTO
+    # Ano
+    m_ano = re.search(r"\bAno\b\s*[:\-]?\s*(\d{4})", norm, flags=re.IGNORECASE)
+    if m_ano:
+        p.ano = m_ano.group(1)
+    
+    # Trimestre
+    m_trim = re.search(r"(\d+)\s*º?\s*Trimestre", norm, flags=re.IGNORECASE)
+    if m_trim:
+        p.trimestre = m_trim.group(1)
+    
+    # Tipo de Crédito
+    m_tipo_cred = re.search(r"Tipo\s+de\s+Cr[eé]dito\s*[:\-]?\s*(.+?)(?:\n|$)", norm, flags=re.IGNORECASE)
+    if m_tipo_cred:
+        p.tipo_credito = m_tipo_cred.group(1).strip()
+    
+    # 7. Campos específicos de RESTITUIÇÃO
+    # Período de Apuração (pode ser dd/mm/aaaa ou mm/aaaa)
+    m_per_ap = re.search(r"Per[ií]odo\s+de\s+Apura[cç][aã]o\s*[:\-]?\s*(\d{2}/\d{2}/\d{4})", norm, flags=re.IGNORECASE)
+    if m_per_ap:
+        p.periodo_apuracao_credito = m_per_ap.group(1)
+    else:
+        m_per_ap = re.search(r"Per[ií]odo\s+de\s+Apura[cç][aã]o\s*[:\-]?\s*(\d{2}/\d{4})", norm, flags=re.IGNORECASE)
+        if m_per_ap:
+            p.periodo_apuracao_credito = m_per_ap.group(1)
+    
+    # Código da Receita
+    m_rec = re.search(r"C[oó]digo\s+(?:da|de)\s+Receita\s*[:\-]?\s*([0-9.]+)", norm, flags=re.IGNORECASE)
+    if m_rec:
+        p.codigo_receita = m_rec.group(1).strip()
+    
+    # Data de Arrecadação
+    m_arrec = re.search(r"Data\s+de\s+Arrecada[cç][aã]o\s*[:\-]?\s*(\d{2}/\d{2}/\d{4})", norm, flags=re.IGNORECASE)
+    if m_arrec:
+        p.data_arrecadacao = m_arrec.group(1)
+    
+    return p

@@ -171,75 +171,85 @@
             {% if adesoes %}
                 <!-- Desktop Table View -->
                 <div class="hidden md:block">
-                    <div class="rounded-md border overflow-x-auto">
-                        <table class="min-w-full">
-                            <thead>
-                                <tr class="border-b bg-muted/50">
-                                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Perdcomp</th>
-                                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Cliente</th>
-                                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Tipo de Crédito</th>
-                                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Número Controle</th>
-                                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Status</th>
-                                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground hidden xl:table-cell">Chave SERPRO</th>
-                                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Data de Início</th>
-                                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Saldo Inicial</th>
-                                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Saldo Restante</th>
-                                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for adesao in adesoes %}
-                                <tr class="border-b transition-colors hover:bg-muted/50">
-                                    <td class="p-4 align-middle font-medium">{{ adesao.perdcomp }}</td>
-                                    <td class="p-4 align-middle">{{ adesao.cliente.id_company_vinculada.nome_fantasia|default:adesao.cliente.id_company_vinculada.razao_social }}</td>
-                                    <td class="p-4 align-middle">{{ adesao.metodo_credito|default:"—" }}</td>
-                                    <td class="p-4 align-middle">{{ adesao.numero_controle|default:"—" }}</td>
-                                    <td class="p-4 align-middle">
-                                        {% if adesao.status %}
-                                            <span class="inline-flex items-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-0.5 text-xs font-medium">
-                                                {{ adesao.get_status_display }}
+                    <div class="rounded-md border overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="border-b bg-muted/50">
+                                        <th class="h-12 px-3 text-left align-middle font-medium text-muted-foreground text-sm whitespace-nowrap">Perdcomp</th>
+                                        <th class="h-12 px-3 text-left align-middle font-medium text-muted-foreground text-sm whitespace-nowrap">Cliente</th>
+                                        <th class="h-12 px-3 text-left align-middle font-medium text-muted-foreground text-sm whitespace-nowrap hidden lg:table-cell">Tipo de Crédito</th>
+                                        <th class="h-12 px-3 text-left align-middle font-medium text-muted-foreground text-sm whitespace-nowrap hidden xl:table-cell">Número Controle</th>
+                                        <th class="h-12 px-3 text-left align-middle font-medium text-muted-foreground text-sm whitespace-nowrap">Status</th>
+                                        <th class="h-12 px-3 text-left align-middle font-medium text-muted-foreground text-sm whitespace-nowrap hidden 2xl:table-cell">Data de Início</th>
+                                        <th class="h-12 px-3 text-left align-middle font-medium text-muted-foreground text-sm whitespace-nowrap hidden lg:table-cell">Saldo Inicial</th>
+                                        <th class="h-12 px-3 text-left align-middle font-medium text-muted-foreground text-sm whitespace-nowrap">Saldo Restante</th>
+                                        <th class="h-12 px-3 text-left align-middle font-medium text-muted-foreground text-sm whitespace-nowrap">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for adesao in adesoes %}
+                                    <tr class="border-b transition-colors hover:bg-muted/50">
+                                        <td class="p-3 align-middle">
+                                            <span class="font-medium text-sm">{{ adesao.perdcomp }}</span>
+                                        </td>
+                                        <td class="p-3 align-middle">
+                                            <span class="text-sm max-w-[200px] block truncate" title="{{ adesao.cliente.id_company_vinculada.nome_fantasia|default:adesao.cliente.id_company_vinculada.razao_social }}">
+                                                {{ adesao.cliente.id_company_vinculada.nome_fantasia|default:adesao.cliente.id_company_vinculada.razao_social }}
                                             </span>
-                                        {% else %}
-                                            <span class="text-muted-foreground">—</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="p-4 align-middle hidden xl:table-cell">
-                                        {% if adesao.chave_seguranca_serpro %}
-                                            <span class="font-mono text-sm break-all" title="{{ adesao.chave_seguranca_serpro }}">{{ adesao.chave_seguranca_serpro|truncatechars:28 }}</span>
-                                        {% else %}
-                                            <span class="text-muted-foreground">—</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="p-4 align-middle">{{ adesao.data_inicio|date:"d/m/Y" }}</td>
-                                    <td class="p-4 align-middle font-semibold {% if adesao.saldo > 0 %}text-muted-foreground{% elif adesao.saldo < 0 %}text-destructive{% endif %}">
-                                        {{ adesao.saldo|br_currency }}
-                                    </td>
-                                    <td class="p-4 align-middle font-semibold {% if adesao.saldo_atual > 0 %}text-green-600 dark:text-green-400{% elif adesao.saldo_atual < 0 %}text-destructive{% endif %} saldo-restante-cell" data-saldo="{{ adesao.saldo_atual|default:0 }}">
-                                        {{ adesao.saldo_atual|br_currency }}
-                                    </td>
-                                    <td class="p-4 align-middle">
-                                        <div class="flex flex-wrap items-center gap-2">
-                                            <a href="{% url 'adesao:detail' adesao.pk %}" 
-                                               class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 w-9"
-                                               title="Visualizar">
-                                                <i class="bi bi-eye text-sm"></i>
-                                            </a>
-                                            <a href="{% url 'lancamentos:list' %}?perdcomp={{ adesao.perdcomp }}" 
-                                               class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-9 w-9"
-                                               title="Lançamentos">
-                                                <i class="bi bi-card-list text-sm"></i>
-                                            </a>
-                                            <button class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 w-9 btn-history-adesao" 
-                                                    data-id="{{ adesao.id }}" 
-                                                    title="Histórico">
-                                                <i class="bi bi-clock-history text-sm"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                                        </td>
+                                        <td class="p-3 align-middle hidden lg:table-cell">
+                                            <span class="text-sm">{{ adesao.metodo_credito|default:"—" }}</span>
+                                        </td>
+                                        <td class="p-3 align-middle hidden xl:table-cell">
+                                            <span class="text-sm">{{ adesao.numero_controle|default:"—" }}</span>
+                                        </td>
+                                        <td class="p-3 align-middle">
+                                            {% if adesao.status %}
+                                                <span class="inline-flex items-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-0.5 text-xs font-medium whitespace-nowrap">
+                                                    {{ adesao.get_status_display }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted-foreground text-sm">—</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="p-3 align-middle hidden 2xl:table-cell">
+                                            <span class="text-sm whitespace-nowrap">{{ adesao.data_inicio|date:"d/m/Y" }}</span>
+                                        </td>
+                                        <td class="p-3 align-middle hidden lg:table-cell">
+                                            <span class="font-semibold text-sm whitespace-nowrap {% if adesao.saldo > 0 %}text-muted-foreground{% elif adesao.saldo < 0 %}text-destructive{% endif %}">
+                                                {{ adesao.saldo|br_currency }}
+                                            </span>
+                                        </td>
+                                        <td class="p-3 align-middle">
+                                            <span class="font-semibold text-sm whitespace-nowrap {% if adesao.saldo_atual > 0 %}text-green-600 dark:text-green-400{% elif adesao.saldo_atual < 0 %}text-destructive{% endif %} saldo-restante-cell" data-saldo="{{ adesao.saldo_atual|default:0 }}">
+                                                {{ adesao.saldo_atual|br_currency }}
+                                            </span>
+                                        </td>
+                                        <td class="p-3 align-middle">
+                                            <div class="flex items-center gap-1.5">
+                                                <a href="{% url 'adesao:detail' adesao.pk %}" 
+                                                   class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 w-8"
+                                                   title="Visualizar">
+                                                    <i class="bi bi-eye text-sm"></i>
+                                                </a>
+                                                <a href="{% url 'lancamentos:list' %}?perdcomp={{ adesao.perdcomp }}" 
+                                                   class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-8 w-8"
+                                                   title="Lançamentos">
+                                                    <i class="bi bi-card-list text-sm"></i>
+                                                </a>
+                                                <button class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 w-8 btn-history-adesao" 
+                                                        data-id="{{ adesao.id }}" 
+                                                        title="Histórico">
+                                                    <i class="bi bi-clock-history text-sm"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
                 

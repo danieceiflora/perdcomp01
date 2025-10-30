@@ -12,6 +12,7 @@ urlpatterns = [
     path('historico/<int:pk>/', views.adesao_history_json, name='history_json'),
     path('importar-pdf/', views.importar_pdf_perdcomp, name='importar_pdf'),
     path('importar-pdf-lote/', views.importar_pdf_perdcomp_lote, name='importar_pdf_lote'),
+    path('importar-pedido-credito/', views.importar_pedido_credito, name='importar_pedido_credito'),
     path('importar-recibo/', views.importar_recibo_pedido_credito, name='importar_recibo'),
     path('importar-declaracao-compensacao/', views.importar_declaracao_compensacao, name='importar_declaracao_compensacao'),
     path('importar-notificacao-credito/', views.importar_notificacao_credito_conta, name='importar_credito_conta'),

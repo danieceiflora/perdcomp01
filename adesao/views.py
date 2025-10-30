@@ -24,7 +24,8 @@ from utils.pdf_parser import (
     parse_ressarcimento_text, 
     parse_recibo_pedido_credito_text, 
     parse_credito_em_conta_text,
-    parse_declaracao_compensacao_text
+    parse_declaracao_compensacao_text,
+    parse_pedido_credito_text
 )
 from pdf import extract_text
 from clientes_parceiros.models import ClientesParceiros
@@ -844,6 +845,170 @@ def importar_declaracao_compensacao(request):
                 logs_dir,
                 f"compensacao_{timezone.now().strftime('%Y%m%d_%H%M%S')}_{safe_name}.json"
             )
+            with open(log_path, 'w', encoding='utf-8') as fh:
+                fh.write(json.dumps(log_data, ensure_ascii=False, indent=2))
+        except Exception:
+            pass
+        try:
+            if tmp_path and os.path.exists(tmp_path):
+                os.remove(tmp_path)
+        except Exception:
+            pass
+
+    return JsonResponse(response_payload or {'ok': False, 'error': 'Falha desconhecida.'}, status=status_code)
+
+
+@login_required
+@csrf_protect
+@require_POST
+def importar_pedido_credito(request):
+    """
+    View dedicada para importar Pedidos de Crédito (PER).
+    Suporta: Pedido de Restituição e Pedido de Ressarcimento.
+    Cria automaticamente a Adesão se validações passarem.
+    """
+    pdf_file: UploadedFile | None = request.FILES.get('pdf')
+    if not pdf_file:
+        return JsonResponse({'ok': False, 'error': 'Arquivo PDF não enviado (campo "pdf").'}, status=400)
+
+    import tempfile
+    import os
+    from django.conf import settings
+
+    status_code = 200
+    response_payload: dict[str, Any] | None = None
+    log_data: dict[str, Any] = {
+        'user': getattr(request.user, 'username', None),
+        'filename': pdf_file.name,
+        'ts': timezone.now().isoformat(),
+        'context': 'pedido_credito',
+    }
+
+    tmp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp:
+            for chunk in pdf_file.chunks():
+                tmp.write(chunk)
+            tmp_path = tmp.name
+
+        txt = extract_text(tmp_path) or ''
+        parsed = parse_pedido_credito_text(txt)
+        
+        log_data['extracted_present'] = bool(txt)
+        log_data['parsed'] = parsed.as_dict()
+
+        # Validação 1: CNPJ → Cliente
+        cnpj = (parsed.cnpj or '').strip()
+        if not cnpj:
+            status_code = 400
+            response_payload = {'ok': False, 'error': 'CNPJ não identificado no PDF.'}
+        else:
+            try:
+                cliente = ClientesParceiros.objects.select_related('id_company_vinculada').get(
+                    id_company_vinculada__cnpj=cnpj
+                )
+            except ClientesParceiros.DoesNotExist:
+                status_code = 404
+                response_payload = {'ok': False, 'error': f'Cliente com CNPJ {cnpj} não encontrado.'}
+
+        # Validação 2: PERDCOMP
+        if status_code == 200:
+            perdcomp = (parsed.perdcomp or '').strip()
+            if not perdcomp:
+                status_code = 400
+                response_payload = {'ok': False, 'error': 'Número do PER/DCOMP não identificado no PDF.'}
+            else:
+                # Verificar duplicidade
+                if Adesao.objects.filter(perdcomp=perdcomp).exists():
+                    status_code = 409
+                    response_payload = {'ok': False, 'error': f'Adesão com PER/DCOMP {perdcomp} já existe.'}
+
+        # Validação 3: Tipo de crédito
+        if status_code == 200:
+            metodo_credito = (parsed.metodo_credito or '').strip()
+            if not metodo_credito:
+                status_code = 400
+                response_payload = {'ok': False, 'error': 'Tipo de documento não identificado no PDF.'}
+            elif metodo_credito not in ['Pedido de restituição', 'Pedido de ressarcimento']:
+                status_code = 400
+                response_payload = {'ok': False, 'error': f'Tipo de documento inválido: {metodo_credito}. Esperado: Pedido de Restituição ou Pedido de Ressarcimento.'}
+
+        # Criar Adesão
+        if status_code == 200:
+            with transaction.atomic():
+                adesao = Adesao(
+                    cliente=cliente,
+                    perdcomp=perdcomp,
+                    metodo_credito=metodo_credito,
+                    data_inicio=timezone.now().date(),
+                    saldo=parsed.valor_pedido or 0,
+                    saldo_atual=parsed.valor_pedido or 0,
+                )
+
+                # Campos opcionais
+                if parsed.data_criacao:
+                    try:
+                        from datetime import datetime
+                        dt = datetime.strptime(parsed.data_criacao, '%d/%m/%Y')
+                        adesao.data_inicio = dt.date()
+                    except:
+                        pass
+
+                # Campos específicos de Ressarcimento
+                if metodo_credito == 'Pedido de ressarcimento':
+                    if parsed.ano:
+                        adesao.ano = parsed.ano
+                    if parsed.trimestre:
+                        adesao.trimestre = parsed.trimestre
+                    if parsed.tipo_credito:
+                        adesao.tipo_credito = parsed.tipo_credito
+
+                # Campos específicos de Restituição
+                elif metodo_credito == 'Pedido de restituição':
+                    if parsed.periodo_apuracao_credito:
+                        adesao.periodo_apuracao_credito = parsed.periodo_apuracao_credito
+                    if parsed.codigo_receita:
+                        adesao.codigo_receita = parsed.codigo_receita
+                    if parsed.data_arrecadacao:
+                        try:
+                            from datetime import datetime
+                            dt_arrec = datetime.strptime(parsed.data_arrecadacao, '%d/%m/%Y')
+                            # Pode adicionar campo específico se necessário
+                        except:
+                            pass
+
+                adesao.save()
+
+                emp = cliente.id_company_vinculada
+                cliente_label = f"{emp.nome_fantasia or emp.razao_social} ({cliente.nome_referencia})"
+
+                response_payload = {
+                    'ok': True,
+                    'created': True,
+                    'id': adesao.pk,
+                    'detail_url': reverse('adesao:detail', kwargs={'pk': adesao.pk}),
+                    'perdcomp': adesao.perdcomp,
+                    'cliente': cliente_label,
+                    'metodo_credito': adesao.metodo_credito,
+                    'saldo': str(adesao.saldo),
+                    'fields': parsed.as_dict(),
+                }
+
+    except Exception as e:
+        status_code = 500
+        response_payload = {'ok': False, 'error': f'Erro ao processar PDF: {str(e)}'}
+    finally:
+        try:
+            log_data['status_code'] = status_code
+            log_data['result'] = response_payload
+            logs_dir = os.path.join(getattr(settings, 'MEDIA_ROOT', ''), 'import_logs')
+            os.makedirs(logs_dir, exist_ok=True)
+            safe_name = os.path.basename(pdf_file.name).replace(' ', '_')
+            log_path = os.path.join(
+                logs_dir,
+                f"pedido_credito_{timezone.now().strftime('%Y%m%d_%H%M%S')}_{safe_name}.json"
+            )
+            import json
             with open(log_path, 'w', encoding='utf-8') as fh:
                 fh.write(json.dumps(log_data, ensure_ascii=False, indent=2))
         except Exception:
