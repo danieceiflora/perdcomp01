@@ -3,6 +3,7 @@ from . import views
 
 
 app_name = 'adesao'
+##teste
 
 urlpatterns = [
     path('', views.AdesaoListView.as_view(), name='list'),
