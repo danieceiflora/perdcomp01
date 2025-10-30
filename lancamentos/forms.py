@@ -81,6 +81,36 @@ class LancamentosForm(forms.ModelForm):
         required=False,
         widget=forms.Textarea(attrs={'class': 'input w-full', 'rows': 3, 'placeholder': 'Observações sobre a aprovação (opcional)'})
     )
+    
+    # Campos de recibo de protocolo
+    numero_controle = forms.CharField(
+        required=False,
+        max_length=50,
+        widget=forms.TextInput(attrs={
+            'class': 'input w-full',
+            'placeholder': 'Número de controle do recibo'
+        }),
+        label='Número de Controle'
+    )
+    chave_seguranca_serpro = forms.CharField(
+        required=False,
+        max_length=100,
+        widget=forms.TextInput(attrs={
+            'class': 'input w-full',
+            'placeholder': 'Chave de segurança SERPRO'
+        }),
+        label='Chave de Segurança SERPRO'
+    )
+    status = forms.ChoiceField(
+        required=False,
+        choices=[
+            ('solicitado', 'Solicitado'),
+            ('protocolado', 'Protocolado'),
+        ],
+        initial='solicitado',
+        widget=forms.Select(attrs={'class': 'input w-full'}),
+        label='Status do Controle'
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -93,6 +123,9 @@ class LancamentosForm(forms.ModelForm):
         # Definir valor padrão para evitar validação de campo obrigatório
         if not self.instance.pk:
             self.initial['valor'] = 0
+            # Definir status padrão como 'solicitado' para novos lançamentos
+            if 'status' not in self.initial:
+                self.initial['status'] = 'solicitado'
 
     class Meta:
         model = Lancamentos
@@ -101,7 +134,8 @@ class LancamentosForm(forms.ModelForm):
                   'lanc_data_credito', 'lanc_valor_credito_em_conta',
                   'metodo', 'total', 'total_credito_original_utilizado', 'total_debitos_documento', 'descricao_debitos',
                   'periodo_apuracao', 'data_credito', 'valor_credito_em_conta',
-                  'aprovado', 'data_aprovacao', 'observacao_aprovacao']
+                  'aprovado', 'data_aprovacao', 'observacao_aprovacao',
+                  'numero_controle', 'chave_seguranca_serpro', 'status']
         widgets = {
             'id_adesao': forms.Select(attrs={'class': 'input w-full'}),
             'data_lancamento': forms.DateInput(attrs={'class': 'input w-full','type': 'date'}),

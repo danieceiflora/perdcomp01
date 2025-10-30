@@ -626,7 +626,7 @@ def importar_recibo_lancamento(request):
         numero_documento = (parsed.numero_documento or '').strip()
         if not numero_documento:
             status_code = 400
-            response_payload = {'ok': False, 'error': 'Número do Documento não identificado no PDF.'}
+            response_payload = {'ok': False, 'error': 'Número da Declaração não identificado no PDF.'}
         else:
             try:
                 lancamento = Lancamentos.objects.get(perdcomp_declaracao=numero_documento)

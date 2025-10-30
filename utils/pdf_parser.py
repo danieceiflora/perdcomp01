@@ -555,7 +555,8 @@ def parse_recibo_pedido_credito_text(txt: str) -> PDFReceiptParsed:
 
     norm = re.sub(r"[\t\u00A0]+", " ", txt)
 
-    m = re.search(r"N[úu]mero\s+do\s+Documento\s*[:\-]?\s*([0-9A-Za-z./\-]+)", norm, flags=re.IGNORECASE)
+    # Buscar "Número da Declaração" ao invés de "Número do Documento"
+    m = re.search(r"N[úu]mero\s+da\s+Declara[çc][ãa]o\s*[:\-]?\s*([0-9A-Za-z./\-]+)", norm, flags=re.IGNORECASE)
     if m:
         parsed.numero_documento = m.group(1).strip()
 

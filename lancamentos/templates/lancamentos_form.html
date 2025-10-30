@@ -41,25 +41,42 @@
         {% if user.is_staff or user.is_superuser %}
         <!-- Área de importação de declaração de compensação -->
         <div class="p-6 border-b bg-muted/10">
-            <div class="flex flex-col gap-3">
-                <div class="flex items-start gap-2">
-                    <i class="bi bi-file-earmark-arrow-up text-primary text-lg"></i>
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                        <h3 class="text-sm font-semibold">Importar Declaração de Compensação</h3>
-                        <p class="text-xs text-muted-foreground">Arraste um PDF de declaração de compensação ou clique para selecionar</p>
+                        <h2 class="text-xl font-semibold text-card-foreground">Importar Declarações de Compensação</h2>
+                        <p class="text-sm text-muted-foreground">Carregue declarações de compensação em PDF para criar lançamentos automaticamente vinculados ao PER/DCOMP inicial informado no documento.</p>
+                    </div>
+                    <button type="button" id="importToggleButton" aria-controls="importDropZoneContainer" aria-expanded="false"
+                            class="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-card-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                        <i class="bi bi-chevron-down mr-2" aria-hidden="true"></i>
+                        Expandir área
+                    </button>
+                </div>
+                <div id="importDropZoneContainer" class="transition-all duration-200 hidden" aria-hidden="true">
+                    <div class="flex flex-col gap-4">
+                        <div id="importDropZone" role="button" tabindex="0"
+                             data-compensacao-url="{% url 'adesao:importar_declaracao_compensacao' %}"
+                             class="relative flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-border bg-muted/30 p-5 text-center transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                            <input type="file" id="importFileInput" accept="application/pdf" class="hidden" multiple />
+                            <i class="bi bi-cloud-arrow-up text-3xl text-muted-foreground"></i>
+                            <div>
+                                <p class="text-sm font-medium text-card-foreground">Arraste declarações de compensação aqui</p>
+                                <p class="text-xs text-muted-foreground mt-1">ou clique para selecionar arquivos PDF</p>
+                            </div>
+                            <button type="button" id="importBrowseButton"
+                                    class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-card-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                                Selecionar PDFs
+                            </button>
+                            <div id="importDropZoneOverlay" class="pointer-events-none absolute inset-0 hidden items-center justify-center rounded-lg bg-background/80 backdrop-blur-sm">
+                                <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <span class="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
+                                    <span id="importDropZoneOverlayText">Processando arquivos...</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div id="import-declaracao-dropzone" 
-                     class="border-2 border-dashed rounded-md p-6 text-center cursor-pointer transition-colors hover:border-primary hover:bg-muted/30"
-                     data-url="{% url 'adesao:importar_declaracao_compensacao' %}">
-                    <div class="flex flex-col items-center gap-2 text-sm text-muted-foreground">
-                        <i class="bi bi-cloud-upload text-2xl"></i>
-                        <span>Arraste o PDF aqui ou <span class="text-primary font-medium">clique para selecionar</span></span>
-                        <span class="text-xs">Apenas arquivos PDF de Declaração de Compensação</span>
-                    </div>
-                    <input id="declaracao-file-input" type="file" accept=".pdf" class="hidden">
-                </div>
-                <div id="import-declaracao-status" class="hidden rounded-md border p-3 text-sm"></div>
             </div>
         </div>
         {% endif %}
@@ -188,6 +205,56 @@
                         <div class="md:col-span-3">
                             <label class="block text-sm font-medium mb-1">Observação da Aprovação</label>
                             <textarea name="observacao_aprovacao" rows="3" class="input w-full" placeholder="Observações sobre a aprovação (opcional)"></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Grupo: Informações de Recibo / Protocolo -->
+                <div class="bg-muted/20 border rounded-md p-4">
+                    <h3 class="text-sm font-semibold mb-4 tracking-wide text-muted-foreground flex items-center gap-2">
+                        <i class="bi bi-file-earmark-check"></i>
+                        Informações de Recibo / Protocolo
+                    </h3>
+                    <p class="text-xs text-muted-foreground mb-4">
+                        Informações do recibo de envio da declaração. O status padrão para novos lançamentos é "Solicitado". 
+                        Você pode informar os dados manualmente ou importar um recibo PDF na lista de lançamentos.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="{{ form.numero_controle.id_for_label }}" class="block text-sm font-medium mb-1">
+                                {{ form.numero_controle.label }}
+                            </label>
+                            {{ form.numero_controle }}
+                            {% if form.numero_controle.errors %}
+                                <div class="text-xs text-destructive mt-1">
+                                    {% for error in form.numero_controle.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label for="{{ form.chave_seguranca_serpro.id_for_label }}" class="block text-sm font-medium mb-1">
+                                {{ form.chave_seguranca_serpro.label }}
+                            </label>
+                            {{ form.chave_seguranca_serpro }}
+                            {% if form.chave_seguranca_serpro.errors %}
+                                <div class="text-xs text-destructive mt-1">
+                                    {% for error in form.chave_seguranca_serpro.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label for="{{ form.status.id_for_label }}" class="block text-sm font-medium mb-1">
+                                {{ form.status.label }}
+                            </label>
+                            {{ form.status }}
+                            {% if form.status.errors %}
+                                <div class="text-xs text-destructive mt-1">
+                                    {% for error in form.status.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            <p class="text-xs text-muted-foreground mt-1">
+                                Novos lançamentos: "Solicitado" por padrão
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -782,13 +849,35 @@
 
 // ====== DRAG AND DROP PARA DECLARAÇÃO DE COMPENSAÇÃO ======
 document.addEventListener('DOMContentLoaded', () => {
-    const dropzone = document.getElementById('import-declaracao-dropzone');
-    const fileInput = document.getElementById('declaracao-file-input');
-    const statusDiv = document.getElementById('import-declaracao-status');
+    // Toggle expand/collapse
+    const toggleButton = document.getElementById('importToggleButton');
+    const container = document.getElementById('importDropZoneContainer');
+    
+    if (toggleButton && container) {
+        toggleButton.addEventListener('click', () => {
+            const isExpanded = toggleButton.getAttribute('aria-expanded') === 'true';
+            toggleButton.setAttribute('aria-expanded', !isExpanded);
+            container.setAttribute('aria-hidden', isExpanded);
+            container.classList.toggle('hidden');
+            
+            const icon = toggleButton.querySelector('i');
+            if (icon) {
+                icon.classList.toggle('bi-chevron-down', isExpanded);
+                icon.classList.toggle('bi-chevron-up', !isExpanded);
+            }
+            toggleButton.innerHTML = isExpanded 
+                ? '<i class="bi bi-chevron-down mr-2" aria-hidden="true"></i>Expandir área'
+                : '<i class="bi bi-chevron-up mr-2" aria-hidden="true"></i>Recolher área';
+        });
+    }
+    
+    const dropzone = document.getElementById('importDropZone');
+    const fileInput = document.getElementById('importFileInput');
+    const browseButton = document.getElementById('importBrowseButton');
     
     if (!dropzone || !fileInput) return;
     
-    const uploadUrl = dropzone.getAttribute('data-url');
+    const uploadUrl = dropzone.getAttribute('data-compensacao-url');
     
     function getCookie(name) {
         const cookies = document.cookie ? document.cookie.split('; ') : [];
@@ -802,33 +891,38 @@ document.addEventListener('DOMContentLoaded', () => {
         return null;
     }
     
-    function showStatus(message, type = 'info') {
-        statusDiv.classList.remove('hidden', 'border-blue-200', 'bg-blue-50', 'text-blue-700',
-                                   'border-green-200', 'bg-green-50', 'text-green-700',
-                                   'border-red-200', 'bg-red-50', 'text-red-700');
+    function showMessage(container, message, type = 'info') {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'mt-3 rounded-md border p-3 text-sm';
         
         if (type === 'success') {
-            statusDiv.classList.add('border-green-200', 'bg-green-50', 'text-green-700');
+            messageDiv.classList.add('border-green-200', 'bg-green-50', 'text-green-700', 'dark:border-green-500/40', 'dark:bg-green-500/15', 'dark:text-green-300');
         } else if (type === 'error') {
-            statusDiv.classList.add('border-red-200', 'bg-red-50', 'text-red-700');
+            messageDiv.classList.add('border-red-200', 'bg-red-50', 'text-red-700', 'dark:border-red-500/40', 'dark:bg-red-500/15', 'dark:text-red-300');
         } else {
-            statusDiv.classList.add('border-blue-200', 'bg-blue-50', 'text-blue-700');
+            messageDiv.classList.add('border-blue-200', 'bg-blue-50', 'text-blue-700', 'dark:border-blue-500/40', 'dark:bg-blue-500/15', 'dark:text-blue-300');
         }
         
-        statusDiv.innerHTML = message;
+        messageDiv.innerHTML = message;
+        
+        // Remove previous messages
+        const oldMessages = container.querySelectorAll('.mt-3.rounded-md.border');
+        oldMessages.forEach(msg => msg.remove());
+        
+        container.appendChild(messageDiv);
     }
     
     async function uploadFile(file) {
         const csrfToken = getCookie('csrftoken');
         if (!csrfToken) {
-            showStatus('Erro: Token CSRF não encontrado', 'error');
+            showMessage(dropzone, '<i class="bi bi-x-circle mr-2"></i>Erro: Token CSRF não encontrado', 'error');
             return;
         }
         
         const formData = new FormData();
         formData.append('pdf', file);
         
-        showStatus('<i class="bi bi-hourglass-split mr-2"></i>Processando arquivo...', 'info');
+        showMessage(dropzone, '<i class="bi bi-hourglass-split mr-2"></i>Processando arquivo...', 'info');
         
         try {
             const response = await fetch(uploadUrl, {
@@ -841,7 +935,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (!response.ok || !data.ok) {
                 const errorMsg = data.error || `Erro ${response.status}`;
-                showStatus(`<i class="bi bi-x-circle mr-2"></i>${errorMsg}`, 'error');
+                showMessage(dropzone, `<i class="bi bi-x-circle mr-2"></i>${errorMsg}`, 'error');
                 return;
             }
             
@@ -849,7 +943,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const totalDebitos = data.total_debitos || 0;
             const perdcomp = data.perdcomp_declaracao || '';
             
-            showStatus(`
+            showMessage(dropzone, `
                 <div class="flex items-start gap-2">
                     <i class="bi bi-check-circle-fill text-lg"></i>
                     <div>
@@ -860,34 +954,44 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div>Quantidade de itens: <strong>${numDebitos}</strong></div>
                         </div>
                         <div class="mt-2">
-                            <a href="${data.detail_url || ''}" class="text-xs underline">Ver detalhes da adesão</a>
+                            <a href="${data.detail_url || ''}" class="text-xs underline hover:no-underline">Ver detalhes da adesão</a>
                         </div>
                     </div>
                 </div>
             `, 'success');
             
         } catch (error) {
-            showStatus(`<i class="bi bi-x-circle mr-2"></i>Erro ao processar: ${error.message}`, 'error');
+            showMessage(dropzone, `<i class="bi bi-x-circle mr-2"></i>Erro ao processar: ${error.message}`, 'error');
         }
     }
     
     // Click to browse
-    dropzone.addEventListener('click', () => fileInput.click());
+    if (browseButton) {
+        browseButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            fileInput.click();
+        });
+    }
+    
+    dropzone.addEventListener('click', (e) => {
+        if (e.target === browseButton || browseButton.contains(e.target)) return;
+        fileInput.click();
+    });
     
     // Drag events
     dropzone.addEventListener('dragover', (e) => {
         e.preventDefault();
-        dropzone.classList.add('border-primary', 'bg-muted/40');
+        dropzone.classList.add('border-primary', 'bg-primary/5');
     });
     
     dropzone.addEventListener('dragleave', (e) => {
         e.preventDefault();
-        dropzone.classList.remove('border-primary', 'bg-muted/40');
+        dropzone.classList.remove('border-primary', 'bg-primary/5');
     });
     
     dropzone.addEventListener('drop', (e) => {
         e.preventDefault();
-        dropzone.classList.remove('border-primary', 'bg-muted/40');
+        dropzone.classList.remove('border-primary', 'bg-primary/5');
         
         const files = e.dataTransfer?.files;
         if (files && files.length > 0) {
@@ -895,7 +999,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
                 uploadFile(file);
             } else {
-                showStatus('<i class="bi bi-x-circle mr-2"></i>Apenas arquivos PDF são aceitos', 'error');
+                showMessage(dropzone, '<i class="bi bi-x-circle mr-2"></i>Apenas arquivos PDF são aceitos', 'error');
             }
         }
     });
@@ -907,7 +1011,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
                 uploadFile(file);
             } else {
-                showStatus('<i class="bi bi-x-circle mr-2"></i>Apenas arquivos PDF são aceitos', 'error');
+                showMessage(dropzone, '<i class="bi bi-x-circle mr-2"></i>Apenas arquivos PDF são aceitos', 'error');
             }
             fileInput.value = '';
         }

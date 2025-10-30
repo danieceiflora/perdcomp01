@@ -286,9 +286,10 @@ class Lancamentos(models.Model):
         if not self.aprovado:
             self.data_aprovacao = None
 
-        # Imutabilidade: após criação, apenas campos de aprovação podem mudar
+        # Imutabilidade: após criação, apenas campos de aprovação e controle/recibo podem mudar
         if not is_novo:
-            allowed = {'aprovado', 'data_aprovacao', 'observacao_aprovacao'}
+            allowed = {'aprovado', 'data_aprovacao', 'observacao_aprovacao', 
+                      'numero_controle', 'chave_seguranca_serpro', 'status'}
             changed = set()
             for field in self._meta.fields:
                 fname = field.name
@@ -299,7 +300,7 @@ class Lancamentos(models.Model):
                 if old_val != new_val:
                     changed.add(fname)
             if changed - allowed:
-                raise ValidationError('Após a criação, apenas os campos de aprovação podem ser editados.')
+                raise ValidationError('Após a criação, apenas os campos de aprovação e controle de protocolo podem ser editados.')
             # Bloquear mudança de status após aprovado
             if original_aprovado and self.aprovado is not True:
                 raise ValidationError('Não é permitido alterar o status após aprovado.')
