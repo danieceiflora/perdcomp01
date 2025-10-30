@@ -647,6 +647,8 @@ def importar_recibo_pedido_credito(request):
 
             response_payload = {
                 'ok': True,
+                'created': False,
+                'updated': True,
                 'id': adesao.pk,
                 'detail_url': reverse('adesao:detail', kwargs={'pk': adesao.pk}),
                 'numero_controle': adesao.numero_controle,
@@ -817,6 +819,8 @@ def importar_declaracao_compensacao(request):
 
             response_payload = {
                 'ok': True,
+                'created': False,
+                'updated': True,
                 'perdcomp_declaracao': doc_perdcomp,
                 'perdcomp_inicial': adesao.perdcomp,
                 'created_count': len(created_items),
@@ -1139,6 +1143,8 @@ def importar_notificacao_credito_conta(request):
 
             response_payload = {
                 'ok': True,
+                'created': False,
+                'updated': True,
                 'perdcomp': adesao.perdcomp,
                 'lancamento_id': lancamento.pk,
                 'lancamento_detail_url': reverse('lancamentos:detail', kwargs={'pk': lancamento.pk}),
@@ -1441,6 +1447,23 @@ def importacao_logs_page(request):
                     mtime = datetime.datetime.fromtimestamp(os.path.getmtime(fpath))
                     # Flatten a few useful fields
                     result = data.get('result') or {}
+                    context_type = data.get('context', '')
+                    
+                    # Determinar created/updated com fallback inteligente
+                    created = result.get('created')
+                    updated = result.get('updated')
+                    
+                    # Se não tem os campos explícitos, inferir pelo tipo de contexto
+                    if created is None and updated is None and result.get('ok'):
+                        # Recibos, declarações e créditos sempre atualizam
+                        if context_type in ['recibo_pedido_credito', 'declaracao_compensacao', 'credito_em_conta']:
+                            updated = True
+                            created = False
+                        # Pedidos de crédito criam novos
+                        elif context_type == 'pedido_credito':
+                            created = True
+                            updated = False
+                    
                     entries.append({
                         'filename': data.get('filename') or fname,
                         'user': data.get('user'),
@@ -1449,7 +1472,9 @@ def importacao_logs_page(request):
                         'ok': result.get('ok'),
                         'error': result.get('error'),
                         'detail_url': result.get('detail_url'),
-                        'created': result.get('created'),
+                        'created': created,
+                        'updated': updated,
+                        'context': context_type,
                         'raw_name': fname,
                     })
                 except Exception:
