@@ -11,7 +11,8 @@ class LancamentosForm(forms.ModelForm):
             ('Declaração de compensação', 'Declaração de compensação'),
             ('Crédito em conta', 'Crédito em conta'),
         ],
-        widget=forms.Select(attrs={'class': 'input w-full'})
+        widget=forms.Select(attrs={'class': 'input w-full'}),
+        label='Tipo de Crédito'
     )
     # Campos dinâmicos (não persistem diretamente; serão copiados aos campos do model)
     lanc_total_credito_original_utilizado = forms.DecimalField(
@@ -28,6 +29,12 @@ class LancamentosForm(forms.ModelForm):
         decimal_places=2,
         widget=forms.NumberInput(attrs={'class': 'input w-full', 'step': '0.01', 'placeholder': '0,00'}),
         label='Total dos Débitos deste Documento'
+    )
+    
+    lanc_descricao_debitos = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={'class': 'input w-full', 'rows': 3, 'placeholder': 'Detalhamento dos itens de débito'}),
+        label='Descrição dos Débitos'
     )
     
     lanc_periodo_apuracao = forms.CharField(
@@ -106,6 +113,7 @@ class LancamentosForm(forms.ModelForm):
         choices=[
             ('solicitado', 'Solicitado'),
             ('protocolado', 'Protocolado'),
+            ('retificado', 'Retificado'),
         ],
         initial='solicitado',
         widget=forms.Select(attrs={'class': 'input w-full'}),
@@ -130,12 +138,13 @@ class LancamentosForm(forms.ModelForm):
     class Meta:
         model = Lancamentos
         fields = ['id_adesao', 'metodo_escolhido', 'data_lancamento', 'valor', 'descricao', 'codigo_guia',
-                  'lanc_total_credito_original_utilizado', 'lanc_total_debitos_documento', 'lanc_periodo_apuracao',
+                  'lanc_total_credito_original_utilizado', 'lanc_total_debitos_documento', 'lanc_descricao_debitos', 'lanc_periodo_apuracao',
                   'lanc_data_credito', 'lanc_valor_credito_em_conta',
                   'metodo', 'total', 'total_credito_original_utilizado', 'total_debitos_documento', 'descricao_debitos',
                   'periodo_apuracao', 'data_credito', 'valor_credito_em_conta',
                   'aprovado', 'data_aprovacao', 'observacao_aprovacao',
-                  'numero_controle', 'chave_seguranca_serpro', 'status']
+                  'numero_controle', 'chave_seguranca_serpro', 'status', 
+                  'perdcomp_declaracao', 'perdcomp_retificador', 'item']
         widgets = {
             'id_adesao': forms.Select(attrs={'class': 'input w-full'}),
             'data_lancamento': forms.DateInput(attrs={'class': 'input w-full','type': 'date'}),
@@ -149,6 +158,9 @@ class LancamentosForm(forms.ModelForm):
             'valor_credito_em_conta': forms.HiddenInput(),
             'total_debitos_documento': forms.HiddenInput(),
             'descricao_debitos': forms.HiddenInput(),
+            'perdcomp_declaracao': forms.TextInput(attrs={'class': 'input w-full', 'placeholder': 'PER/DCOMP da declaração'}),
+            'perdcomp_retificador': forms.TextInput(attrs={'class': 'input w-full', 'placeholder': 'PER/DCOMP retificador'}),
+            'item': forms.TextInput(attrs={'class': 'input w-full', 'placeholder': 'Ex: 01, 02'}),
         }
 
     def add_error_classes(self):
@@ -191,28 +203,37 @@ class LancamentosForm(forms.ModelForm):
         cleaned['valor_credito_em_conta'] = None
         cleaned['total_debitos_documento'] = None
         cleaned['descricao_debitos'] = None
+        cleaned['total_credito_original_utilizado'] = None
         
-        # Declaração de Compensação: usar total_debitos_documento
+        # Declaração de Compensação
         if 'compensacao' in metodo or 'compensação' in metodo:
             total_cred = cleaned.get('lanc_total_credito_original_utilizado')
             total_deb = cleaned.get('lanc_total_debitos_documento')
+            descricao_deb = cleaned.get('lanc_descricao_debitos')
             periodo = cleaned.get('lanc_periodo_apuracao')
             
-            if not total_deb:
-                self.add_error('lanc_total_debitos_documento', 'Total dos débitos é obrigatório para Declaração de Compensação.')
-            if not periodo:
-                self.add_error('lanc_periodo_apuracao', 'Período de apuração é obrigatório para Declaração de Compensação.')
-            
-            if total_deb:
-                cleaned['total_debitos_documento'] = float(total_deb)
-                cleaned['valor'] = float(total_deb)
+            # Total do Crédito Original Utilizado é obrigatório e será usado para atualizar o saldo
+            if not total_cred:
+                self.add_error('lanc_total_credito_original_utilizado', 'Total do Crédito Original Utilizado é obrigatório para Declaração de Compensação.')
+            else:
+                # Este valor atualiza o saldo da adesão (débito)
+                cleaned['total_credito_original_utilizado'] = float(total_cred)
+                cleaned['valor'] = float(total_cred)
                 cleaned['sinal'] = '-'
             
-            if total_cred:
-                cleaned['total_credito_original_utilizado'] = float(total_cred)
+            # Total dos Débitos é obrigatório mas não atualiza o saldo (apenas para registro)
+            if not total_deb:
+                self.add_error('lanc_total_debitos_documento', 'Total dos Débitos deste Documento é obrigatório para Declaração de Compensação.')
+            else:
+                cleaned['total_debitos_documento'] = float(total_deb)
             
-            if periodo:
+            if not periodo:
+                self.add_error('lanc_periodo_apuracao', 'Período de apuração é obrigatório para Declaração de Compensação.')
+            else:
                 cleaned['periodo_apuracao'] = periodo
+            
+            if descricao_deb:
+                cleaned['descricao_debitos'] = descricao_deb
 
         # Crédito em conta
         elif 'credito' in metodo and 'conta' in metodo:
@@ -234,6 +255,7 @@ class LancamentosForm(forms.ModelForm):
         
         if cleaned.get('valor') in (None, 0):
             self.add_error('valor', 'Valor inválido ou ausente.')
+        
         # Regras de aprovação na criação/edição
         aprovado = cleaned.get('aprovado')
         data_aprovacao = cleaned.get('data_aprovacao')

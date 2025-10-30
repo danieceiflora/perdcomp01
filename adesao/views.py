@@ -416,8 +416,15 @@ def importar_pdf_perdcomp(request):
         log_data['extracted_present'] = bool(txt)
         log_data['parsed'] = parsed.as_dict()
 
+        cnpj = (parsed.cnpj or '').strip()
+        perdcomp = (parsed.perdcomp or '').strip()
+        perdcomp_inicial = (parsed.perdcomp_inicial or '').strip()
+        perdcomp_retificador = (parsed.perdcomp_retificador or '').strip()
+        is_retificador = bool(getattr(parsed, 'is_retificador', False))
+        retificador_processado = False
+
         # Validar CNPJ -> cliente
-        cnpj = parsed.cnpj or ''
+        cliente: ClientesParceiros | None = None
         cliente_id = None
         cliente_label = None
         if cnpj:
@@ -435,17 +442,92 @@ def importar_pdf_perdcomp(request):
             status_code = 400
             response_payload = {'ok': False, 'error': 'CNPJ não identificado no PDF.'}
 
-        # Validar PERDCOMP presente
-        if status_code == 200 and not parsed.perdcomp:
-            status_code = 400
-            response_payload = {'ok': False, 'error': 'Declaração PERDCOMP não identificada no PDF.'}
+        if status_code == 200 and is_retificador:
+            retificador_numero = perdcomp_retificador or perdcomp
+            if not retificador_numero:
+                status_code = 400
+                response_payload = {'ok': False, 'error': 'Número do PER/DCOMP retificador não identificado no PDF.'}
+            elif not perdcomp_inicial:
+                status_code = 400
+                response_payload = {'ok': False, 'error': 'Número do PER/DCOMP original não identificado no PDF.'}
+            else:
+                try:
+                    adesao = Adesao.objects.select_related('cliente__id_company_vinculada').get(perdcomp=perdcomp_inicial)
+                except Adesao.DoesNotExist:
+                    status_code = 404
+                    response_payload = {'ok': False, 'error': f'Adesão com PER/DCOMP {perdcomp_inicial} não encontrada.'}
+                else:
+                    adesao_cnpj = getattr(adesao.cliente.id_company_vinculada, 'cnpj', '')
+                    if adesao_cnpj and cnpj and adesao_cnpj != cnpj:
+                        status_code = 409
+                        response_payload = {'ok': False, 'error': 'CNPJ do retificador não corresponde ao da adesão original.'}
+                    elif cliente and adesao.cliente_id != cliente.id:
+                        status_code = 409
+                        response_payload = {'ok': False, 'error': 'Retificador vinculado a um cliente diferente da adesão original.'}
+                    elif retificador_numero and Adesao.objects.filter(perdcomp=retificador_numero).exclude(pk=adesao.pk).exists():
+                        status_code = 409
+                        response_payload = {'ok': False, 'error': f'Já existe adesão cadastrada com PER/DCOMP {retificador_numero}.'}
+                    else:
+                        updates: list[str] = []
+                        if adesao.perdcomp_retificador != retificador_numero:
+                            adesao.perdcomp_retificador = retificador_numero
+                            updates.append('perdcomp_retificador')
+                        if adesao.status != 'retificado':
+                            adesao.status = 'retificado'
+                            updates.append('status')
+                        if updates:
+                            adesao.save(update_fields=updates)
 
-        # Validar PERDCOMP único
-        if status_code == 200 and parsed.perdcomp and Adesao.objects.filter(perdcomp=parsed.perdcomp).exists():
-            status_code = 409
-            response_payload = {'ok': False, 'error': f'PERDCOMP {parsed.perdcomp} já cadastrado.'}
+                        lancamentos_updates = []
+                        if retificador_numero:
+                            lanc_qs = Lancamentos.objects.filter(id_adesao=adesao)
+                            for lanc in lanc_qs:
+                                lanc_fields: list[str] = []
+                                if lanc.perdcomp_retificador != retificador_numero:
+                                    lanc.perdcomp_retificador = retificador_numero
+                                    lanc_fields.append('perdcomp_retificador')
+                                if lanc.status != 'retificado':
+                                    lanc.status = 'retificado'
+                                    lanc_fields.append('status')
+                                if lanc_fields:
+                                    lanc.save(update_fields=lanc_fields)
+                                    lancamentos_updates.append(lanc.pk)
 
-        if status_code == 200:
+                        retificador_processado = True
+                        log_data['retificador_vinculado'] = True
+                        log_data['retificador_perdcomp'] = retificador_numero
+                        log_data['retificador_inicial'] = perdcomp_inicial
+                        if lancamentos_updates:
+                            log_data['lancamentos_retificados'] = lancamentos_updates
+
+                        response_payload = {
+                            'ok': True,
+                            'retificador': True,
+                            'created': False,
+                            'updated': bool(updates),
+                            'id': adesao.pk,
+                            'detail_url': reverse('adesao:detail', kwargs={'pk': adesao.pk}),
+                            'perdcomp': adesao.perdcomp,
+                            'perdcomp_retificador': adesao.perdcomp_retificador,
+                            'status': adesao.get_status_display(),
+                            'fields': parsed.as_dict(),
+                        }
+                        if lancamentos_updates:
+                            response_payload['lancamentos_retificados'] = lancamentos_updates
+                        if cliente_id:
+                            response_payload['cliente'] = {'id': cliente_id, 'label': cliente_label}
+                        if not updates:
+                            response_payload['message'] = 'Retificador já estava vinculado a esta adesão.'
+
+        if status_code == 200 and not retificador_processado:
+            if not perdcomp:
+                status_code = 400
+                response_payload = {'ok': False, 'error': 'Declaração PERDCOMP não identificada no PDF.'}
+            elif Adesao.objects.filter(perdcomp=perdcomp).exists():
+                status_code = 409
+                response_payload = {'ok': False, 'error': f'PERDCOMP {perdcomp} já cadastrado.'}
+
+        if status_code == 200 and not retificador_processado:
             criar = str(request.POST.get('criar', '0')).lower() in ('1','true','on','yes')
             metodo_credito_val = (parsed.metodo_credito or '').strip()
             metodo_credito_lower = metodo_credito_val.lower()
@@ -641,8 +723,9 @@ def importar_recibo_pedido_credito(request):
                 adesao.chave_seguranca_serpro = autenticacao_serpro
                 fields_to_update.append('chave_seguranca_serpro')
 
-            adesao.status = 'protocolado'
-            fields_to_update.append('status')
+            if adesao.status != 'retificado':
+                adesao.status = 'protocolado'
+                fields_to_update.append('status')
             adesao.save(update_fields=fields_to_update)
 
             response_payload = {
@@ -902,8 +985,12 @@ def importar_pedido_credito(request):
         log_data['extracted_present'] = bool(txt)
         log_data['parsed'] = parsed.as_dict()
 
-        # Validação 1: CNPJ → Cliente
         cnpj = (parsed.cnpj or '').strip()
+        perdcomp = (parsed.perdcomp or '').strip()
+        perdcomp_inicial = (parsed.perdcomp_inicial or '').strip()
+        is_retificador = bool(getattr(parsed, 'is_retificador', False))
+
+        cliente: ClientesParceiros | None = None
         if not cnpj:
             status_code = 400
             response_payload = {'ok': False, 'error': 'CNPJ não identificado no PDF.'}
@@ -916,20 +1003,72 @@ def importar_pedido_credito(request):
                 status_code = 404
                 response_payload = {'ok': False, 'error': f'Cliente com CNPJ {cnpj} não encontrado.'}
 
-        # Validação 2: PERDCOMP
-        if status_code == 200:
-            perdcomp = (parsed.perdcomp or '').strip()
+        if status_code == 200 and is_retificador:
+            if not perdcomp:
+                status_code = 400
+                response_payload = {'ok': False, 'error': 'Número do PER/DCOMP retificador não identificado no PDF.'}
+            elif not perdcomp_inicial:
+                status_code = 400
+                response_payload = {'ok': False, 'error': 'Número do PER/DCOMP original não identificado no PDF.'}
+            else:
+                try:
+                    adesao = Adesao.objects.select_related('cliente__id_company_vinculada').get(perdcomp=perdcomp_inicial)
+                except Adesao.DoesNotExist:
+                    status_code = 404
+                    response_payload = {'ok': False, 'error': f'Adesão com PER/DCOMP {perdcomp_inicial} não encontrada.'}
+                else:
+                    adesao_cnpj = getattr(adesao.cliente.id_company_vinculada, 'cnpj', None)
+                    if adesao_cnpj and adesao_cnpj != cnpj:
+                        status_code = 409
+                        response_payload = {'ok': False, 'error': 'CNPJ do retificador não corresponde ao da adesão original.'}
+                    elif cliente and adesao.cliente_id != cliente.id:
+                        status_code = 409
+                        response_payload = {'ok': False, 'error': 'Retificador vinculado a um cliente diferente da adesão original.'}
+                    elif perdcomp and Adesao.objects.filter(perdcomp=perdcomp).exclude(pk=adesao.pk).exists():
+                        status_code = 409
+                        response_payload = {'ok': False, 'error': f'Já existe adesão cadastrada com PER/DCOMP {perdcomp}.'}
+                    else:
+                        updates: list[str] = []
+                        if adesao.perdcomp_retificador != perdcomp:
+                            adesao.perdcomp_retificador = perdcomp
+                            updates.append('perdcomp_retificador')
+                        if adesao.status != 'retificado':
+                            adesao.status = 'retificado'
+                            updates.append('status')
+                        if updates:
+                            adesao.save(update_fields=updates)
+
+                        log_data['retificador_vinculado'] = True
+                        log_data['retificador_perdcomp'] = perdcomp
+                        log_data['retificador_inicial'] = perdcomp_inicial
+
+                        emp = adesao.cliente.id_company_vinculada
+                        cliente_label = f"{emp.nome_fantasia or emp.razao_social} ({adesao.cliente.nome_referencia})"
+                        response_payload = {
+                            'ok': True,
+                            'created': False,
+                            'updated': bool(updates),
+                            'retificador': True,
+                            'id': adesao.pk,
+                            'detail_url': reverse('adesao:detail', kwargs={'pk': adesao.pk}),
+                            'perdcomp': adesao.perdcomp,
+                            'perdcomp_retificador': adesao.perdcomp_retificador,
+                            'status': adesao.get_status_display(),
+                            'cliente': cliente_label,
+                            'fields': parsed.as_dict(),
+                        }
+                        if not updates:
+                            response_payload['message'] = 'Retificador já estava vinculado a esta adesão.'
+
+        if status_code == 200 and not is_retificador:
             if not perdcomp:
                 status_code = 400
                 response_payload = {'ok': False, 'error': 'Número do PER/DCOMP não identificado no PDF.'}
-            else:
-                # Verificar duplicidade
-                if Adesao.objects.filter(perdcomp=perdcomp).exists():
-                    status_code = 409
-                    response_payload = {'ok': False, 'error': f'Adesão com PER/DCOMP {perdcomp} já existe.'}
+            elif Adesao.objects.filter(perdcomp=perdcomp).exists():
+                status_code = 409
+                response_payload = {'ok': False, 'error': f'Adesão com PER/DCOMP {perdcomp} já existe.'}
 
-        # Validação 3: Tipo de crédito
-        if status_code == 200:
+        if status_code == 200 and not is_retificador:
             metodo_credito = (parsed.metodo_credito or '').strip()
             if not metodo_credito:
                 status_code = 400
@@ -938,8 +1077,7 @@ def importar_pedido_credito(request):
                 status_code = 400
                 response_payload = {'ok': False, 'error': f'Tipo de documento inválido: {metodo_credito}. Esperado: Pedido de Restituição ou Pedido de Ressarcimento.'}
 
-        # Criar Adesão
-        if status_code == 200:
+        if status_code == 200 and not is_retificador:
             with transaction.atomic():
                 adesao = Adesao(
                     cliente=cliente,
@@ -950,16 +1088,14 @@ def importar_pedido_credito(request):
                     saldo_atual=parsed.valor_pedido or 0,
                 )
 
-                # Campos opcionais
                 if parsed.data_criacao:
                     try:
                         from datetime import datetime
                         dt = datetime.strptime(parsed.data_criacao, '%d/%m/%Y')
                         adesao.data_inicio = dt.date()
-                    except:
+                    except Exception:
                         pass
 
-                # Campos específicos de Ressarcimento
                 if metodo_credito == 'Pedido de ressarcimento':
                     if parsed.ano:
                         adesao.ano = parsed.ano
@@ -968,7 +1104,6 @@ def importar_pedido_credito(request):
                     if parsed.tipo_credito:
                         adesao.tipo_credito = parsed.tipo_credito
 
-                # Campos específicos de Restituição
                 elif metodo_credito == 'Pedido de restituição':
                     if parsed.periodo_apuracao_credito:
                         adesao.periodo_apuracao_credito = parsed.periodo_apuracao_credito
@@ -977,9 +1112,8 @@ def importar_pedido_credito(request):
                     if parsed.data_arrecadacao:
                         try:
                             from datetime import datetime
-                            dt_arrec = datetime.strptime(parsed.data_arrecadacao, '%d/%m/%Y')
-                            # Pode adicionar campo específico se necessário
-                        except:
+                            datetime.strptime(parsed.data_arrecadacao, '%d/%m/%Y')
+                        except Exception:
                             pass
 
                 adesao.save()
@@ -1136,7 +1270,7 @@ def importar_notificacao_credito_conta(request):
             if adesao.valor_credito_em_conta != valor_float:
                 adesao.valor_credito_em_conta = valor_float
                 fields_to_update.append('valor_credito_em_conta')
-            if adesao.status != 'protocolado':
+            if adesao.status == 'solicitado':
                 adesao.status = 'protocolado'
                 fields_to_update.append('status')
             if fields_to_update:
@@ -1241,6 +1375,7 @@ def importar_pdf_perdcomp_lote(request):
                 context_log['result'] = res
                 write_log(f.name, context_log)
                 continue
+            cliente: ClientesParceiros | None = None
             try:
                 cliente = ClientesParceiros.objects.select_related('id_company_vinculada').get(
                     id_company_vinculada__cnpj=cnpj
@@ -1253,16 +1388,101 @@ def importar_pdf_perdcomp_lote(request):
                 write_log(f.name, context_log)
                 continue
 
+            perdcomp = (parsed.perdcomp or '').strip()
+            perdcomp_inicial = (parsed.perdcomp_inicial or '').strip()
+            perdcomp_retificador = (parsed.perdcomp_retificador or '').strip()
+            is_retificador = bool(getattr(parsed, 'is_retificador', False))
+
+            if is_retificador:
+                retificador_numero = perdcomp_retificador or perdcomp
+                if not retificador_numero:
+                    msg = 'Número do PER/DCOMP retificador não identificado no PDF.'
+                    res = {'file': f.name, 'ok': False, 'error': msg}
+                    results.append(res)
+                    context_log['result'] = res
+                    write_log(f.name, context_log)
+                    continue
+                if not perdcomp_inicial:
+                    msg = 'Número do PER/DCOMP original não identificado no PDF.'
+                    res = {'file': f.name, 'ok': False, 'error': msg}
+                    results.append(res)
+                    context_log['result'] = res
+                    write_log(f.name, context_log)
+                    continue
+                try:
+                    adesao = Adesao.objects.select_related('cliente__id_company_vinculada').get(perdcomp=perdcomp_inicial)
+                except Adesao.DoesNotExist:
+                    msg = f'Adesão com PER/DCOMP {perdcomp_inicial} não encontrada.'
+                    res = {'file': f.name, 'ok': False, 'error': msg}
+                    results.append(res)
+                    context_log['result'] = res
+                    write_log(f.name, context_log)
+                    continue
+
+                adesao_cnpj = getattr(adesao.cliente.id_company_vinculada, 'cnpj', '')
+                if adesao_cnpj and adesao_cnpj != cnpj:
+                    msg = 'CNPJ do retificador não corresponde ao da adesão original.'
+                    res = {'file': f.name, 'ok': False, 'error': msg}
+                    results.append(res)
+                    context_log['result'] = res
+                    write_log(f.name, context_log)
+                    continue
+
+                if cliente and adesao.cliente_id != cliente.id:
+                    msg = 'Retificador vinculado a um cliente diferente da adesão original.'
+                    res = {'file': f.name, 'ok': False, 'error': msg}
+                    results.append(res)
+                    context_log['result'] = res
+                    write_log(f.name, context_log)
+                    continue
+
+                if Adesao.objects.filter(perdcomp=retificador_numero).exclude(pk=adesao.pk).exists():
+                    msg = f'Já existe adesão cadastrada com PER/DCOMP {retificador_numero}.'
+                    res = {'file': f.name, 'ok': False, 'error': msg}
+                    results.append(res)
+                    context_log['result'] = res
+                    write_log(f.name, context_log)
+                    continue
+
+                updates: list[str] = []
+                if adesao.perdcomp_retificador != retificador_numero:
+                    adesao.perdcomp_retificador = retificador_numero
+                    updates.append('perdcomp_retificador')
+                if adesao.status != 'retificado':
+                    adesao.status = 'retificado'
+                    updates.append('status')
+                if updates:
+                    adesao.save(update_fields=updates)
+
+                detail_url = reverse('adesao:detail', kwargs={'pk': adesao.pk})
+                res = {
+                    'file': f.name,
+                    'ok': True,
+                    'created': False,
+                    'updated': bool(updates),
+                    'retificador': True,
+                    'id': adesao.pk,
+                    'detail_url': detail_url,
+                    'perdcomp_retificador': adesao.perdcomp_retificador,
+                    'perdcomp_original': adesao.perdcomp,
+                }
+                if not updates:
+                    res['message'] = 'Retificador já estava vinculado a esta adesão.'
+                results.append(res)
+                context_log['result'] = res
+                write_log(f.name, context_log)
+                continue
+
             # Validar PERDCOMP
-            if not parsed.perdcomp:
+            if not perdcomp:
                 msg = 'PERDCOMP não identificado no PDF.'
                 res = {'file': f.name, 'ok': False, 'error': msg}
                 results.append(res)
                 context_log['result'] = res
                 write_log(f.name, context_log)
                 continue
-            if Adesao.objects.filter(perdcomp=parsed.perdcomp).exists():
-                msg = f'PERDCOMP {parsed.perdcomp} já cadastrado.'
+            if Adesao.objects.filter(perdcomp=perdcomp).exists():
+                msg = f'PERDCOMP {perdcomp} já cadastrado.'
                 res = {'file': f.name, 'ok': False, 'error': msg}
                 results.append(res)
                 context_log['result'] = res

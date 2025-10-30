@@ -236,6 +236,10 @@
                                         <span class="inline-flex items-center rounded-md bg-blue-500/10 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-300">
                                             <i class="bi bi-check-circle-fill mr-1"></i>Protocolado
                                         </span>
+                                        {% elif lancamento.status == 'retificado' %}
+                                        <span class="inline-flex items-center rounded-md bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-700 dark:text-amber-300">
+                                            <i class="bi bi-arrow-repeat mr-1"></i>Retificado
+                                        </span>
                                         {% elif lancamento.status == 'solicitado' %}
                                         <span class="inline-flex items-center rounded-md bg-gray-500/10 px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300">
                                             <i class="bi bi-clock-history mr-1"></i>Solicitado
@@ -319,6 +323,10 @@
                             {% if lancamento.status == 'protocolado' %}
                             <span class="inline-flex items-center rounded-md bg-blue-500/10 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-300">
                                 <i class="bi bi-check-circle-fill mr-1"></i>Protocolado
+                            </span>
+                            {% elif lancamento.status == 'retificado' %}
+                            <span class="inline-flex items-center rounded-md bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-700 dark:text-amber-300">
+                                <i class="bi bi-arrow-repeat mr-1"></i>Retificado
                             </span>
                             {% elif lancamento.status == 'solicitado' %}
                             <span class="inline-flex items-center rounded-md bg-gray-500/10 px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300">

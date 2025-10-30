@@ -85,6 +85,7 @@ def exportar_lancamentos_xlsx(request):
     headers = [
         'PER/DCOMP Adesão',
         'Declaração PER/DCOMP',
+        'PER/DCOMP Retificador',
         'Item',
         'Código da Guia',
         'Cliente',
@@ -103,17 +104,18 @@ def exportar_lancamentos_xlsx(request):
     for idx, lanc in enumerate(queryset, start=7):
         ws.cell(row=idx, column=1, value=getattr(lanc.id_adesao, 'perdcomp', ''))
         ws.cell(row=idx, column=2, value=lanc.perdcomp_declaracao or '')
-        ws.cell(row=idx, column=3, value=lanc.item or '')
-        ws.cell(row=idx, column=4, value=lanc.codigo_guia or '')
+        ws.cell(row=idx, column=3, value=lanc.perdcomp_retificador or '')
+        ws.cell(row=idx, column=4, value=lanc.item or '')
+        ws.cell(row=idx, column=5, value=lanc.codigo_guia or '')
         cliente = getattr(getattr(lanc.id_adesao, 'cliente', None), 'id_company_vinculada', None)
         cliente_nome = getattr(cliente, 'razao_social', str(cliente)) if cliente else ''
-        ws.cell(row=idx, column=5, value=cliente_nome)
-        ws.cell(row=idx, column=6, value=lanc.data_lancamento.strftime('%d/%m/%Y'))
-        ws.cell(row=idx, column=7, value=lanc.valor)
-        ws.cell(row=idx, column=8, value=lanc.sinal)
-        ws.cell(row=idx, column=9, value=lanc.saldo_restante)
-        ws.cell(row=idx, column=10, value=lanc.descricao if hasattr(lanc, 'descricao') else '')
-        ws.cell(row=idx, column=11, value=lanc.anexos.count())
+        ws.cell(row=idx, column=6, value=cliente_nome)
+        ws.cell(row=idx, column=7, value=lanc.data_lancamento.strftime('%d/%m/%Y'))
+        ws.cell(row=idx, column=8, value=lanc.valor)
+        ws.cell(row=idx, column=9, value=lanc.sinal)
+        ws.cell(row=idx, column=10, value=lanc.saldo_restante)
+        ws.cell(row=idx, column=11, value=lanc.descricao if hasattr(lanc, 'descricao') else '')
+        ws.cell(row=idx, column=12, value=lanc.anexos.count())
 
     # Ajuste de largura
     for col in range(1, len(headers)+1):
@@ -317,13 +319,39 @@ class LancamentoCreateView(AdminRequiredMixin, CreateView):
     def form_invalid(self, form):
         context = self.get_context_data(form=form)
         anexos_formset = context['anexos_formset']
-        messages.error(self.request, 'Erro ao cadastrar lançamento. Verifique os campos.')
+        
+        # Log detalhado dos erros para debug
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error("=== ERROS DO FORMULÁRIO ===")
+        logger.error(f"Form errors: {form.errors}")
+        logger.error(f"Form errors as JSON: {form.errors.as_json()}")
+        if anexos_formset.errors:
+            logger.error(f"Anexos formset errors: {anexos_formset.errors}")
+        if anexos_formset.non_form_errors():
+            logger.error(f"Anexos non-form errors: {anexos_formset.non_form_errors()}")
+        
+        # Mensagem principal
+        messages.error(self.request, 'Erro ao cadastrar lançamento. Verifique os campos destacados abaixo.')
+        
+        # Listar todos os erros de campos
+        for field_name, errors in form.errors.items():
+            if field_name == '__all__':
+                for error in errors:
+                    messages.error(self.request, f'Erro: {error}')
+            else:
+                field_label = form.fields.get(field_name).label if field_name in form.fields else field_name
+                for error in errors:
+                    messages.error(self.request, f'{field_label}: {error}')
+        
+        # Erros do formset de anexos
         if anexos_formset.errors:
             for i, form_errors in enumerate(anexos_formset.errors):
                 if form_errors:
                     messages.error(self.request, f'Erro no anexo {i+1}: {form_errors}')
         if anexos_formset.non_form_errors():
             messages.error(self.request, f'Erros do formset: {anexos_formset.non_form_errors()}')
+        
         return self.render_to_response(context)
 
 # Removemos as views LancamentoUpdateView, LancamentoDeleteView e confirmar_lancamento
@@ -655,8 +683,9 @@ def importar_recibo_lancamento(request):
                 lancamento.chave_seguranca_serpro = autenticacao_serpro
                 fields_to_update.append('chave_seguranca_serpro')
 
-            lancamento.status = 'protocolado'
-            fields_to_update.append('status')
+            if lancamento.status != 'retificado':
+                lancamento.status = 'protocolado'
+                fields_to_update.append('status')
             lancamento.save(update_fields=fields_to_update)
 
             response_payload = {

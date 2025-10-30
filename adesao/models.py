@@ -25,6 +25,7 @@ class Adesao(models.Model):
     status_options = [
         ('solicitado', 'Solicitado'),
         ('protocolado', 'Protocolado'),
+        ('retificado', 'Retificado'),
     ]
 
     metodo_credito = models.CharField(
@@ -43,6 +44,14 @@ class Adesao(models.Model):
     perdcomp = models.CharField(
         max_length=30,
         verbose_name='PERDCOMP'
+    )
+
+    perdcomp_retificador = models.CharField(
+        max_length=30,
+        verbose_name='PERDCOMP retificador',
+        blank=True,
+        null=True,
+        help_text='Número do PER/DCOMP retificador vinculado a esta adesão.'
     )
 
     numero_controle = models.CharField(

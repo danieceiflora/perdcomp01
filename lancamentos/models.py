@@ -13,21 +13,20 @@ class Lancamentos(models.Model):
         related_name='lancamentos',
         verbose_name='Adesão'
     )
-    
-
-    perdcomp_inicial = models.CharField(
-        max_length=100,
-        verbose_name='PER/DCOMP Inicial',
-        help_text='Identificador da PER/DCOMP utilizada na adesão relacionada.',
-        blank=True,
-        null=True,
-        db_index=True,
-    )
 
     perdcomp_declaracao = models.CharField(
         max_length=100,
         verbose_name='PER/DCOMP da Declaração',
         help_text='Identificador da declaração de compensação de onde este item foi importado.',
+        blank=True,
+        null=True,
+        db_index=True,
+    )
+
+    perdcomp_retificador = models.CharField(
+        max_length=100,
+        verbose_name='PER/DCOMP Retificador',
+        help_text='Identificador da declaração retificadora vinculada a este lançamento.',
         blank=True,
         null=True,
         db_index=True,
@@ -138,6 +137,7 @@ class Lancamentos(models.Model):
     STATUS_CHOICES = [
         ('solicitado', 'Solicitado'),
         ('protocolado', 'Protocolado'),
+        ('retificado', 'Retificado'),
     ]
     status = models.CharField(
         max_length=20,
@@ -216,7 +216,6 @@ class Lancamentos(models.Model):
     def __str__(self):
         ref = (
             self.perdcomp_declaracao
-            or self.perdcomp_inicial
             or getattr(self.id_adesao, 'perdcomp', None)
         )
         item_label = f"/{self.item}" if self.item else ''
@@ -266,9 +265,9 @@ class Lancamentos(models.Model):
         from django.core.exceptions import ValidationError
         from django.utils import timezone
 
-        # Garante que o identificador inicial acompanhe a adesão vinculada
-        if not self.perdcomp_inicial and self.id_adesao_id:
-            self.perdcomp_inicial = getattr(self.id_adesao, 'perdcomp', None)
+        # Garante que o retificador acompanhe a adesão vinculada se não foi preenchido
+        if not self.perdcomp_retificador and self.id_adesao_id:
+            self.perdcomp_retificador = getattr(self.id_adesao, 'perdcomp_retificador', None)
 
         # Verifica se é um novo lançamento e captura estado anterior
         is_novo = not self.pk
@@ -288,8 +287,15 @@ class Lancamentos(models.Model):
 
         # Imutabilidade: após criação, apenas campos de aprovação e controle/recibo podem mudar
         if not is_novo:
-            allowed = {'aprovado', 'data_aprovacao', 'observacao_aprovacao', 
-                      'numero_controle', 'chave_seguranca_serpro', 'status'}
+            allowed = {
+                'aprovado',
+                'data_aprovacao',
+                'observacao_aprovacao',
+                'numero_controle',
+                'chave_seguranca_serpro',
+                'status',
+                'perdcomp_retificador',
+            }
             changed = set()
             for field in self._meta.fields:
                 fname = field.name

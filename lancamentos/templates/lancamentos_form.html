@@ -92,6 +92,16 @@
                     </ul>
                 </div>
                 {% endif %}
+                
+                <!-- Exibir erros do campo oculto 'valor' -->
+                {% if form.valor.errors %}
+                <div class="rounded-md border border-destructive/50 bg-destructive/10 text-destructive text-sm p-4">
+                    <p class="font-medium mb-2">Erro no campo Valor:</p>
+                    <ul class="list-disc list-inside space-y-1">
+                        {% for error in form.valor.errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
 
                 <!-- Campo oculto de valor (quando necessário) -->
                 <div class="hidden">
@@ -114,61 +124,62 @@
                             <p class="text-xs text-muted-foreground mt-1">Saldo disponível na adesão selecionada.</p>
                         </div>
                         <div>
+                            <label for="{{ form.data_lancamento.id_for_label }}" class="block text-sm font-medium mb-1">{{ form.data_lancamento.label }}</label>
+                            {{ form.data_lancamento }}
+                            {% if form.data_lancamento.errors %}<div class="text-sm text-destructive mt-1">{{ form.data_lancamento.errors }}</div>{% endif %}
+                            <p class="text-xs text-muted-foreground mt-1">{{ form.data_lancamento.help_text }}</p>
+                        </div>
+                        <div>
                             <label for="{{ form.sinal.id_for_label }}" class="block text-sm font-medium mb-1">{{ form.sinal.label }}</label>
                             {{ form.sinal }}
                             {% if form.sinal.errors %}<div class="text-sm text-destructive mt-1">{{ form.sinal.errors }}</div>{% endif %}
                         </div>
-                        <div class="md:col-span-2">
+                        <div>
                             <label for="{{ form.codigo_guia.id_for_label }}" class="block text-sm font-medium mb-1">{{ form.codigo_guia.label }}</label>
                             {{ form.codigo_guia }}
-                            <p class="text-xs text-muted-foreground mt-1">Informe o identificador da guia associado a este lançamento (opcional).</p>
+                            <p class="text-xs text-muted-foreground mt-1">Identificador da guia (opcional).</p>
                             {% if form.codigo_guia.errors %}<div class="text-sm text-destructive mt-1">{{ form.codigo_guia.errors }}</div>{% endif %}
                         </div>
                     </div>
                 </div>
 
-                <!-- Grupo 2: Tipo de Crédito / Data / Detalhes / Observação -->
+                <!-- Grupo 2: Tipo de Crédito / Detalhes / Observação -->
                 <div class="bg-muted/20 border rounded-md p-4">
                     <h3 class="text-sm font-semibold mb-4 tracking-wide text-muted-foreground">Pedido e tipo de crédito</h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
+                        <div class="md:col-span-3">
                             <label for="{{ form.metodo_escolhido.id_for_label }}" class="block text-sm font-medium mb-1">Tipo de Crédito</label>
                             {{ form.metodo_escolhido }}
                             {% if form.metodo_escolhido.errors %}<div class="text-sm text-destructive mt-1">{{ form.metodo_escolhido.errors }}</div>{% endif %}
                             <p class="text-xs text-muted-foreground mt-1">Selecione o tipo de crédito para exibir os campos específicos.</p>
-                        </div>
-                        <div>
-                            <label for="{{ form.data_lancamento.id_for_label }}" class="block text-sm font-medium mb-1">{{ form.data_lancamento.label }}</label>
-                            {{ form.data_lancamento }}
-                            {% if form.data_lancamento.errors %}<div class="text-sm text-destructive mt-1">{{ form.data_lancamento.errors }}</div>{% endif %}
-                            <p class="text-xs text-muted-foreground mt-1">{{ form.data_lancamento.help_text }}</p>
                         </div>
                         <div class="md:col-span-3">
                             <div class="border rounded-md p-4">
                                 <h4 class="text-sm font-semibold mb-4 tracking-wide text-muted-foreground">Detalhes do tipo de crédito</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <!-- Declaração de Compensação -->
-                                    <div id="lanc-group-total_debitos_documento" class="hidden md:col-span-3">
+                                    <div id="lanc-group-total_credito_original_utilizado" class="hidden">
+                                        <label for="{{ form.lanc_total_credito_original_utilizado.id_for_label }}" class="block text-sm font-medium mb-1">Total do Crédito Original Utilizado</label>
+                                        {{ form.lanc_total_credito_original_utilizado }}
+                                        <p class="text-xs text-muted-foreground mt-1">Este valor será utilizado para atualizar o saldo da adesão</p>
+                                        {% if form.lanc_total_credito_original_utilizado.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_total_credito_original_utilizado.errors }}</div>{% endif %}
+                                    </div>
+                                    <div id="lanc-group-total_debitos_documento" class="hidden">
                                         <label for="{{ form.lanc_total_debitos_documento.id_for_label }}" class="block text-sm font-medium mb-1">Total dos Débitos deste Documento</label>
                                         {{ form.lanc_total_debitos_documento }}
-                                        <p class="text-xs text-muted-foreground mt-1">Valor total dos débitos conforme declaração de compensação</p>
+                                        <p class="text-xs text-muted-foreground mt-1">Valor total dos débitos (apenas para registro)</p>
                                         {% if form.lanc_total_debitos_documento.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_total_debitos_documento.errors }}</div>{% endif %}
+                                    </div>
+                                    <div id="lanc-group-periodo_apuracao" class="hidden">
+                                        <label for="{{ form.lanc_periodo_apuracao.id_for_label }}" class="block text-sm font-medium mb-1">Período de Apuração</label>
+                                        {{ form.lanc_periodo_apuracao }}
+                                        {% if form.lanc_periodo_apuracao.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_periodo_apuracao.errors }}</div>{% endif %}
                                     </div>
                                     <div id="lanc-group-descricao_debitos" class="hidden md:col-span-3">
                                         <label for="{{ form.lanc_descricao_debitos.id_for_label }}" class="block text-sm font-medium mb-1">Descrição dos Débitos</label>
                                         {{ form.lanc_descricao_debitos }}
                                         <p class="text-xs text-muted-foreground mt-1">Detalhamento dos itens de débito da declaração</p>
                                         {% if form.lanc_descricao_debitos.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_descricao_debitos.errors }}</div>{% endif %}
-                                    </div>
-                                    <div id="lanc-group-total_credito_original_utilizado" class="hidden">
-                                        <label for="{{ form.lanc_total_credito_original_utilizado.id_for_label }}" class="block text-sm font-medium mb-1">Total Crédito Original Utilizado</label>
-                                        {{ form.lanc_total_credito_original_utilizado }}
-                                        {% if form.lanc_total_credito_original_utilizado.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_total_credito_original_utilizado.errors }}</div>{% endif %}
-                                    </div>
-                                    <div id="lanc-group-periodo_apuracao" class="hidden">
-                                        <label for="{{ form.lanc_periodo_apuracao.id_for_label }}" class="block text-sm font-medium mb-1">Período de Apuração</label>
-                                        {{ form.lanc_periodo_apuracao }}
-                                        {% if form.lanc_periodo_apuracao.errors %}<div class="text-sm text-destructive mt-1">{{ form.lanc_periodo_apuracao.errors }}</div>{% endif %}
                                     </div>
                                     
                                     <!-- Crédito em Conta -->
@@ -254,6 +265,63 @@
                             {% endif %}
                             <p class="text-xs text-muted-foreground mt-1">
                                 Novos lançamentos: "Solicitado" por padrão
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grupo: Identificação PERDCOMP e Item -->
+                <div class="bg-muted/20 border rounded-md p-4">
+                    <h3 class="text-sm font-semibold mb-4 tracking-wide text-muted-foreground flex items-center gap-2">
+                        <i class="bi bi-hash"></i>
+                        Identificação PERDCOMP
+                    </h3>
+                    <p class="text-xs text-muted-foreground mb-4">
+                        Campos para rastreamento e vinculação de declarações PER/DCOMP. 
+                        O PERDCOMP inicial é o da adesão selecionada acima.
+                        Geralmente preenchidos automaticamente durante importações.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="{{ form.perdcomp_declaracao.id_for_label }}" class="block text-sm font-medium mb-1">
+                                {{ form.perdcomp_declaracao.label }}
+                            </label>
+                            {{ form.perdcomp_declaracao }}
+                            {% if form.perdcomp_declaracao.errors %}
+                                <div class="text-xs text-destructive mt-1">
+                                    {% for error in form.perdcomp_declaracao.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            <p class="text-xs text-muted-foreground mt-1">
+                                PERDCOMP da declaração de compensação
+                            </p>
+                        </div>
+                        <div>
+                            <label for="{{ form.perdcomp_retificador.id_for_label }}" class="block text-sm font-medium mb-1">
+                                {{ form.perdcomp_retificador.label }}
+                            </label>
+                            {{ form.perdcomp_retificador }}
+                            {% if form.perdcomp_retificador.errors %}
+                                <div class="text-xs text-destructive mt-1">
+                                    {% for error in form.perdcomp_retificador.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            <p class="text-xs text-muted-foreground mt-1">
+                                PERDCOMP retificador (se houver)
+                            </p>
+                        </div>
+                        <div>
+                            <label for="{{ form.item.id_for_label }}" class="block text-sm font-medium mb-1">
+                                {{ form.item.label }}
+                            </label>
+                            {{ form.item }}
+                            {% if form.item.errors %}
+                                <div class="text-xs text-destructive mt-1">
+                                    {% for error in form.item.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            <p class="text-xs text-muted-foreground mt-1">
+                                Item da declaração
                             </p>
                         </div>
                     </div>
@@ -489,7 +557,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const metodoField = document.getElementById('{{ form.metodo_escolhido.id_for_label }}') || document.querySelector('select[name="metodo_escolhido"]');
         const mapGroups = {
-            'declaração de compensação': ['lanc-group-total_debitos_documento','lanc-group-descricao_debitos','lanc-group-total_credito_original_utilizado','lanc-group-periodo_apuracao'],
+            'declaracao de compensacao': ['lanc-group-total_credito_original_utilizado','lanc-group-total_debitos_documento','lanc-group-periodo_apuracao','lanc-group-descricao_debitos'],
             'credito em conta': ['lanc-group-data_credito','lanc-group-valor_credito_em_conta']
         };
         function norm(v){return (v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();}

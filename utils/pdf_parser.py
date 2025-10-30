@@ -69,6 +69,8 @@ class PDFParsed:
     cnpj: Optional[str] = None
     perdcomp: Optional[str] = None
     perdcomp_inicial: Optional[str] = None
+    perdcomp_retificador: Optional[str] = None
+    is_retificador: bool = False
     metodo_credito: Optional[str] = None
     data_criacao: Optional[str] = None  # dd/mm/aaaa
     valor_pedido: Optional[Decimal] = None
@@ -91,6 +93,10 @@ class PDFParsed:
     valor_total_origem: Optional[Decimal] = None
     # Valor Original do Crédito Inicial (bloco 'CRÉDITO PAGAMENTO INDEVIDO OU A MAIOR' ou similar)
     valor_original_credito_inicial: Optional[Decimal] = None
+    # Total dos Débitos deste Documento (soma dos débitos compensados)
+    total_debitos_documento: Optional[Decimal] = None
+    # Total do Crédito Original Utilizado neste Documento
+    total_credito_original_utilizado: Optional[Decimal] = None
 
     def as_dict(self) -> Dict[str, Any]:
         return {
@@ -106,6 +112,8 @@ class PDFParsed:
             'periodo_apuracao_credito': self.periodo_apuracao_credito,
             'codigo_receita': self.codigo_receita,
             'perdcomp_inicial': self.perdcomp_inicial,
+            'perdcomp_retificador': self.perdcomp_retificador,
+            'is_retificador': self.is_retificador,
         }
 
 
@@ -124,7 +132,17 @@ def parse_ressarcimento_text(txt: str) -> PDFParsed:
 
     # ETAPA 1: Número do PER/DCOMP inicial (seção "Nº do PER/DCOMP inicial")
     # Este é o número que identifica a adesão original e deve ser capturado PRIMEIRO
-    m_initial = re.search(r"N[ºo°]\s*do\s+PER\s*/?\s*DCOMP\s+inicial\s*[:\-]?\s*([0-9A-Za-z./\-\s]+)", norm, flags=re.IGNORECASE)
+    m_initial = re.search(
+        r"N[ºo°]\s*do\s+PER\s*/?\s*DCOMP\s+(?:inicial|a\s+ser\s+retificad[ao]|original)\s*[:\-]?\s*([0-9A-Za-z./\-\s]+)",
+        norm,
+        flags=re.IGNORECASE,
+    )
+    if not m_initial:
+        m_initial = re.search(
+            r"PER\s*/?\s*DCOMP\s+(?:a\s+ser\s+retificad[ao]|original)\s*[:\-]?\s*([0-9A-Za-z./\-\s]+)",
+            norm,
+            flags=re.IGNORECASE,
+        )
     if m_initial:
         raw_initial = m_initial.group(1).strip()
         # Remove letras e mantém apenas números, pontos, traços e barras
@@ -188,6 +206,15 @@ def parse_ressarcimento_text(txt: str) -> PDFParsed:
     # (isso só deve acontecer em PDFs de adesão inicial, não em declarações)
     if not p.perdcomp and p.perdcomp_inicial:
         p.perdcomp = p.perdcomp_inicial
+
+    # Identifica se o documento é retificador
+    if p.perdcomp_inicial and p.perdcomp and p.perdcomp != p.perdcomp_inicial:
+        p.is_retificador = True
+        p.perdcomp_retificador = p.perdcomp
+    elif re.search(r"\bretificador(?:a)?\b", norm, flags=re.IGNORECASE):
+        p.is_retificador = True
+        if p.perdcomp and not p.perdcomp_retificador:
+            p.perdcomp_retificador = p.perdcomp
 
     # Tipo de Documento -> mapeia para metodo_credito conforme opções do sistema
     m = re.search(r"Tipo de Documento\s*[:\-]?\s*(.+)", norm, flags=re.IGNORECASE)
@@ -340,6 +367,24 @@ def parse_ressarcimento_text(txt: str) -> PDFParsed:
         if mg:
             p.valor_original_credito_inicial = _parse_ptbr_number(mg.group(1))
 
+    # Total dos Débitos deste Documento
+    m_total_debitos = re.search(
+        r"Total\s+dos\s+D[eé]bitos\s+(?:deste\s+Documento|do\s+Documento)?\s*[:\-]?\s*([0-9.]+,\d{2})",
+        norm,
+        flags=re.IGNORECASE
+    )
+    if m_total_debitos:
+        p.total_debitos_documento = _parse_ptbr_number(m_total_debitos.group(1))
+    
+    # Total do Crédito Original Utilizado neste Documento
+    m_total_credito_utilizado = re.search(
+        r"Total\s+(?:do\s+)?Cr[eé]dito\s+Original\s+Utilizado\s+(?:neste\s+Documento|no\s+Documento)?\s*[:\-]?\s*([0-9.]+,\d{2})",
+        norm,
+        flags=re.IGNORECASE
+    )
+    if m_total_credito_utilizado:
+        p.total_credito_original_utilizado = _parse_ptbr_number(m_total_credito_utilizado.group(1))
+
     return p
 
 
@@ -360,6 +405,31 @@ def parse_declaracao_compensacao_text(txt: str) -> PDFParsed:
     
     # Normalizar
     norm = re.sub(r"[\t\u00A0]+", " ", txt)
+
+    # Captura do PER/DCOMP original (quando o documento é retificador)
+    m_initial = re.search(
+        r"N[ºo°]\s*do\s+PER\s*/?\s*DCOMP\s+(?:inicial|a\s+ser\s+retificad[ao]|original)\s*[:\-]?\s*([0-9A-Za-z./\-\s]+)",
+        norm,
+        flags=re.IGNORECASE,
+    )
+    if not m_initial:
+        m_initial = re.search(
+            r"PER\s*/?\s*DCOMP\s+(?:a\s+ser\s+retificad[ao]|original)\s*[:\-]?\s*([0-9A-Za-z./\-\s]+)",
+            norm,
+            flags=re.IGNORECASE,
+        )
+    if m_initial:
+        raw_initial = m_initial.group(1).strip()
+        candidate_initial = re.sub(r"[^0-9.\-/]", "", raw_initial).strip(" .;,:")
+        if _looks_like_perdcomp(candidate_initial):
+            p.perdcomp_inicial = candidate_initial
+        else:
+            tail = norm[m_initial.end():m_initial.end() + 200]
+            candidate_initial = _find_perdcomp_candidate(raw_initial + " " + tail)
+            if not candidate_initial:
+                candidate_initial = _find_perdcomp_candidate(tail)
+            if candidate_initial:
+                p.perdcomp_inicial = candidate_initial
     
     # 1. CNPJ (obrigatório)
     m_cnpj = re.search(r"CNPJ\s*[:\-]?\s*([0-9./-]{14,20})", norm, flags=re.IGNORECASE)
@@ -527,6 +597,24 @@ def parse_declaracao_compensacao_text(txt: str) -> PDFParsed:
     if debitos:
         p.debitos = debitos
     
+    # 8. Total dos Débitos deste Documento
+    m_total_debitos = re.search(
+        r"Total\s+dos\s+D[eé]bitos\s+(?:deste\s+Documento|do\s+Documento)?\s*[:\-]?\s*([0-9.]+,\d{2})",
+        norm,
+        flags=re.IGNORECASE
+    )
+    if m_total_debitos:
+        p.total_debitos_documento = _parse_ptbr_number(m_total_debitos.group(1))
+    
+    # 9. Total do Crédito Original Utilizado neste Documento
+    m_total_credito_utilizado = re.search(
+        r"Total\s+(?:do\s+)?Cr[eé]dito\s+Original\s+Utilizado\s+(?:neste\s+Documento|no\s+Documento)?\s*[:\-]?\s*([0-9.]+,\d{2})",
+        norm,
+        flags=re.IGNORECASE
+    )
+    if m_total_credito_utilizado:
+        p.total_credito_original_utilizado = _parse_ptbr_number(m_total_credito_utilizado.group(1))
+    
     return p
 
 
@@ -692,6 +780,15 @@ def parse_pedido_credito_text(txt: str) -> PDFParsed:
         candidate = _find_perdcomp_candidate(norm)
         if candidate:
             p.perdcomp = candidate
+
+    # Determina se é um documento retificador
+    if p.perdcomp_inicial and p.perdcomp and p.perdcomp != p.perdcomp_inicial:
+        p.is_retificador = True
+        p.perdcomp_retificador = p.perdcomp
+    elif re.search(r"\bretificador(?:a)?\b", norm, flags=re.IGNORECASE):
+        p.is_retificador = True
+        if p.perdcomp and not p.perdcomp_retificador:
+            p.perdcomp_retificador = p.perdcomp
     
     # 3. Tipo de Documento - determina se é Restituição ou Ressarcimento
     m_tipo = re.search(r"Tipo\s+de\s+Documento\s*[:\-]?\s*(.+?)(?:\n|$)", norm, flags=re.IGNORECASE)
