@@ -109,12 +109,17 @@
                                     <a href="{% url 'adesao:list' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"><i class="bi bi-list mr-2"></i>Listar Créditos</a>
                                     {% if user.is_superuser or user.is_staff or perms.adesao.add_adesao %}
                                     <a href="{% url 'adesao:create' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"><i class="bi bi-plus mr-2"></i>Novo Crédito</a>
-                                    <a href="{% url 'adesao:importacao_logs_page' %}" class="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"><i class="bi bi-clipboard-data mr-2"></i>Logs de importação</a>
                                     {% endif %}
                                 </div>
                             </div>
                         </div>
                         {% endif %}
+                        
+                        <!-- Logs de Importação -->
+                        {% if user.is_superuser or user.is_staff or perms.adesao.view_adesao %}
+                        <a href="{% url 'importacao_logs' %}" class="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 transition-colors"><i class="bi bi-clipboard-data mr-2"></i>Logs de Importação</a>
+                        {% endif %}
+                        
                         {% if user.is_authenticated %}
                         <!-- Compensações Dropdown (liberado para qualquer autenticado; criação restrita) -->
                         <div class="relative group">
@@ -250,6 +255,11 @@
 
                 <!-- Perfil & Sessão -->
                 <div class="pt-2 border-t border-slate-200 dark:border-slate-700 mt-2">
+                    <!-- Logs de Importação -->
+                    {% if user.is_superuser or user.is_staff or perms.adesao.view_adesao %}
+                    <a href="{% url 'importacao_logs' %}" class="flex items-center gap-2 px-3 py-2 rounded-md font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-clipboard-data"></i> Logs de Importação</a>
+                    {% endif %}
+                    
                     {% if not user.is_superuser and not user.is_staff %}
                     <a href="{% url 'accounts:profile' %}" class="flex items-center gap-2 px-3 py-2 rounded-md font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"><i class="bi bi-person"></i> Meu Perfil</a>
                     {% else %}

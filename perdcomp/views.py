@@ -1,5 +1,7 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from urllib.parse import urlencode
 from urllib.request import urlopen, Request
@@ -9,6 +11,82 @@ import json
 
 def token_jwt_view(request):
     return render(request, 'token_jwt.html')
+
+
+@login_required
+def importacao_logs_page(request):
+    """Página de logs de importação (PDFs de adesões, lançamentos, etc.)"""
+    # Permissão: staff, superuser ou quem tem permissão de visualizar adesão
+    if not (request.user.is_superuser or request.user.is_staff or request.user.has_perm('adesao.view_adesao')):
+        messages.error(request, 'Você não tem permissão para visualizar os logs de importação.')
+        return redirect('root')
+    
+    import os
+    from django.conf import settings
+    from django.core.paginator import Paginator
+    
+    logs_dir = os.path.join(getattr(settings, 'MEDIA_ROOT', ''), 'import_logs')
+    entries = []
+    
+    try:
+        if os.path.isdir(logs_dir):
+            for fname in os.listdir(logs_dir):
+                if not fname.endswith('.json'):
+                    continue
+                fpath = os.path.join(logs_dir, fname)
+                try:
+                    with open(fpath, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                    mtime = datetime.fromtimestamp(os.path.getmtime(fpath))
+                    result = data.get('result') or {}
+                    context_type = data.get('context', '')
+                    
+                    # Determinar created/updated com fallback inteligente
+                    created = result.get('created')
+                    updated = result.get('updated')
+                    
+                    # Se não tem os campos explícitos, inferir pelo tipo de contexto
+                    if created is None and updated is None and result.get('ok'):
+                        # Recibos, declarações e créditos sempre atualizam
+                        if context_type in ['recibo_pedido_credito', 'declaracao_compensacao', 'credito_em_conta']:
+                            updated = True
+                            created = False
+                        # Pedidos de crédito criam novos
+                        elif context_type == 'pedido_credito':
+                            created = True
+                            updated = False
+                    
+                    entries.append({
+                        'filename': data.get('filename') or fname,
+                        'user': data.get('user'),
+                        'when': mtime,
+                        'parsed': data.get('parsed', {}),
+                        'ok': result.get('ok'),
+                        'error': result.get('error'),
+                        'detail_url': result.get('detail_url'),
+                        'created': created,
+                        'updated': updated,
+                        'context': context_type,
+                        'raw_name': fname,
+                    })
+                except Exception:
+                    continue
+        
+        # Sort desc by when
+        entries.sort(key=lambda e: e['when'], reverse=True)
+    except Exception:
+        messages.error(request, 'Falha ao ler logs de importação.')
+    
+    # Paginação
+    paginator = Paginator(entries, 50)  # 50 por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'importacao_logs.html', {
+        'entries': page_obj,
+        'page_obj': page_obj,
+        'is_paginated': page_obj.has_other_pages(),
+    })
 
 
 def selic_acumulada_view(request):

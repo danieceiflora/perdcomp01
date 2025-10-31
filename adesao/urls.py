@@ -19,7 +19,6 @@ urlpatterns = [
     path('importar-notificacao-credito/', views.importar_notificacao_credito_conta, name='importar_credito_conta'),
     path('detectar-tipo-pdf/', views.detectar_tipo_pdf, name='detectar_tipo_pdf'),
     path('importar-lote/', views.importar_lote_page, name='importar_lote_page'),
-    path('importar-logs/', views.importacao_logs_page, name='importacao_logs_page'),
 
     ## API endpoint for listing adesoes 
     path('api/v1/listar-adesao/', views.AdesaoListAPI.as_view(), name='api-adesao-list'),

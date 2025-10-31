@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Logs de Importação{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6" style="max-width: 90%;">
+    <!-- Header Card -->
+    <div class="bg-card border rounded-lg shadow-sm mb-6">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-6 border-b">
+                <h1 class="text-2xl font-semibold text-card-foreground mb-4 sm:mb-0">
+                    <i class="bi bi-clock-history mr-2"></i>Histórico de Importações
+                </h1>
+            </div>
+
+            <div class="p-6">
+                {% if entries %}
+                <!-- Desktop Table View -->
+                <div class="hidden md:block overflow-x-auto">
+                    <div class="rounded-md border">
+                        <table class="w-full text-sm">
+                            <thead class="bg-muted">
+                                <tr class="border-b">
+                                    <th class="text-left font-semibold text-muted-foreground px-4 py-3 w-[12%]">Quando</th>
+                                    <th class="text-left font-semibold text-muted-foreground px-4 py-3 w-[10%]">Usuário</th>
+                                    <th class="text-left font-semibold text-muted-foreground px-4 py-3 w-[20%]">Arquivo</th>
+                                    <th class="text-left font-semibold text-muted-foreground px-4 py-3 w-[14%]">PERDCOMP</th>
+                                    <th class="text-left font-semibold text-muted-foreground px-4 py-3 w-[12%]">CNPJ</th>
+                                    <th class="text-left font-semibold text-muted-foreground px-4 py-3 w-[20%]">Status</th>
+                                    <th class="text-left font-semibold text-muted-foreground px-4 py-3 w-[12%]">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for e in entries %}
+                                <tr class="border-b hover:bg-muted/50 transition-colors">
+                                    <td class="px-4 py-3 text-card-foreground align-top">{{ e.when|date:'d/m/Y H:i:s' }}</td>
+                                    <td class="px-4 py-3 text-card-foreground align-top break-words">{{ e.user|default:"—" }}</td>
+                                    <td class="px-4 py-3 text-card-foreground align-top break-words" title="{{ e.filename }}">{{ e.filename }}</td>
+                                    <td class="px-4 py-3 text-card-foreground font-mono align-top break-all">{{ e.parsed.perdcomp|default:"—" }}</td>
+                                    <td class="px-4 py-3 text-card-foreground font-mono align-top break-all">{{ e.parsed.cnpj|default:"—" }}</td>
+                                    <td class="px-4 py-3 align-top">
+                                        {% if e.ok %}
+                                            {% if e.created == True %}
+                                                <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700 whitespace-nowrap">
+                                                    <i class="bi bi-check-circle-fill"></i>
+                                                    Criado
+                                                </span>
+                                            {% elif e.updated == True %}
+                                                <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700 whitespace-nowrap">
+                                                    <i class="bi bi-arrow-repeat"></i>
+                                                    Atualizado
+                                                </span>
+                                            {% else %}
+                                                <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 whitespace-nowrap">
+                                                    <i class="bi bi-eye"></i>
+                                                    Pré-visualizado
+                                                </span>
+                                            {% endif %}
+                                        {% else %}
+                                            <div class="flex flex-col gap-1">
+                                                <span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700 w-fit whitespace-nowrap">
+                                                    <i class="bi bi-exclamation-circle-fill"></i>
+                                                    Erro
+                                                </span>
+                                                {% if e.error %}<span class="text-xs text-red-600 break-words" title="{{ e.error }}">{{ e.error }}</span>{% endif %}
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-4 py-3 align-top">
+                                        {% if e.detail_url %}
+                                        <a href="{{ e.detail_url }}" class="inline-flex items-center gap-1 text-primary hover:text-primary/80 font-medium transition-colors whitespace-nowrap">
+                                            <i class="bi bi-eye"></i>
+                                            <span class="text-xs">Ver</span>
+                                        </a>
+                                        {% else %}
+                                        <span class="text-muted-foreground text-xs">—</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Mobile Card View -->
+                <div class="md:hidden space-y-4">
+                    {% for e in entries %}
+                    <div class="rounded-md border bg-card p-4">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex items-start gap-3 flex-1">
+                                <i class="bi bi-file-pdf-fill text-red-600 text-lg flex-shrink-0 mt-1"></i>
+                                <div class="min-w-0 flex-1">
+                                    <p class="font-semibold text-sm break-words text-card-foreground" title="{{ e.filename }}">{{ e.filename }}</p>
+                                    <p class="text-xs text-muted-foreground mt-1">{{ e.when|date:'d/m/Y H:i:s' }}</p>
+                                </div>
+                            </div>
+                            {% if e.ok %}
+                                {% if e.created == True %}
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700 flex-shrink-0">
+                                        <i class="bi bi-check-circle-fill"></i>
+                                    </span>
+                                {% elif e.updated == True %}
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700 flex-shrink-0">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 flex-shrink-0">
+                                        <i class="bi bi-eye"></i>
+                                    </span>
+                                {% endif %}
+                            {% else %}
+                                <span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700 flex-shrink-0">
+                                    <i class="bi bi-exclamation-circle-fill"></i>
+                                </span>
+                            {% endif %}
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3 mb-3 text-xs">
+                            <div>
+                                <span class="text-muted-foreground">PERDCOMP:</span>
+                                <p class="font-mono font-semibold text-card-foreground break-all">{{ e.parsed.perdcomp|default:"—" }}</p>
+                            </div>
+                            <div>
+                                <span class="text-muted-foreground">CNPJ:</span>
+                                <p class="font-mono font-semibold text-card-foreground break-all">{{ e.parsed.cnpj|default:"—" }}</p>
+                            </div>
+                            <div>
+                                <span class="text-muted-foreground">Usuário:</span>
+                                <p class="font-semibold text-card-foreground break-words">{{ e.user|default:"—" }}</p>
+                            </div>
+                            <div>
+                                <span class="text-muted-foreground">Status:</span>
+                                <p class="font-semibold text-card-foreground">
+                                    {% if e.ok %}
+                                        {% if e.created == True %}
+                                            Criado
+                                        {% elif e.updated == True %}
+                                            Atualizado
+                                        {% else %}
+                                            Pré-visualizado
+                                        {% endif %}
+                                    {% else %}
+                                        Erro
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+
+                        {% if e.error %}
+                        <div class="bg-red-50 border border-red-200 rounded-lg p-2 mb-3">
+                            <p class="text-xs text-red-700 break-words">{{ e.error }}</p>
+                        </div>
+                        {% endif %}
+
+                        {% if e.detail_url %}
+                        <a href="{{ e.detail_url }}" class="inline-flex items-center gap-1 text-primary hover:text-primary/80 font-medium text-xs transition-colors">
+                            <i class="bi bi-eye"></i>
+                            <span>Ver Detalhes</span>
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if is_paginated %}
+                <nav class="flex items-center justify-center mt-8" aria-label="Navegação de páginas">
+                    <div class="flex items-center gap-2">
+                        {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}" 
+                           class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
+                            <i class="bi bi-chevron-left mr-2"></i>Anterior
+                        </a>
+                        {% endif %}
+                        
+                        <span class="flex items-center px-4 py-2 text-sm text-muted-foreground">
+                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                        </span>
+                        
+                        {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}" 
+                           class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
+                            Próximo<i class="bi bi-chevron-right ml-2"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </nav>
+                {% endif %}
+
+                {% else %}
+                    <!-- Empty State -->
+                    <div class="text-center py-12">
+                        <i class="bi bi-inbox text-4xl text-muted-foreground mb-3 inline-block"></i>
+                        <h3 class="text-lg font-semibold text-card-foreground mb-2">Nenhum log encontrado</h3>
+                        <p class="text-muted-foreground mb-6">Comece importando PDFs para visualizar o histórico</p>
+                        <a href="{% url 'adesao:importar_lote_page' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-6">
+                            <i class="bi bi-upload mr-2"></i>Ir para Importação
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

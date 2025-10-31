@@ -8,7 +8,7 @@ from rest_framework_simplejwt.views import (
 from empresas.views import home_view
 from django.views.generic import RedirectView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
-from perdcomp.views import token_jwt_view, selic_acumulada_view
+from perdcomp.views import token_jwt_view, selic_acumulada_view, importacao_logs_page
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import get_user_model
@@ -33,6 +33,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
     path('', root_view, name='root'),
+    path('logs-importacao/', importacao_logs_page, name='importacao_logs'),
     path('empresas/', include('empresas.urls')),
     path('contatos/', include('contatos.urls')),
     path('clientes-parceiros/', include('clientes_parceiros.urls')),
