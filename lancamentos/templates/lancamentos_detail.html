@@ -56,8 +56,25 @@
                         </div>
                         <div>
                             <div class="text-xs uppercase tracking-wide text-muted-foreground">Declaração PER/DCOMP</div>
-                            <div class="font-medium">{{ lancamento.perdcomp_declaracao|default:'--' }}</div>
+                            <div class="font-medium">
+                                {{ lancamento.perdcomp_declaracao|default:'--' }}
+                                {% if lancamento.is_retificadora %}
+                                <span class="ml-2 inline-flex items-center rounded-md bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-300">
+                                    <i class="bi bi-arrow-repeat mr-1"></i>
+                                    Retificadora
+                                </span>
+                                {% endif %}
+                            </div>
                         </div>
+                        {% if lancamento.perdcomp_retificado %}
+                        <div>
+                            <div class="text-xs uppercase tracking-wide text-muted-foreground">PER/DCOMP Retificado</div>
+                            <div class="font-medium text-amber-700 dark:text-amber-300">
+                                <i class="bi bi-arrow-counterclockwise mr-1"></i>
+                                {{ lancamento.perdcomp_retificado }}
+                            </div>
+                        </div>
+                        {% endif %}
                         {% if lancamento.perdcomp_retificador %}
                         <div>
                             <div class="text-xs uppercase tracking-wide text-muted-foreground">PER/DCOMP Retificador</div>
@@ -159,6 +176,11 @@
                                     <i class="bi bi-arrow-repeat mr-1.5"></i>
                                     Retificado
                                 </span>
+                            {% elif lancamento.status == 'estornado' %}
+                                <span class="inline-flex items-center rounded-md bg-purple-500/10 px-2.5 py-1 text-sm font-medium text-purple-700 dark:text-purple-300">
+                                    <i class="bi bi-arrow-counterclockwise mr-1.5"></i>
+                                    Estornado após retificação
+                                </span>
                             {% elif lancamento.status == 'solicitado' %}
                                 <span class="inline-flex items-center rounded-md bg-gray-500/10 px-2.5 py-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                                     <i class="bi bi-clock-history mr-1.5"></i>
@@ -177,13 +199,20 @@
                         <div class="text-xs uppercase tracking-wide text-muted-foreground">Chave de Segurança SERPRO</div>
                         <div class="font-medium font-mono text-sm mt-1 break-all">{{ lancamento.chave_seguranca_serpro|default:'--' }}</div>
                     </div>
-                    {% if lancamento.perdcomp_retificador %}
-                    <div>
-                        <div class="text-xs uppercase tracking-wide text-muted-foreground">PER/DCOMP Retificador</div>
-                        <div class="font-medium font-mono text-sm mt-1 break-all text-amber-700 dark:text-amber-300">{{ lancamento.perdcomp_retificador }}</div>
-                    </div>
-                    {% endif %}
                 </div>
+                {% if lancamento.is_retificadora %}
+                <div class="mt-4 flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-500/15 dark:border-amber-500/40 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <div>
+                        <strong>Declaração Retificadora:</strong> Esta declaração retifica a PER/DCOMP 
+                        {% if lancamento.perdcomp_retificado %}
+                            <span class="font-mono font-semibold">{{ lancamento.perdcomp_retificado }}</span>, restaurando seu saldo antes de aplicar os novos débitos.
+                        {% else %}
+                            anterior.
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
                 {% if not lancamento.numero_controle and not lancamento.chave_seguranca_serpro %}
                 <div class="mt-4 flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 dark:bg-blue-500/15 dark:border-blue-500/40 px-4 py-3 text-sm text-blue-700 dark:text-blue-300">
                     <i class="bi bi-info-circle-fill"></i>

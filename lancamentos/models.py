@@ -32,6 +32,21 @@ class Lancamentos(models.Model):
         db_index=True,
     )
 
+    perdcomp_retificado = models.CharField(
+        max_length=100,
+        verbose_name='PER/DCOMP Retificado',
+        help_text='Número do PER/DCOMP que está sendo retificado por esta declaração (quando is_retificadora=True).',
+        blank=True,
+        null=True,
+        db_index=True,
+    )
+
+    is_retificadora = models.BooleanField(
+        default=False,
+        verbose_name='É Retificadora',
+        help_text='Indica se esta declaração é retificadora de outra declaração anterior.'
+    )
+
     item = models.CharField(
         max_length=10,
         verbose_name='Item da Declaração',
@@ -138,6 +153,7 @@ class Lancamentos(models.Model):
         ('solicitado', 'Solicitado'),
         ('protocolado', 'Protocolado'),
         ('retificado', 'Retificado'),
+        ('estornado', 'Estornado após retificação'),
     ]
     status = models.CharField(
         max_length=20,

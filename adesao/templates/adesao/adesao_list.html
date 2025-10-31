@@ -644,25 +644,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 successLabelPlural: 'processadas',
                 processingMessageBuilder: ({ index, total }) => `Processando declaração ${index} de ${total}...`,
                 successMessageBuilder: ({ data, file }) => {
+                    // Se tiver mensagem customizada da view, usar ela
+                    if (data && data.mensagem) {
+                        const lines = data.mensagem.split('\n').filter(l => l.trim());
+                        return lines.join(' • ');
+                    }
+                    
+                    // Fallback para formato antigo
                     const referencia = data && (data.perdcomp_declaracao || data.perdcomp_inicial) ? (data.perdcomp_declaracao || data.perdcomp_inicial) : file.name;
-                    const createdCount = data && typeof data.created_count === 'number' ? data.created_count : null;
-                    const skippedCount = data && typeof data.skipped_count === 'number' ? data.skipped_count : 0;
-                    const errorCount = data && typeof data.error_count === 'number' ? data.error_count : 0;
-                    const notes = [];
-                    if (skippedCount > 0) {
-                        notes.push(`${skippedCount} já existente${skippedCount === 1 ? '' : 's'}`);
+                    const numDebitos = data && typeof data.num_debitos === 'number' ? data.num_debitos : 0;
+                    const isRetificadora = data && data.is_retificadora;
+                    const perdcompRetificado = data && data.perdcomp_retificado;
+                    
+                    let msg = `Declaração ${referencia} importada`;
+                    
+                    if (isRetificadora && perdcompRetificado) {
+                        msg += ` (retifica ${perdcompRetificado})`;
                     }
-                    if (errorCount > 0) {
-                        notes.push(`${errorCount} inválido${errorCount === 1 ? '' : 's'}`);
+                    
+                    if (numDebitos > 0) {
+                        msg += ` com ${numDebitos} débito${numDebitos === 1 ? '' : 's'}`;
                     }
-                    const suffix = notes.length ? ` (${notes.join(', ')})` : '';
-                    if (createdCount && createdCount > 0) {
-                        return `Declaração ${referencia} importada com ${createdCount} débito${createdCount === 1 ? '' : 's'}${suffix}.`;
+                    
+                    if (data && data.saldo_restaurado) {
+                        const saldoFormatado = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.saldo_restaurado);
+                        msg += ` • Estorno: ${saldoFormatado}`;
                     }
-                    if (notes.length) {
-                        return `Declaração ${referencia} analisada${suffix}.`;
-                    }
-                    return `Declaração ${referencia} analisada, nenhum débito novo encontrado.`;
+                    
+                    return msg + '.';
                 },
                 description: 'Importe declarações de compensação para registrar automaticamente débitos e atualizar o saldo do PER/DCOMP inicial informado.',
                 hint: 'Cada declaração deve conter o campo "PER/DCOMP inicial" já cadastrado no sistema.',

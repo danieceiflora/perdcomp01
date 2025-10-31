@@ -81,6 +81,53 @@
         </div>
         {% endif %}
 
+        <!-- Overlay de Progresso para Declarações -->
+        <div id="declaracao-processing-overlay" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" role="dialog" aria-modal="true">
+            <div class="flex w-full max-w-md flex-col rounded-lg border border-border bg-card text-card-foreground shadow-2xl p-6 sm:p-8" tabindex="-1">
+                <div class="mb-6 text-center">
+                    <h3 class="text-xl font-semibold mb-2">Processando declarações</h3>
+                    <p class="text-sm text-muted-foreground">Aguarde enquanto processamos as declarações de compensação.</p>
+                </div>
+                <div class="flex justify-center mb-6">
+                    <div class="relative">
+                        <div class="h-16 w-16 rounded-full border-4 border-primary/20"></div>
+                        <div class="absolute inset-0 h-16 w-16 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+                        <div class="absolute inset-0 flex items-center justify-center text-primary">
+                            <i class="bi bi-file-earmark-text text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <div class="mb-2 flex items-center justify-between text-sm text-muted-foreground">
+                        <span id="declaracao-overlay-progress-text">0 de 0 processados</span>
+                        <span id="declaracao-overlay-progress-percentage">0%</span>
+                    </div>
+                    <div class="h-3 w-full rounded-full bg-muted/60">
+                        <div id="declaracao-overlay-progress-bar" class="relative h-3 w-0 rounded-full bg-primary transition-all duration-300"></div>
+                    </div>
+                </div>
+                <div class="mb-4 rounded-lg bg-muted/40 px-4 py-3 text-center">
+                    <p class="text-xs text-muted-foreground">Processando:</p>
+                    <p id="declaracao-overlay-current-file" class="truncate text-sm font-medium">—</p>
+                </div>
+                <div id="declaracao-overlay-success-message" class="hidden rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 dark:border-green-500/40 dark:bg-green-500/15 dark:text-green-300">
+                    <div class="flex items-center justify-center gap-2 mb-3">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <span id="declaracao-overlay-success-text" class="font-medium">Processamento concluído!</span>
+                    </div>
+                    <div class="flex items-center justify-center gap-2 mt-3 pt-3 border-t border-green-300 dark:border-green-500/30">
+                        <a href="{% url 'adesao:importacao_logs_page' %}" target="_blank" class="inline-flex items-center gap-1 rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                            <i class="bi bi-clipboard-data"></i>
+                            Ver logs de importação
+                        </a>
+                    </div>
+                </div>
+                <button id="declaracao-overlay-close-btn" type="button" class="mt-6 hidden inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                    <i class="bi bi-check-lg mr-2"></i>OK, Fechar
+                </button>
+            </div>
+        </div>
+
         <form id="lancamento-form" method="post" enctype="multipart/form-data" novalidate class="p-6 space-y-8">
                 {% csrf_token %}
                 
@@ -917,6 +964,105 @@
 
 // ====== DRAG AND DROP PARA DECLARAÇÃO DE COMPENSAÇÃO ======
 document.addEventListener('DOMContentLoaded', () => {
+    const overlayEls = {
+        root: document.getElementById('declaracao-processing-overlay'),
+        currentFile: document.getElementById('declaracao-overlay-current-file'),
+        closeBtn: document.getElementById('declaracao-overlay-close-btn'),
+        successMessage: document.getElementById('declaracao-overlay-success-message'),
+        successText: document.getElementById('declaracao-overlay-success-text'),
+        progressText: document.getElementById('declaracao-overlay-progress-text'),
+        progressPercentage: document.getElementById('declaracao-overlay-progress-percentage'),
+        progressBar: document.getElementById('declaracao-overlay-progress-bar'),
+    };
+
+    let processedCount = 0;
+    let totalCount = 0;
+    let successCount = 0;
+    let errorCount = 0;
+    let results = [];
+
+    function resetOverlay() {
+        processedCount = 0;
+        totalCount = 0;
+        successCount = 0;
+        errorCount = 0;
+        results = [];
+        
+        if (overlayEls.currentFile) overlayEls.currentFile.textContent = '—';
+        if (overlayEls.successMessage) overlayEls.successMessage.classList.add('hidden');
+        if (overlayEls.closeBtn) overlayEls.closeBtn.classList.add('hidden');
+        if (overlayEls.progressText) overlayEls.progressText.textContent = '0 de 0 processados';
+        if (overlayEls.progressPercentage) overlayEls.progressPercentage.textContent = '0%';
+        if (overlayEls.progressBar) overlayEls.progressBar.style.width = '0%';
+    }
+
+    function updateProgress() {
+        const percentage = totalCount > 0 ? Math.round((processedCount / totalCount) * 100) : 0;
+        
+        if (overlayEls.progressText) {
+            overlayEls.progressText.textContent = `${processedCount} de ${totalCount} processado${totalCount !== 1 ? 's' : ''}`;
+        }
+        if (overlayEls.progressPercentage) {
+            overlayEls.progressPercentage.textContent = `${percentage}%`;
+        }
+        if (overlayEls.progressBar) {
+            overlayEls.progressBar.style.width = `${percentage}%`;
+        }
+    }
+
+    function showOverlay(fileCount) {
+        if (!overlayEls.root) return;
+        resetOverlay();
+        totalCount = fileCount;
+        overlayEls.root.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        updateProgress();
+    }
+
+    function showFinalResult() {
+        if (!overlayEls.root) return;
+        
+        if (overlayEls.currentFile) {
+            overlayEls.currentFile.textContent = 'Processamento concluído!';
+        }
+        
+        if (overlayEls.successText) {
+            overlayEls.successText.textContent = `${successCount} arquivo${successCount !== 1 ? 's' : ''} processado${successCount !== 1 ? 's' : ''} com sucesso${errorCount > 0 ? `, ${errorCount} com erro${errorCount !== 1 ? 's' : ''}` : ''}`;
+        }
+        
+        if (overlayEls.successMessage) {
+            overlayEls.successMessage.classList.remove('hidden');
+        }
+        
+        if (overlayEls.closeBtn) {
+            overlayEls.closeBtn.classList.remove('hidden');
+            overlayEls.closeBtn.focus();
+        }
+    }
+
+    function closeOverlay() {
+        if (overlayEls.root) {
+            overlayEls.root.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+        // Recarregar página após fechar para mostrar novos lançamentos
+        if (successCount > 0) {
+            window.location.reload();
+        }
+    }
+
+    if (overlayEls.closeBtn) {
+        overlayEls.closeBtn.addEventListener('click', closeOverlay);
+    }
+
+    if (overlayEls.root) {
+        overlayEls.root.addEventListener('click', (e) => {
+            if (e.target === overlayEls.root && overlayEls.closeBtn && !overlayEls.closeBtn.classList.contains('hidden')) {
+                closeOverlay();
+            }
+        });
+    }
+
     // Toggle expand/collapse
     const toggleButton = document.getElementById('importToggleButton');
     const container = document.getElementById('importDropZoneContainer');
@@ -959,38 +1105,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return null;
     }
     
-    function showMessage(container, message, type = 'info') {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = 'mt-3 rounded-md border p-3 text-sm';
-        
-        if (type === 'success') {
-            messageDiv.classList.add('border-green-200', 'bg-green-50', 'text-green-700', 'dark:border-green-500/40', 'dark:bg-green-500/15', 'dark:text-green-300');
-        } else if (type === 'error') {
-            messageDiv.classList.add('border-red-200', 'bg-red-50', 'text-red-700', 'dark:border-red-500/40', 'dark:bg-red-500/15', 'dark:text-red-300');
-        } else {
-            messageDiv.classList.add('border-blue-200', 'bg-blue-50', 'text-blue-700', 'dark:border-blue-500/40', 'dark:bg-blue-500/15', 'dark:text-blue-300');
-        }
-        
-        messageDiv.innerHTML = message;
-        
-        // Remove previous messages
-        const oldMessages = container.querySelectorAll('.mt-3.rounded-md.border');
-        oldMessages.forEach(msg => msg.remove());
-        
-        container.appendChild(messageDiv);
-    }
-    
     async function uploadFile(file) {
         const csrfToken = getCookie('csrftoken');
-        if (!csrfToken) {
-            showMessage(dropzone, '<i class="bi bi-x-circle mr-2"></i>Erro: Token CSRF não encontrado', 'error');
-            return;
-        }
-        
         const formData = new FormData();
         formData.append('pdf', file);
         
-        showMessage(dropzone, '<i class="bi bi-hourglass-split mr-2"></i>Processando arquivo...', 'info');
+        if (overlayEls.currentFile) {
+            overlayEls.currentFile.textContent = file.name;
+        }
         
         try {
             const response = await fetch(uploadUrl, {
@@ -1001,36 +1123,63 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const data = await response.json();
             
-            if (!response.ok || !data.ok) {
-                const errorMsg = data.error || `Erro ${response.status}`;
-                showMessage(dropzone, `<i class="bi bi-x-circle mr-2"></i>${errorMsg}`, 'error');
-                return;
+            processedCount++;
+            updateProgress();
+            
+            if (response.ok && data.ok) {
+                successCount++;
+                results.push({
+                    file: file.name,
+                    success: true,
+                    data: data
+                });
+            } else {
+                errorCount++;
+                results.push({
+                    file: file.name,
+                    success: false,
+                    error: data.error || `Erro ${response.status}`
+                });
             }
             
-            const numDebitos = data.num_debitos || 0;
-            const totalDebitos = data.total_debitos || 0;
-            const perdcomp = data.perdcomp_declaracao || '';
-            
-            showMessage(dropzone, `
-                <div class="flex items-start gap-2">
-                    <i class="bi bi-check-circle-fill text-lg"></i>
-                    <div>
-                        <div class="font-medium mb-1">Declaração importada com sucesso!</div>
-                        <div class="text-xs space-y-1">
-                            <div>PER/DCOMP: <strong>${perdcomp}</strong></div>
-                            <div>Total de débitos: <strong>R$ ${totalDebitos.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong></div>
-                            <div>Quantidade de itens: <strong>${numDebitos}</strong></div>
-                        </div>
-                        <div class="mt-2">
-                            <a href="${data.detail_url || ''}" class="text-xs underline hover:no-underline">Ver detalhes da adesão</a>
-                        </div>
-                    </div>
-                </div>
-            `, 'success');
-            
         } catch (error) {
-            showMessage(dropzone, `<i class="bi bi-x-circle mr-2"></i>Erro ao processar: ${error.message}`, 'error');
+            processedCount++;
+            errorCount++;
+            updateProgress();
+            results.push({
+                file: file.name,
+                success: false,
+                error: error.message
+            });
         }
+    }
+    
+    async function processFiles(files) {
+        if (!files || files.length === 0) return;
+        
+        const pdfFiles = Array.from(files).filter(f => 
+            f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')
+        );
+        
+        if (pdfFiles.length === 0) {
+            alert('Nenhum arquivo PDF encontrado');
+            return;
+        }
+        
+        const csrfToken = getCookie('csrftoken');
+        if (!csrfToken) {
+            alert('Token CSRF não encontrado. Recarregue a página e tente novamente.');
+            return;
+        }
+        
+        showOverlay(pdfFiles.length);
+        
+        // Processar arquivos sequencialmente
+        for (const file of pdfFiles) {
+            await uploadFile(file);
+        }
+        
+        showFinalResult();
     }
     
     // Click to browse
@@ -1063,24 +1212,14 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const files = e.dataTransfer?.files;
         if (files && files.length > 0) {
-            const file = files[0];
-            if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-                uploadFile(file);
-            } else {
-                showMessage(dropzone, '<i class="bi bi-x-circle mr-2"></i>Apenas arquivos PDF são aceitos', 'error');
-            }
+            processFiles(files);
         }
     });
     
     // File input change
     fileInput.addEventListener('change', (e) => {
         if (e.target.files && e.target.files.length > 0) {
-            const file = e.target.files[0];
-            if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-                uploadFile(file);
-            } else {
-                showMessage(dropzone, '<i class="bi bi-x-circle mr-2"></i>Apenas arquivos PDF são aceitos', 'error');
-            }
+            processFiles(e.target.files);
             fileInput.value = '';
         }
     });

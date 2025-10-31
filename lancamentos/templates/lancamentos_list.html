@@ -240,6 +240,10 @@
                                         <span class="inline-flex items-center rounded-md bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-700 dark:text-amber-300">
                                             <i class="bi bi-arrow-repeat mr-1"></i>Retificado
                                         </span>
+                                        {% elif lancamento.status == 'estornado' %}
+                                        <span class="inline-flex items-center rounded-md bg-purple-500/10 px-2 py-1 text-xs font-medium text-purple-700 dark:text-purple-300">
+                                            <i class="bi bi-arrow-counterclockwise mr-1"></i>Estornado
+                                        </span>
                                         {% elif lancamento.status == 'solicitado' %}
                                         <span class="inline-flex items-center rounded-md bg-gray-500/10 px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300">
                                             <i class="bi bi-clock-history mr-1"></i>Solicitado
@@ -327,6 +331,10 @@
                             {% elif lancamento.status == 'retificado' %}
                             <span class="inline-flex items-center rounded-md bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-700 dark:text-amber-300">
                                 <i class="bi bi-arrow-repeat mr-1"></i>Retificado
+                            </span>
+                            {% elif lancamento.status == 'estornado' %}
+                            <span class="inline-flex items-center rounded-md bg-purple-500/10 px-2 py-1 text-xs font-medium text-purple-700 dark:text-purple-300">
+                                <i class="bi bi-arrow-counterclockwise mr-1"></i>Estornado
                             </span>
                             {% elif lancamento.status == 'solicitado' %}
                             <span class="inline-flex items-center rounded-md bg-gray-500/10 px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300">

@@ -70,6 +70,7 @@ class PDFParsed:
     perdcomp: Optional[str] = None
     perdcomp_inicial: Optional[str] = None
     perdcomp_retificador: Optional[str] = None
+    perdcomp_retificado: Optional[str] = None  # Nº PER/DCOMP Retificado (quando é retificadora)
     is_retificador: bool = False
     metodo_credito: Optional[str] = None
     data_criacao: Optional[str] = None  # dd/mm/aaaa
@@ -450,6 +451,20 @@ def parse_declaracao_compensacao_text(txt: str) -> PDFParsed:
         candidate = candidate.strip(" .;,:")
         if _looks_like_perdcomp(candidate):
             p.perdcomp_inicial = candidate
+    
+    # 2b. Capturar "Nº PER/DCOMP Retificado" (quando esta declaração é retificadora)
+    m_retificado = re.search(
+        r"(?:N[ºo°]\.?\s*|Nº\s+)?PER\s*/?\s*DCOMP\s+(?:Retificad[ao]|a\s+ser\s+retificad[ao])\s*[:\-]?\s*([0-9A-Za-z./\-\s]{15,35})",
+        norm,
+        flags=re.IGNORECASE
+    )
+    if m_retificado:
+        raw_retif = m_retificado.group(1).strip()
+        candidate_retif = re.sub(r"[^0-9.\-/]", "", raw_retif)
+        candidate_retif = candidate_retif.strip(" .;,:")
+        if _looks_like_perdcomp(candidate_retif):
+            p.perdcomp_retificado = candidate_retif
+            p.is_retificador = True
     
     # 3. Número do PERDCOMP da DECLARAÇÃO ATUAL
     # Este número aparece no cabeçalho, geralmente destacado, próximo ao CNPJ

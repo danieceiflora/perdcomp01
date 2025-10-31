@@ -809,6 +809,8 @@ def importar_declaracao_compensacao(request):
 
         doc_perdcomp = (parsed.perdcomp or '').strip()
         perdcomp_inicial = (parsed.perdcomp_inicial or '').strip()
+        perdcomp_retificado = (parsed.perdcomp_retificado or '').strip()
+        is_retificadora = parsed.is_retificador
 
         # Validação 1: PER/DCOMP inicial deve estar presente
         if not perdcomp_inicial:
@@ -828,7 +830,19 @@ def importar_declaracao_compensacao(request):
                 status_code = 404
                 response_payload = {'ok': False, 'error': f'Adesão com PER/DCOMP inicial {perdcomp_inicial} não encontrada.'}
 
-        # Validação 4: Deve ter débitos
+        # Validação 4: Se é retificadora, verificar se a declaração original existe
+        if status_code == 200 and is_retificadora and perdcomp_retificado:
+            if not Lancamentos.objects.filter(
+                id_adesao=adesao,
+                perdcomp_declaracao=perdcomp_retificado
+            ).exists():
+                status_code = 404
+                response_payload = {
+                    'ok': False,
+                    'error': f'Esta é uma declaração retificadora, mas a declaração original PER/DCOMP {perdcomp_retificado} não foi encontrada na adesão {perdcomp_inicial}. Importe primeiro a declaração original.'
+                }
+
+        # Validação 6: Deve ter débitos
         debitos_extraidos = parsed.debitos or []
         if status_code == 200 and not debitos_extraidos:
             status_code = 400
@@ -837,6 +851,8 @@ def importar_declaracao_compensacao(request):
         if status_code == 200:
             log_data['perdcomp_declaracao'] = doc_perdcomp
             log_data['perdcomp_inicial'] = perdcomp_inicial
+            log_data['perdcomp_retificado'] = perdcomp_retificado
+            log_data['is_retificadora'] = is_retificadora
             from django.utils import timezone as dj_tz
             from django.core.exceptions import ValidationError
 
@@ -852,11 +868,80 @@ def importar_declaracao_compensacao(request):
                         'error': f'Declaração {doc_perdcomp} já foi importada anteriormente para esta adesão.'
                     }
                 else:
-                    # Calcular o total dos débitos
+                    # Se é retificadora, buscar e processar a declaração retificada
+                    declaracao_retificada = None
+                    saldo_restaurado = 0.0
+                    lancamento_estorno = None
+                    
+                    if is_retificadora and perdcomp_retificado:
+                        try:
+                            declaracao_retificada = Lancamentos.objects.get(
+                                id_adesao=adesao,
+                                perdcomp_declaracao=perdcomp_retificado
+                            )
+                            
+                            # Obter valor original da declaração retificada
+                            valor_original = float(declaracao_retificada.valor or 0)
+                            
+                            if declaracao_retificada.sinal == '-' and valor_original > 0:
+                                # PASSO 1: Criar lançamento de ESTORNO
+                                # Este lançamento credita o valor de volta à adesão
+                                lancamento_estorno = Lancamentos.objects.create(
+                                    id_adesao=adesao,
+                                    data_lancamento=dj_tz.now(),
+                                    valor=valor_original,
+                                    sinal='+',  # Crédito (devolução)
+                                    descricao=f'Estorno da declaração {perdcomp_retificado} (retificada pela declaração {doc_perdcomp})',
+                                    metodo='Estorno por Retificação',
+                                    aprovado=True,
+                                    status='estornado',
+                                    perdcomp_declaracao=None,  # Lançamento de estorno não tem declaração própria
+                                    perdcomp_retificador=doc_perdcomp,  # Vincula à declaração retificadora
+                                    perdcomp_retificado=perdcomp_retificado,  # Referencia a declaração estornada
+                                )
+                                
+                                # PASSO 2: Atualizar saldo da adesão (aprovado=True já faz isso automaticamente via save())
+                                adesao.refresh_from_db(fields=['saldo_atual'])
+                                saldo_restaurado = valor_original
+                                log_data['saldo_restaurado'] = saldo_restaurado
+                                log_data['saldo_apos_estorno'] = adesao.saldo_atual
+                                log_data['lancamento_estorno_id'] = lancamento_estorno.pk
+                            
+                            # PASSO 3: Marcar declaração original como 'retificado'
+                            declaracao_retificada.status = 'retificado'
+                            declaracao_retificada.perdcomp_retificador = doc_perdcomp
+                            declaracao_retificada.save(update_fields=['status', 'perdcomp_retificador'])
+                            log_data['declaracao_retificada_id'] = declaracao_retificada.pk
+                            log_data['valor_declaracao_retificada'] = valor_original
+                        except Lancamentos.DoesNotExist:
+                            # Este caso não deveria acontecer devido à validação prévia,
+                            # mas mantemos como proteção adicional
+                            status_code = 404
+                            response_payload = {
+                                'ok': False,
+                                'error': f'Declaração original {perdcomp_retificado} não encontrada para retificação.'
+                            }
+                    
+                    # Calcular o total dos débitos (apenas para descrição)
                     total_debitos = sum(float(d.get('valor', 0)) for d in debitos_extraidos if d.get('valor') is not None)
                     
-                    # Montar descrição dos débitos
-                    descricao_items = []
+                    # Obter o Total do Crédito Original Utilizado (campo que atualiza o saldo)
+                    total_credito_utilizado = parsed.total_credito_original_utilizado
+                    if total_credito_utilizado is None:
+                        status_code = 400
+                        response_payload = {
+                            'ok': False,
+                            'error': 'Total do Crédito Original Utilizado não identificado no PDF.'
+                        }
+                    
+                    # Obter o Total dos Débitos deste Documento do PDF
+                    total_debitos_doc = parsed.total_debitos_documento
+                    if total_debitos_doc is None:
+                        # Usar a soma calculada como fallback
+                        total_debitos_doc = total_debitos
+                    
+                    # Montar descrição dos débitos (cabeçalho com total + itens discriminados)
+                    descricao_items = [f"Total dos Débitos: R$ {total_debitos_doc:,.2f}\n"]
                     for idx, debito in enumerate(debitos_extraidos, start=1):
                         item_code = (debito.get('item') or '').strip() or f"{idx:03d}"
                         valor = debito.get('valor', 0)
@@ -877,26 +962,41 @@ def importar_declaracao_compensacao(request):
                     if debitos_extraidos and debitos_extraidos[0].get('periodo_apuracao_debito'):
                         periodo_apuracao = debitos_extraidos[0].get('periodo_apuracao_debito')
                     
+                if status_code == 200:
                     try:
                         lanc = Lancamentos.objects.create(
                             id_adesao=adesao,
                             data_lancamento=dj_tz.now(),
-                            valor=total_debitos,
+                            valor=float(total_credito_utilizado),  # Usar o Total do Crédito Original Utilizado
                             sinal='-',
                             descricao=(
                                 f'Declaração de Compensação {doc_perdcomp} importada com {len(debitos_extraidos)} débito(s)'
                             ),
                             metodo='Declaração de Compensação',
-                            total_debitos_documento=total_debitos,
+                            total_credito_original_utilizado=float(total_credito_utilizado),
+                            total_debitos_documento=float(total_debitos_doc),
                             descricao_debitos=descricao_debitos,
                             periodo_apuracao=periodo_apuracao,
                             aprovado=True,
-                            perdcomp_inicial=perdcomp_inicial,
                             perdcomp_declaracao=doc_perdcomp,
+                            perdcomp_retificado=perdcomp_retificado if is_retificadora else None,
+                            is_retificadora=is_retificadora,
                             item=None,  # Não mais usamos item individual
                         )
                         
                         adesao.refresh_from_db(fields=['saldo_atual'])
+                        
+                        # Preparar mensagem detalhada para o modal
+                        mensagem_detalhes = []
+                        
+                        if is_retificadora and perdcomp_retificado:
+                            mensagem_detalhes.append(f"✓ Declaração retificadora importada")
+                            mensagem_detalhes.append(f"✓ Estorno de R$ {saldo_restaurado:,.2f} registrado")
+                            mensagem_detalhes.append(f"✓ Declaração {perdcomp_retificado} marcada como retificada")
+                        
+                        mensagem_detalhes.append(f"✓ {len(debitos_extraidos)} débito(s) processado(s)")
+                        mensagem_detalhes.append(f"✓ Total debitado: R$ {float(total_credito_utilizado):,.2f}")
+                        mensagem_detalhes.append(f"✓ Saldo atual: R$ {adesao.saldo_atual:,.2f}")
                         
                         response_payload = {
                             'ok': True,
@@ -904,11 +1004,19 @@ def importar_declaracao_compensacao(request):
                             'updated': True,
                             'perdcomp_declaracao': doc_perdcomp,
                             'perdcomp_inicial': adesao.perdcomp,
-                            'total_debitos': total_debitos,
+                            'is_retificadora': is_retificadora,
+                            'perdcomp_retificado': perdcomp_retificado if is_retificadora else None,
+                            'declaracao_retificada_atualizada': declaracao_retificada.pk if declaracao_retificada else None,
+                            'lancamento_estorno_id': lancamento_estorno.pk if lancamento_estorno else None,
+                            'saldo_restaurado': saldo_restaurado if is_retificadora else None,
+                            'total_credito_utilizado': float(total_credito_utilizado),
+                            'total_debitos': float(total_debitos_doc),
                             'num_debitos': len(debitos_extraidos),
                             'lancamento_id': lanc.pk,
                             'detail_url': reverse('adesao:detail', kwargs={'pk': adesao.pk}),
                             'saldo_atual': adesao.saldo_atual,
+                            'mensagem': '\n'.join(mensagem_detalhes),
+                            'titulo': f'Declaração {doc_perdcomp} importada com sucesso',
                         }
                     except ValidationError as exc:
                         status_code = 400
