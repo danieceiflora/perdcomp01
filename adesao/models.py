@@ -17,15 +17,12 @@ class Adesao(models.Model):
         ('Pedido de restituição', 'Pedido de restituição'),
         ('Compensação vinculada a um pedido de ressarcimento', 'Compensação vinculada a um pedido de ressarcimento'),
         ('Compensação vinculada a um pedido de restituição', 'Compensação vinculada a um pedido de restituição'),
-        ('Escritural', 'Escritural'),
-        ('Crédito em conta', 'Crédito em conta'),
-        ('Declaração de Compensação', 'Declaração de Compensação'),
+        ('Escritural', 'Escritural')
     ]
 
     status_options = [
         ('solicitado', 'Solicitado'),
         ('protocolado', 'Protocolado'),
-        ('retificado', 'Retificado'),
     ]
 
     metodo_credito = models.CharField(
