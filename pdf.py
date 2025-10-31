@@ -1,23 +1,22 @@
 import os
 import sys
-from pypdf import PdfReader
+from pdfminer.high_level import extract_text as pdfminer_extract_text
 
 
 def extract_text(pdf_path: str) -> str:
-    """Extrai texto diretamente de um PDF utilizando apenas o conteúdo embutido."""
+    """Extrai texto diretamente de um PDF utilizando pdfminer.six (melhor extração)."""
     if not pdf_path.lower().endswith(".pdf"):
         raise ValueError("Somente arquivos PDF são suportados")
 
     if not os.path.exists(pdf_path):
         raise FileNotFoundError(pdf_path)
 
-    reader = PdfReader(pdf_path)
-    texts = []
-    for page in reader.pages:
-        page_text = page.extract_text() or ""
-        texts.append(page_text)
-
-    return "\n".join(texts).strip()
+    try:
+        text = pdfminer_extract_text(pdf_path) or ""
+        return text.strip()
+    except Exception as e:
+        print(f"Erro ao extrair texto do PDF: {e}", file=sys.stderr)
+        return ""
 
 def main():
     if len(sys.argv) < 2:

@@ -16,7 +16,7 @@
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                         <h2 class="text-xl font-semibold text-card-foreground">Importar documentos PERDCOMP</h2>
-                        <p class="text-sm text-muted-foreground">Carregue recibos de protocolo, notificações de crédito em conta ou declarações de compensação vinculadas a PERDCOMPs já cadastrados.</p>
+                        <p class="text-sm text-muted-foreground">Carregue recibos de protocolo ou declarações de compensação vinculadas a PERDCOMPs já cadastrados. Para notificações de crédito em conta, use a área de lançamentos.</p>
                     </div>
                     <button type="button" id="importToggleButton" aria-controls="importDropZoneContainer" aria-expanded="false"
                             class="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-card-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
@@ -29,7 +29,6 @@
                         
                         <div id="importDropZone" role="button" tabindex="0"
                              data-recibo-url="{% url 'adesao:importar_recibo' %}"
-                             data-credito-url="{% url 'adesao:importar_credito_conta' %}"
                              data-compensacao-url="{% url 'adesao:importar_declaracao_compensacao' %}"
                              class="relative flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-border bg-muted/30 p-5 text-center transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                             <input type="file" id="importFileInput" accept="application/pdf" class="hidden" multiple />
@@ -620,21 +619,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 description: 'Importe o recibo de pedido de crédito recebido ao protocolar o PERDCOMP. O arquivo atualizará número de controle, chave SERPRO e status.',
                 hint: 'Você pode importar vários recibos; cada arquivo deve corresponder a um PERDCOMP existente.',
             },
-            credito: {
-                uploadUrlAttr: 'data-credito-url',
-                overlayTitle: 'Processando notificações',
-                labelSingular: 'notificação',
-                labelPlural: 'notificações',
-                successLabelSingular: 'importada',
-                successLabelPlural: 'importadas',
-                processingMessageBuilder: ({ index, total }) => `Processando notificação ${index} de ${total}...`,
-                successMessageBuilder: ({ data, file }) => {
-                    const label = data && data.perdcomp ? data.perdcomp : file.name;
-                    return `Notificação de crédito do PERDCOMP ${label} importada com sucesso.`;
-                },
-                description: 'Importe a notificação de crédito em conta emitida pela Receita Federal para registrar automaticamente o lançamento aprovado.',
-                hint: 'Cada notificação deve corresponder a um PERDCOMP já cadastrado e resultará em um crédito aprovado.',
-            },
             compensacao: {
                 uploadUrlAttr: 'data-compensacao-url',
                 overlayTitle: 'Processando declarações de compensação',
@@ -703,12 +687,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const humanTypeLabels = {
             recibo: 'recibo de protocolo',
-            credito: 'notificação de crédito em conta',
             compensacao: 'declaração de compensação',
         };
         const typePluralLabels = {
             recibo: 'recibos de protocolo',
-            credito: 'notificações de crédito em conta',
             compensacao: 'declarações de compensação',
         };
         const baseSummaryDefaults = {
@@ -832,10 +814,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     const normalized = normalizeText(rawText);
                     if (normalized.includes('recibo d entrega') || normalized.includes('recibo de entrega')) {
                         resolve('recibo');
-                        return;
-                    }
-                    if (normalized.includes('aviso de pagamento de ressarcimento')) {
-                        resolve('credito');
                         return;
                     }
                     if (normalized.includes('declaracao de compensacao') || normalized.includes('per/dcomp inicial')) {

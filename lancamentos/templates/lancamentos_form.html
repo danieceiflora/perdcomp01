@@ -39,13 +39,13 @@
         </div>
 
         {% if user.is_staff or user.is_superuser %}
-        <!-- Área de importação de declaração de compensação -->
+        <!-- Área de importação de documentos -->
         <div class="p-6 border-b bg-muted/10">
             <div class="flex flex-col gap-4">
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                        <h2 class="text-xl font-semibold text-card-foreground">Importar Declarações de Compensação</h2>
-                        <p class="text-sm text-muted-foreground">Carregue declarações de compensação em PDF para criar lançamentos automaticamente vinculados ao PER/DCOMP inicial informado no documento.</p>
+                        <h2 class="text-xl font-semibold text-card-foreground">Importar Documentos de Lançamento</h2>
+                        <p class="text-sm text-muted-foreground">Carregue declarações de compensação ou notificações de crédito em conta em PDF. O sistema detecta automaticamente o tipo de documento.</p>
                     </div>
                     <button type="button" id="importToggleButton" aria-controls="importDropZoneContainer" aria-expanded="false"
                             class="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-card-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
@@ -57,12 +57,13 @@
                     <div class="flex flex-col gap-4">
                         <div id="importDropZone" role="button" tabindex="0"
                              data-compensacao-url="{% url 'adesao:importar_declaracao_compensacao' %}"
+                             data-credito-url="{% url 'adesao:importar_credito_conta' %}"
                              class="relative flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-border bg-muted/30 p-5 text-center transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                             <input type="file" id="importFileInput" accept="application/pdf" class="hidden" multiple />
                             <i class="bi bi-cloud-arrow-up text-3xl text-muted-foreground"></i>
                             <div>
-                                <p class="text-sm font-medium text-card-foreground">Arraste declarações de compensação aqui</p>
-                                <p class="text-xs text-muted-foreground mt-1">ou clique para selecionar arquivos PDF</p>
+                                <p class="text-sm font-medium text-card-foreground">Arraste PDFs aqui ou clique no botão abaixo</p>
+                                <p class="text-xs text-muted-foreground mt-1">Tipos aceitos: Declaração de Compensação • Notificação de Crédito em Conta</p>
                             </div>
                             <button type="button" id="importBrowseButton"
                                     class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-card-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
@@ -81,12 +82,12 @@
         </div>
         {% endif %}
 
-        <!-- Overlay de Progresso para Declarações -->
+        <!-- Overlay de Progresso para Documentos -->
         <div id="declaracao-processing-overlay" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" role="dialog" aria-modal="true">
             <div class="flex w-full max-w-md flex-col rounded-lg border border-border bg-card text-card-foreground shadow-2xl p-6 sm:p-8" tabindex="-1">
                 <div class="mb-6 text-center">
-                    <h3 class="text-xl font-semibold mb-2">Processando declarações</h3>
-                    <p class="text-sm text-muted-foreground">Aguarde enquanto processamos as declarações de compensação.</p>
+                    <h3 class="text-xl font-semibold mb-2">Processando documentos</h3>
+                    <p class="text-sm text-muted-foreground">Aguarde enquanto processamos os documentos PDF.</p>
                 </div>
                 <div class="flex justify-center mb-6">
                     <div class="relative">
@@ -1091,7 +1092,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (!dropzone || !fileInput) return;
     
-    const uploadUrl = dropzone.getAttribute('data-compensacao-url');
+    const compensacaoUrl = dropzone.getAttribute('data-compensacao-url');
+    const creditoUrl = dropzone.getAttribute('data-credito-url');
     
     function getCookie(name) {
         const cookies = document.cookie ? document.cookie.split('; ') : [];
@@ -1105,7 +1107,77 @@ document.addEventListener('DOMContentLoaded', () => {
         return null;
     }
     
-    async function uploadFile(file) {
+    const normalizeText = (value) => {
+        if (!value) return '';
+        let normalized = value;
+        if (typeof normalized.normalize === 'function') {
+            normalized = normalized.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        }
+        return normalized.toLowerCase();
+    };
+    
+    const detectPdfType = (file) => new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            try {
+                const buffer = reader.result;
+                let rawText = '';
+                if (buffer instanceof ArrayBuffer) {
+                    if (typeof TextDecoder !== 'undefined') {
+                        const decoder = new TextDecoder('latin1', { fatal: false });
+                        rawText = decoder.decode(buffer);
+                    } else {
+                        rawText = Array.from(new Uint8Array(buffer)).map((byte) => String.fromCharCode(byte)).join('');
+                    }
+                } else if (typeof buffer === 'string') {
+                    rawText = buffer;
+                }
+                const normalized = normalizeText(rawText);
+                
+                // DEBUG: Log para diagnóstico
+                console.log('=== DEBUG PDF DETECTION ===');
+                console.log('Arquivo:', file.name);
+                console.log('Tamanho buffer:', buffer.byteLength || buffer.length);
+                console.log('Primeiros 1000 chars do rawText:', rawText.substring(0, 1000));
+                console.log('Primeiros 1000 chars normalizados:', normalized.substring(0, 1000));
+                console.log('Contém "Aviso" (raw)?', rawText.includes('Aviso'));
+                console.log('Contém "aviso" (normalized)?', normalized.includes('aviso'));
+                console.log('Contém "pagamento" (normalized)?', normalized.includes('pagamento'));
+                console.log('Contém "ressarcimento" (normalized)?', normalized.includes('ressarcimento'));
+                
+                // Detectar crédito em conta
+                if (normalized.includes('aviso de pagamento de ressarcimento')) {
+                    console.log('✓ DETECTADO: Crédito em conta (aviso de pagamento)');
+                    resolve('credito');
+                    return;
+                }
+                
+                // Detectar declaração de compensação
+                if (normalized.includes('declaracao de compensacao') || normalized.includes('per/dcomp inicial')) {
+                    console.log('✓ DETECTADO: Declaração de compensação');
+                    resolve('compensacao');
+                    return;
+                }
+                
+                console.log('⚠ Tipo não detectado - usando fallback (null)');
+                console.log('Patterns buscados:');
+                console.log('  - aviso de pagamento de ressarcimento');
+                console.log('  - declaracao de compensacao');
+                console.log('  - per/dcomp inicial');
+                console.log('========================');
+            } catch (error) {
+                console.warn('Falha ao analisar PDF para detecção automática:', error);
+            }
+            resolve(null);
+        };
+        reader.onerror = () => {
+            console.warn('Falha ao ler PDF para detecção automática.');
+            resolve(null);
+        };
+        reader.readAsArrayBuffer(file);
+    });
+    
+    async function uploadFile(file, uploadUrl) {
         const csrfToken = getCookie('csrftoken');
         const formData = new FormData();
         formData.append('pdf', file);
@@ -1174,9 +1246,32 @@ document.addEventListener('DOMContentLoaded', () => {
         
         showOverlay(pdfFiles.length);
         
-        // Processar arquivos sequencialmente
+        // Processar arquivos sequencialmente com detecção automática de tipo
         for (const file of pdfFiles) {
-            await uploadFile(file);
+            const pdfType = await detectPdfType(file);
+            
+            let uploadUrl = null;
+            if (pdfType === 'credito') {
+                uploadUrl = creditoUrl;
+            } else if (pdfType === 'compensacao') {
+                uploadUrl = compensacaoUrl;
+            } else {
+                // Fallback: tentar como declaração de compensação
+                uploadUrl = compensacaoUrl;
+            }
+            
+            if (uploadUrl) {
+                await uploadFile(file, uploadUrl);
+            } else {
+                processedCount++;
+                errorCount++;
+                updateProgress();
+                results.push({
+                    file: file.name,
+                    success: false,
+                    error: 'Tipo de documento não reconhecido'
+                });
+            }
         }
         
         showFinalResult();
