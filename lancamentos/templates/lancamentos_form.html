@@ -58,6 +58,7 @@
                         <div id="importDropZone" role="button" tabindex="0"
                              data-compensacao-url="{% url 'adesao:importar_declaracao_compensacao' %}"
                              data-credito-url="{% url 'adesao:importar_credito_conta' %}"
+                             data-detectar-url="{% url 'adesao:detectar_tipo_pdf' %}"
                              class="relative flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-border bg-muted/30 p-5 text-center transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                             <input type="file" id="importFileInput" accept="application/pdf" class="hidden" multiple />
                             <i class="bi bi-cloud-arrow-up text-3xl text-muted-foreground"></i>
@@ -1094,6 +1095,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const compensacaoUrl = dropzone.getAttribute('data-compensacao-url');
     const creditoUrl = dropzone.getAttribute('data-credito-url');
+    const detectarUrl = dropzone.getAttribute('data-detectar-url');
     
     function getCookie(name) {
         const cookies = document.cookie ? document.cookie.split('; ') : [];
@@ -1116,66 +1118,41 @@ document.addEventListener('DOMContentLoaded', () => {
         return normalized.toLowerCase();
     };
     
-    const detectPdfType = (file) => new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-            try {
-                const buffer = reader.result;
-                let rawText = '';
-                if (buffer instanceof ArrayBuffer) {
-                    if (typeof TextDecoder !== 'undefined') {
-                        const decoder = new TextDecoder('latin1', { fatal: false });
-                        rawText = decoder.decode(buffer);
-                    } else {
-                        rawText = Array.from(new Uint8Array(buffer)).map((byte) => String.fromCharCode(byte)).join('');
-                    }
-                } else if (typeof buffer === 'string') {
-                    rawText = buffer;
-                }
-                const normalized = normalizeText(rawText);
-                
-                // DEBUG: Log para diagnóstico
-                console.log('=== DEBUG PDF DETECTION ===');
-                console.log('Arquivo:', file.name);
-                console.log('Tamanho buffer:', buffer.byteLength || buffer.length);
-                console.log('Primeiros 1000 chars do rawText:', rawText.substring(0, 1000));
-                console.log('Primeiros 1000 chars normalizados:', normalized.substring(0, 1000));
-                console.log('Contém "Aviso" (raw)?', rawText.includes('Aviso'));
-                console.log('Contém "aviso" (normalized)?', normalized.includes('aviso'));
-                console.log('Contém "pagamento" (normalized)?', normalized.includes('pagamento'));
-                console.log('Contém "ressarcimento" (normalized)?', normalized.includes('ressarcimento'));
-                
-                // Detectar crédito em conta
-                if (normalized.includes('aviso de pagamento de ressarcimento')) {
-                    console.log('✓ DETECTADO: Crédito em conta (aviso de pagamento)');
-                    resolve('credito');
-                    return;
-                }
-                
-                // Detectar declaração de compensação
-                if (normalized.includes('declaracao de compensacao') || normalized.includes('per/dcomp inicial')) {
-                    console.log('✓ DETECTADO: Declaração de compensação');
-                    resolve('compensacao');
-                    return;
-                }
-                
-                console.log('⚠ Tipo não detectado - usando fallback (null)');
-                console.log('Patterns buscados:');
-                console.log('  - aviso de pagamento de ressarcimento');
-                console.log('  - declaracao de compensacao');
-                console.log('  - per/dcomp inicial');
-                console.log('========================');
-            } catch (error) {
-                console.warn('Falha ao analisar PDF para detecção automática:', error);
+    /**
+     * Detecta o tipo de PDF usando o endpoint do servidor (mais confiável)
+     * Retorna 'credito', 'compensacao' ou null
+     */
+    const detectPdfType = async (file) => {
+        try {
+            const csrfToken = getCookie('csrftoken');
+            const formData = new FormData();
+            formData.append('pdf', file);
+            
+            console.log('=== DETECÇÃO PDF (SERVIDOR) ===');
+            console.log('Arquivo:', file.name);
+            console.log('Enviando para:', detectarUrl);
+            
+            const response = await fetch(detectarUrl, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken },
+                body: formData,
+            });
+            
+            const data = await response.json();
+            
+            if (data.ok) {
+                console.log('✓ Tipo detectado:', data.tipo);
+                console.log('Debug info:', data.debug);
+                return data.tipo; // 'credito', 'compensacao' ou null
+            } else {
+                console.warn('⚠ Erro na detecção:', data.error);
+                return null;
             }
-            resolve(null);
-        };
-        reader.onerror = () => {
-            console.warn('Falha ao ler PDF para detecção automática.');
-            resolve(null);
-        };
-        reader.readAsArrayBuffer(file);
-    });
+        } catch (error) {
+            console.error('❌ Falha ao detectar tipo de PDF:', error);
+            return null;
+        }
+    };
     
     async function uploadFile(file, uploadUrl) {
         const csrfToken = getCookie('csrftoken');

@@ -200,8 +200,6 @@
                                     <th class="h-12 px-4 text-left text-sm font-medium">Data</th>
                                     <th class="h-12 px-4 text-left text-sm font-medium">Valor</th>
                                     <th class="h-12 px-4 text-left text-sm font-medium">Saldo Restante</th>
-                                    <th class="h-12 px-4 text-left text-sm font-medium">Anexos</th>
-                                    <th class="h-12 px-4 text-left text-sm font-medium">Aprovação</th>
                                     <th class="h-12 px-4 text-left text-sm font-medium">Protocolo</th>
                                     <th class="h-12 px-4 text-left text-sm font-medium">Ações</th>
                                 </tr>
@@ -215,22 +213,6 @@
                                     <td class="p-4 align-middle">{{ lancamento.data_criacao|date:"d/m/Y" }}</td>
                                     <td class="p-4 align-middle font-semibold {% if lancamento.sinal == '+' %}text-green-600 dark:text-green-400{% else %}text-destructive{% endif %}">{{ lancamento.sinal }} {{ lancamento.valor|br_currency }}</td>
                                     <td class="p-4 align-middle font-semibold">{{ lancamento.saldo_restante|br_currency }}</td>
-                                    <td class="p-4 align-middle">
-                                        <span class="inline-flex items-center rounded-md bg-blue-500/10 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-300">
-                                            {{ lancamento.anexos.count }} anexo{{ lancamento.anexos.count|pluralize }}
-                                        </span>
-                                    </td>
-                                    <td class="p-4 align-middle">
-                                        {% if lancamento.aprovado %}
-                                        <span class="inline-flex items-center rounded-md bg-green-500/10 px-2 py-1 text-xs font-medium text-green-700 dark:text-green-300">
-                                            <i class="bi bi-check2-circle mr-1"></i>Aprovado
-                                        </span>
-                                        {% else %}
-                                        <span class="inline-flex items-center rounded-md bg-red-500/10 px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300">
-                                            <i class="bi bi-x-circle mr-1"></i>Não Aprovado
-                                        </span>
-                                        {% endif %}
-                                    </td>
                                     <td class="p-4 align-middle">
                                         {% if lancamento.status == 'protocolado' %}
                                         <span class="inline-flex items-center rounded-md bg-blue-500/10 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-300">
@@ -303,24 +285,6 @@
                         <div>
                             <span class="text-sm font-medium text-muted-foreground">Saldo Restante:</span>
                             <div class="font-semibold">{{ lancamento.saldo_restante|br_currency }}</div>
-                        </div>
-                        <div>
-                            <span class="text-sm font-medium text-muted-foreground">Anexos:</span>
-                            <span class="inline-flex items-center rounded-md bg-blue-500/10 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-300">
-                                {{ lancamento.anexos.count }} anexo{{ lancamento.anexos.count|pluralize }}
-                            </span>
-                        </div>
-                        <div>
-                            <span class="text-sm font-medium text-muted-foreground">Aprovação:</span>
-                            {% if lancamento.aprovado %}
-                            <span class="inline-flex items-center rounded-md bg-green-500/10 px-2 py-1 text-xs font-medium text-green-700 dark:text-green-300">
-                                <i class="bi bi-check2-circle mr-1"></i>Aprovado
-                            </span>
-                            {% else %}
-                            <span class="inline-flex items-center rounded-md bg-red-500/10 px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300">
-                                <i class="bi bi-x-circle mr-1"></i>Não Aprovado
-                            </span>
-                            {% endif %}
                         </div>
                         <div>
                             <span class="text-sm font-medium text-muted-foreground">Status Protocolo:</span> 

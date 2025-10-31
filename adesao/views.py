@@ -148,7 +148,6 @@ class AdesaoCreateView(AdminRequiredMixin, CreateView):
                         data_lancamento=dj_tz.now(),
                         valor=d['valor'],
                         sinal='-',
-                        tipo='Gerado',
                         descricao='Débito vinculado ao crédito (PERDCOMP) informado na adesão',
                         metodo=metodo,
                         codigo_receita_denominacao=d.get('codigo_receita_denominacao') or None,
@@ -213,7 +212,6 @@ class AdesaoUpdateView(AdminRequiredMixin, UpdateView):
                         data_lancamento=dj_tz.now(),
                         valor=d['valor'],
                         sinal='-',
-                        tipo='Gerado',
                         descricao='Débito vinculado ao crédito (PERDCOMP) informado na adesão',
                         metodo=metodo,
                         codigo_receita_denominacao=d.get('codigo_receita_denominacao') or None,
@@ -585,7 +583,6 @@ def importar_pdf_perdcomp(request):
                                 data_lancamento=dj_tz.now(),
                                 valor=float(val),
                                 sinal='-',
-                                tipo='Gerado',
                                 descricao='Débito vinculado (importado do PDF) - Declaração de Compensação',
                                 metodo=parsed.metodo_credito,
                                 codigo_receita_denominacao=(d.get('codigo_receita_denominacao') or None),
@@ -1272,6 +1269,72 @@ def importar_pedido_credito(request):
 @login_required
 @csrf_protect
 @require_POST
+def detectar_tipo_pdf(request):
+    """
+    Endpoint para detectar o tipo de PDF (crédito em conta ou declaração de compensação)
+    baseado no conteúdo do arquivo usando pdfminer.six
+    """
+    pdf_file: UploadedFile | None = request.FILES.get('pdf')
+    if not pdf_file:
+        return JsonResponse({'ok': False, 'error': 'Arquivo PDF não enviado.'}, status=400)
+
+    import tempfile
+    import os
+
+    tmp_path = None
+    try:
+        # Salvar PDF temporariamente
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp:
+            for chunk in pdf_file.chunks():
+                tmp.write(chunk)
+            tmp_path = tmp.name
+
+        # Extrair texto usando pdfminer.six
+        txt = extract_text(tmp_path) or ''
+        
+        # Normalizar texto para busca
+        txt_normalized = txt.lower().strip()
+        
+        # Detectar tipo baseado em padrões
+        tipo_detectado = None
+        
+        # Padrão 1: Crédito em conta (Aviso de Pagamento de Ressarcimento)
+        if 'aviso de pagamento de ressarcimento' in txt_normalized:
+            tipo_detectado = 'credito'
+        # Padrão 2: Declaração de Compensação
+        elif 'declaracao de compensacao' in txt_normalized or 'per/dcomp inicial' in txt_normalized:
+            tipo_detectado = 'compensacao'
+        
+        return JsonResponse({
+            'ok': True,
+            'tipo': tipo_detectado,
+            'debug': {
+                'texto_tamanho': len(txt),
+                'tem_aviso_ressarcimento': 'aviso de pagamento de ressarcimento' in txt_normalized,
+                'tem_declaracao': 'declaracao de compensacao' in txt_normalized,
+                'tem_perdcomp_inicial': 'per/dcomp inicial' in txt_normalized,
+                'primeiros_500_chars': txt[:500]
+            }
+        })
+    
+    except Exception as e:
+        return JsonResponse({
+            'ok': False,
+            'error': f'Erro ao processar PDF: {str(e)}'
+        }, status=500)
+    
+    finally:
+        # Limpar arquivo temporário
+        if tmp_path:
+            try:
+                os.remove(tmp_path)
+            except Exception:
+                pass
+
+
+@login_required
+@csrf_protect
+@require_POST
 def importar_notificacao_credito_conta(request):
     pdf_file: UploadedFile | None = request.FILES.get('pdf')
     if not pdf_file:
@@ -1359,8 +1422,7 @@ def importar_notificacao_credito_conta(request):
                 id_adesao=adesao,
                 data_lancamento=credit_datetime,
                 valor=valor_float,
-                sinal='+',
-                tipo='Gerado',
+                sinal='-',
                 descricao='Crédito em conta importado automaticamente.',
                 metodo='Crédito em conta',
                 data_credito=data_credito,
@@ -1684,7 +1746,6 @@ def importar_pdf_perdcomp_lote(request):
                                 data_lancamento=dj_tz.now(),
                                 valor=float(val),
                                 sinal='-',
-                                tipo='Gerado',
                                 descricao='Débito vinculado (importado do PDF) - Declaração de Compensação',
                                 metodo=parsed.metodo_credito,
                                 codigo_receita_denominacao=(d.get('codigo_receita_denominacao') or None),
